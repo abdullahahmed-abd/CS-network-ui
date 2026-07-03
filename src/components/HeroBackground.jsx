@@ -1,4 +1,4 @@
-import Backgroundimage from '../assets/image/Backroundimg13.png';
+import Backgroundimage from '../assets/image/Backgroundimg18.png';
 
 export default function HeroBackground() {
   return (

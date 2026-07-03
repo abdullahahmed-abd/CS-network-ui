@@ -40,16 +40,13 @@ export default function AuthCard({ onAuthenticated }) {
     <motion.div
       className="relative w-full overflow-hidden"
       style={{
-        maxWidth: '360px', // reduced from 440px
+        maxWidth: '360px',
         borderRadius: '24px',
-        padding: 'clamp(18px, 4vw, 28px) clamp(16px, 5vw, 28px)', // reduced padding
-        background:
-          'linear-gradient(135deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.14) 48%, rgba(255,255,255,0.20) 100%)',
-        backdropFilter: 'blur(5px) saturate(120%)',
-        WebkitBackdropFilter: 'blur(5px) saturate(120%)',
-        border: '1px solid rgba(255,255,255,0.42)',
+        padding: 'clamp(18px, 4vw, 28px) clamp(16px, 5vw, 28px)',
+        background: '#ffffff',
+        border: '1px solid rgba(0,0,0,0.08)',
         boxShadow:
-          '0 20px 50px rgba(0, 0, 0, 0.10), 0 8px 24px rgba(96, 181, 255, 0.08), inset 0 1px 0 rgba(255,255,255,0.45)',
+          '0 20px 50px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.06)',
       }}
       initial={{ opacity: 0, y: 40, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -59,37 +56,16 @@ export default function AuthCard({ onAuthenticated }) {
         delay: 0.2,
       }}
     >
-      {/* Soft glass overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 55%, rgba(255,255,255,0.10) 100%)',
-        }}
-      />
-
-      {/* Corner highlight */}
-      <div
-        className="absolute -top-16 -right-16 pointer-events-none"
-        style={{
-          width: '180px',
-          height: '180px',
-          borderRadius: '999px',
-          background:
-            'radial-gradient(circle, rgba(255,255,255,0.22) 0%, transparent 70%)',
-        }}
-      />
-
       {/* Top accent bar */}
-      <div
+      {/* <div
         className="absolute top-0 left-0 right-0 h-1 rounded-t-[24px]"
         style={{
           background:
-            'linear-gradient(90deg, #A2CB8B 0%, #7FB068 40%, #60B5FF 70%, #A2CB8B 100%)',
+            'linear-gradient(90deg, #A2CB8B 100%, #7FB068 100%, #60B5FF 70%, #A2CB8B 100%)',
           backgroundSize: '200% 100%',
           animation: 'gradient-shift 4s ease infinite',
         }}
-      />
+      /> */}
 
       <AnimatePresence>
         {flow !== 'initial' && (
@@ -103,11 +79,9 @@ export default function AuthCard({ onAuthenticated }) {
             <div
               className="px-3 py-1 rounded-full text-[11px] font-semibold"
               style={{
-                background: 'rgba(255,255,255,0.35)',
+                background: 'rgba(162, 203, 139, 0.15)',
                 color: '#4f7d3d',
-                border: '1px solid rgba(255,255,255,0.45)',
-                backdropFilter: 'blur(6px)',
-                WebkitBackdropFilter: 'blur(6px)',
+                border: '1px solid rgba(162, 203, 139, 0.4)',
               }}
             >
               {getFlowLabel()}
@@ -117,20 +91,20 @@ export default function AuthCard({ onAuthenticated }) {
       </AnimatePresence>
 
       <div className="relative z-10 mb-5">
-        <Logo size="sm" /> {/* reduced logo size */}
+        <Logo size="sm" />
       </div>
 
       <div
         className="relative z-10 mb-5 h-px"
         style={{
           background:
-            'linear-gradient(90deg, transparent, rgba(255,255,255,0.75) 30%, rgba(255,255,255,0.75) 70%, transparent)',
+            'linear-gradient(90deg, transparent, rgba(0,0,0,0.08) 30%, rgba(0,0,0,0.08) 70%, transparent)',
         }}
       />
 
       <div
         className="relative z-10"
-        style={{ minHeight: flow === 'initial' ? 'auto' : '260px' }} // slightly reduced minHeight
+        style={{ minHeight: flow === 'initial' ? 'auto' : '260px' }}
       >
         <AnimatePresence mode="wait">
           {flow === 'initial' && (
