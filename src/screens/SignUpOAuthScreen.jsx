@@ -60,33 +60,57 @@ export default function SignUpOAuthScreen({ onBack, onOAuthSuccess }) {
         </motion.p>
       </div>
 
-      {/* Info Banner */}
+      {/* Trust Banner */}
       <motion.div
-        className="rounded-[14px] px-4 py-3 flex items-start gap-3"
+        className="rounded-2xl p-3.5 flex flex-col gap-2.5"
         style={{
-          background: 'linear-gradient(135deg, #f0fae9, #e8f5e0)',
-          border: '1px solid rgba(162,203,139,0.4)',
+          background: 'linear-gradient(135deg, #f0faf0 0%, #f0f7ff 100%)',
+          border: '1px solid rgba(162, 203, 139, 0.3)',
         }}
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <span className="text-lg mt-0.5">ℹ️</span>
-        <div>
-          <p
-            className="text-[13px] font-semibold"
-            style={{ color: '#3d6b2d' }}
+        {/* Row 1 */}
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex items-center justify-center rounded-full shrink-0"
+            style={{
+              width: '28px',
+              height: '28px',
+              background: 'rgba(162, 203, 139, 0.25)',
+            }}
           >
-            Quick & Secure Sign Up
-          </p>
-          <p
-            className="text-[12px] mt-0.5 leading-relaxed"
-            style={{ color: '#5a8a45' }}
-          >
-            After OAuth, you'll verify your phone number to complete
-            registration.
-          </p>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#7FB068"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-[12px] font-bold" style={{ color: '#3d6b2e' }}>
+              100% Secure & Private
+            </p>
+            <p className="text-[11px]" style={{ color: '#6B7280' }}>
+              Your data is fully encrypted and never shared
+            </p>
+          </div>
         </div>
+
+        {/* Divider */}
+        <div
+          className="h-px w-full"
+          style={{ background: 'rgba(162, 203, 139, 0.25)' }}
+        />
+
+        
       </motion.div>
 
       {/* OAuth Buttons */}
@@ -115,10 +139,7 @@ export default function SignUpOAuthScreen({ onBack, onOAuthSuccess }) {
         >
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
-        <span
-          className="text-[12px] font-medium"
-          style={{ color: '#9CA3AF' }}
-        >
+        <span className="text-[12px] font-medium" style={{ color: '#9CA3AF' }}>
           256-bit SSL encrypted · Your data is safe
         </span>
       </motion.div>
