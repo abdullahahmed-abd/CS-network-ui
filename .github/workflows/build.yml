@@ -1,0 +1,193 @@
+name: Build GymPro Admin - All Platforms
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies (with Retry)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: npm ci
+
+      - name: 🏗️ Build Windows App
+        run: npm run electron:build:win:ci
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📤 Upload Windows Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            release/*.exe
+            release/*.zip
+
+
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      #  CI fix for hdiutil detach problems
+      - name: 🧹 Unmount leftover DMGs
+        run: |
+          sudo hdiutil detach -all -quiet || true
+          sleep 2
+
+      - name: 🧹 Clean Electron Cache
+        run: |
+          rm -rf ~/Library/Caches/electron
+          rm -rf ~/Library/Caches/electron-builder
+
+      - name: 📦 Install Dependencies (with Retry)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: npm ci
+
+      #  Retry whole build command
+      - name: 🏗️ Build Mac App (with retry)
+        uses: nick-fields/retry@v3
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          retry_wait_seconds: 60
+          command: npm run electron:build:mac:ci
+
+      - name:  Verify Ad-hoc Signature
+        run: |
+          echo "🔍 Checking app signature..."
+          find release/mac* -name "*.app" -maxdepth 2 -type d 2>/dev/null | while read app; do
+            echo "📦 App: $app"
+            codesign -dv --verbose=4 "$app" 2>&1 || echo "⚠️ Signature check failed"
+            echo "---"
+          done
+
+      - name: 📤 Upload Mac Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-build
+          path: |
+            release/*.dmg
+            release/*.zip
+
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Linux Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools rpm
+
+      - name: 🧹 Clean Electron Cache
+        run: |
+          rm -rf ~/.cache/electron
+          rm -rf ~/.cache/electron-builder
+
+      - name: 📦 Install Node Dependencies (with Retry)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: npm ci
+
+      - name: 🏗️ Build Linux App
+        run: npm run electron:build:linux:ci
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📤 Upload Linux Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: |
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+
+
+  create-release:
+    needs:
+      - build-windows
+      - build-mac
+      - build-linux
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: ⬇️ Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: artifacts/windows
+
+      - name: ⬇️ Download Mac Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mac-build
+          path: artifacts/mac
+
+      - name: ⬇️ Download Linux Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: artifacts/linux
+
+      - name: 🚀 Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: GymPro Admin ${{ github.ref_name }}
+          files: |
+            artifacts/windows/**/*
+            artifacts/mac/**/*
+            artifacts/linux/**/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
