@@ -1,3 +1,4 @@
+// components/AuthCard.jsx
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import Logo from './Logo';
@@ -8,7 +9,7 @@ import LoginScreen from '../screens/LoginScreen';
 import PhoneScreen from '../screens/PhoneScreen';
 import OTPScreen from '../screens/OTPScreen';
 
-export default function AuthCard({ onAuthenticated }) {
+export default function AuthCard({ onAuthenticated, onSignupComplete }) {
   const [flow, setFlow] = useState('initial');
   const [otpMode, setOtpMode] = useState('signup');
   const [phone, setPhone] = useState('');
@@ -20,8 +21,17 @@ export default function AuthCard({ onAuthenticated }) {
     setFlow('otp');
   };
 
-  const handleVerified = () => setFlow('success');
-  const handleSuccessComplete = () => onAuthenticated();
+  const handleVerified = () => {
+    // If signup flow → navigate to form page
+    if (otpMode === 'signup') {
+      onSignupComplete?.({ phone, countryCode });
+    } else {
+      // Login/WhatsApp flow → go to success directly
+      setFlow('success');
+    }
+  };
+
+  const handleSuccessComplete = () => onAuthenticated?.();
 
   const getFlowLabel = () => {
     const labels = {
@@ -56,17 +66,6 @@ export default function AuthCard({ onAuthenticated }) {
         delay: 0.2,
       }}
     >
-      {/* Top accent bar */}
-      {/* <div
-        className="absolute top-0 left-0 right-0 h-1 rounded-t-[24px]"
-        style={{
-          background:
-            'linear-gradient(90deg, #A2CB8B 100%, #7FB068 100%, #60B5FF 70%, #A2CB8B 100%)',
-          backgroundSize: '200% 100%',
-          animation: 'gradient-shift 4s ease infinite',
-        }}
-      /> */}
-
       <AnimatePresence>
         {flow !== 'initial' && (
           <motion.div
@@ -104,7 +103,9 @@ export default function AuthCard({ onAuthenticated }) {
 
       <div
         className="relative z-10"
-        style={{ minHeight: flow === 'initial' ? 'auto' : '260px' }}
+        style={{
+          minHeight: flow === 'initial' ? 'auto' : '260px',
+        }}
       >
         <AnimatePresence mode="wait">
           {flow === 'initial' && (

@@ -48,7 +48,7 @@ const ledger = [
 ];
 
 const referralChain = [
-  { name: "Abdulla", role: "Introducer · Level 1", share: "3%" },
+  { name: "abdullah", role: "Introducer · Level 1", share: "3%" },
   { name: "Ahmed", role: "Broker · Level 2", share: "2%" },
   { name: "John", role: "Closer · Level 3", share: "2%" },
 ];
@@ -61,7 +61,7 @@ const partners = [
 ];
 
 const upcoming = [
-  { kind: "Member call", title: "Abdulla ↔ Faisal — sourcing intro", when: "Today · 4:30 PM" },
+  { kind: "Member call", title: "abdullah ↔ Faisal — sourcing intro", when: "Today · 4:30 PM" },
   { kind: "Operator meeting", title: "UAE Sector Group — monthly sync", when: "Tomorrow · 11:00 AM" },
   { kind: "Event", title: "Connect Souq Online Launch Event", when: "Fri · 6:00 PM · 236 registered" },
 ];
@@ -567,7 +567,7 @@ export default function Dashboard() {
         <div className="sidebar-foot">
           <div className="foot-avatar">AB</div>
           <div>
-            <div className="foot-name">Abdulla</div>
+            <div className="foot-name">abdullah</div>
             <div className="foot-role">Leadership</div>
           </div>
         </div>
@@ -604,7 +604,7 @@ export default function Dashboard() {
         </div>
 
         <div className="greeting">
-          <h1>Welcome back, Abdulla</h1>
+          <h1>Welcome back, abdullah</h1>
           <p>Here's how the network is moving today — Tuesday, 30 June.</p>
         </div>
 
