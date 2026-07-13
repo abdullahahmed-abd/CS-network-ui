@@ -1,5 +1,7 @@
+// components/OAuthButtons.jsx
 import { motion } from 'framer-motion';
 import { useState, useRef } from 'react';
+import { redirectToGoogle } from '../api/auth';
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -52,12 +54,23 @@ function OAuthButton({ provider, onClick, disabled = false }) {
 
   const handleClick = (e) => {
     if (disabled || loading) return;
+
+    // ── Ripple ──
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const id = rippleId.current++;
     setRipples((prev) => [...prev, { id, x, y }]);
     setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 700);
+
+    // ── Google → redirect directly ──
+    if (provider === 'google') {
+      setLoading(true);
+      redirectToGoogle(); // redirects to backend OAuth
+      return;
+    }
+
+    // ── Others ──
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
