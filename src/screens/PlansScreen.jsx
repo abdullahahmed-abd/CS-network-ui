@@ -5,7 +5,7 @@ import Backgroundimage from '../assets/image/Backgroundimg19.png';
 import { authenticatedFetch } from '../api/auth';
 
 const BASE_URL =
-  'https://01cb-2405-201-3037-e150-441e-937-466f-13e7.ngrok-free.app';
+  'https://099e-2409-40c4-5f-5c06-f132-c99e-1b37-e348.ngrok-free.app';
 
 const PLANS = [
   {

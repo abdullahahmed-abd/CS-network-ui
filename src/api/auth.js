@@ -1,7 +1,7 @@
 // api/auth.js
 
 const BASE_URL =
-  'https://01cb-2405-201-3037-e150-441e-937-466f-13e7.ngrok-free.app';
+  'https://099e-2409-40c4-5f-5c06-f132-c99e-1b37-e348.ngrok-free.app';
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
 export const setItem = (key, value) => {
@@ -47,26 +47,17 @@ export const deleteCookie = (name) => {
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
 export const saveTokens = (accessToken, refreshToken) => {
-  if (accessToken) setItem('accessToken', accessToken);
+  if (accessToken)  setItem('accessToken', accessToken);
   if (refreshToken) setItem('refreshToken', refreshToken);
 };
 
-// ✅ Note: HttpOnly cookies JS se read nahi hoti — ye mostly null return karega
-// Backend cookie automatically bhej dega via credentials: 'include'
 export const getAccessToken = () => {
   const cookieToken = getCookie('accessToken');
-  if (cookieToken) {
-    console.log('🍪 Token from COOKIE');
-    return cookieToken;
-  }
+  if (cookieToken) return cookieToken;
 
   const lsToken = getItem('accessToken');
-  if (lsToken) {
-    console.log('💾 Token from localStorage');
-    return lsToken;
-  }
+  if (lsToken) return lsToken;
 
-  console.log('🍪 HttpOnly cookie mode (JS cannot read token)');
   return null;
 };
 
@@ -85,24 +76,138 @@ export const clearTokens = () => {
   removeItem('formFilled');
   removeItem('selectedPlanId');
   removeItem('planPurchased');
+  removeItem('pendingInviteToken');
 
   deleteCookie('accessToken');
   deleteCookie('refreshToken');
   deleteCookie('JSESSIONID');
 };
 
+export const hasValidSession = () => {
+  const accessToken  = getAccessToken();
+  const refreshToken = getRefreshToken();
+  return !!(accessToken || refreshToken);
+};
+
 // ── Save / Get user data ──────────────────────────────────────────────────────
 export const saveUserData = (data) => {
-  setItem('userData', JSON.stringify(data));
+  try {
+    setItem('userData', JSON.stringify(data));
+  } catch (e) {
+    console.error('saveUserData error:', e);
+  }
 };
 
 export const getUserData = () => {
-  const raw = getItem('userData');
-  return raw ? JSON.parse(raw) : null;
+  try {
+    const raw = getItem('userData');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
 };
 
-// ── Generic auth operation ────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+// Session expired handler (global)
+// ─────────────────────────────────────────
+let onSessionExpiredCallback = null;
+
+export const setSessionExpiredHandler = (callback) => {
+  onSessionExpiredCallback = callback;
+};
+
+const triggerSessionExpired = () => {
+  console.log('🔒 Session fully expired — logging out');
+  clearTokens();
+  if (onSessionExpiredCallback) {
+    onSessionExpiredCallback();
+  }
+};
+
+// ─────────────────────────────────────────
+// Refresh token — with lock to prevent
+// multiple simultaneous refresh calls
+// ─────────────────────────────────────────
+let isRefreshing   = false;
+let refreshPromise = null;
+
+export const refreshAccessToken = async () => {
+  // If already refreshing, wait for that to finish
+  if (isRefreshing && refreshPromise) {
+    console.log('🔄 Refresh already in progress, waiting...');
+    return refreshPromise;
+  }
+
+  const refreshToken = getRefreshToken();
+
+  console.log('🔄 Refreshing token...');
+  console.log('   Refresh source:', refreshToken ? '💾 localStorage' : '🍪 HttpOnly cookie');
+
+  isRefreshing = true;
+
+  refreshPromise = (async () => {
+    try {
+      const body = { requestType: 'REFRESH_TOKEN' };
+
+      // Agar JS-readable refresh token hai to body me bhi bhejo (fallback)
+      if (refreshToken) {
+        body.refreshToken = refreshToken;
+      }
+
+      const res = await fetch(`${BASE_URL}/cs-network/auth-operations`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify(body),
+      });
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+
+      console.log(`📨 Refresh response [${res.status}]:`, data);
+
+      if (!res.ok) {
+        console.error('❌ Refresh failed:', data);
+        throw new Error('REFRESH_FAILED');
+      }
+
+      // Save new tokens
+      if (data.accessToken) {
+        console.log('✅ New access token received');
+        saveTokens(data.accessToken, data.refreshToken);
+        return data.accessToken;
+      }
+
+      // Cookie mode — backend sets new cookie
+      console.log('✅ Refresh successful (cookie updated by backend)');
+      return null;
+
+    } catch (err) {
+      console.error('❌ Token refresh error:', err.message);
+      throw err;
+    } finally {
+      isRefreshing   = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
+
+// ─────────────────────────────────────────
+// Auth operations (OTP send/verify)
+// These do NOT need auto-refresh
+// ─────────────────────────────────────────
 export const authOperation = async (payload) => {
+  console.log('🔐 authOperation:', payload.requestType);
+
   const res = await fetch(`${BASE_URL}/cs-network/auth-operations`, {
     method: 'POST',
     credentials: 'include',
@@ -113,71 +218,32 @@ export const authOperation = async (payload) => {
     body: JSON.stringify(payload),
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || 'Something went wrong');
-  return data;
-};
-
-// ── Refresh Token ─────────────────────────────────────────────────────────────
-// ✅ HttpOnly refresh cookie automatically jayegi via credentials: 'include'
-// Body me sirf requestType bhejo. Agar localStorage me hai to fallback me refreshToken bhi bhejo
-export const refreshAccessToken = async () => {
-  const refreshToken = getRefreshToken();
-
-  console.log('🔄 Refreshing token...');
-  console.log('   Refresh source:', refreshToken ? '💾 localStorage' : '🍪 HttpOnly cookie');
-
-  const body = { requestType: 'REFRESH_TOKEN' };
-
-  // ✅ Agar JS-readable refresh token hai to body me bhi bhejo (fallback)
-  if (refreshToken) {
-    body.refreshToken = refreshToken;
-  }
-
-  const res = await fetch(`${BASE_URL}/cs-network/auth-operations`, {
-    method: 'POST',
-    credentials: 'include',   // ✅ HttpOnly refresh cookie automatically jayegi
-    headers: {
-      'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
-    },
-    body: JSON.stringify(body),
-  });
-
-  let data = {};
+  let data;
   try {
     data = await res.json();
   } catch {
-    data = {};
+    const text = await res.text();
+    if (text.includes('ngrok')) {
+      throw new Error('Tunnel issue - please refresh.');
+    }
+    data = { message: text };
   }
+
+  console.log(`📨 authOperation [${res.status}]:`, data);
 
   if (!res.ok) {
-    console.error('❌ Refresh failed:', data);
-    clearTokens();
-    throw new Error('Session expired. Please login again.');
+    throw new Error(data?.message || data?.error || 'Something went wrong');
   }
 
-  if (data.accessToken) {
-    console.log('✅ New access token received');
-    saveTokens(data.accessToken, data.refreshToken);
-    return data.accessToken;
-  }
-
-  // ✅ Cookie mode me backend token body me na bhi bheje — nayi cookie set ho gayi hogi
-  console.log('✅ Refresh successful (cookie updated by backend)');
-  return null;
+  return data;
 };
 
-// ── Authenticated Fetch ───────────────────────────────────────────────────────
-// ✅ HttpOnly access cookie automatically jayegi via credentials: 'include'
-// Agar localStorage me token hai to Bearer header bhi bhej do (fallback)
-export const authenticatedFetch = async (url, options = {}) => {
+// ─────────────────────────────────────────
+// Authenticated Fetch — WITH auto-refresh
+// Use this for ALL protected API calls
+// ─────────────────────────────────────────
+export const authenticatedFetch = async (url, options = {}, retried = false) => {
   let accessToken = getAccessToken();
-
-  console.log(
-    'authenticatedFetch → token source:',
-    accessToken ? '✅ FOUND (localStorage/cookie)' : '🍪 HttpOnly cookie only'
-  );
 
   const buildHeaders = (token) => {
     const baseHeaders = {
@@ -185,12 +251,10 @@ export const authenticatedFetch = async (url, options = {}) => {
       ...(options.headers || {}),
     };
 
-    // ✅ Content-Type only when needed
     if (!(options.body instanceof FormData)) {
       baseHeaders['Content-Type'] = 'application/json';
     }
 
-    // ✅ Token mila to header me bhejo (fallback)
     if (token) {
       baseHeaders['Authorization'] = `Bearer ${token}`;
     }
@@ -199,21 +263,21 @@ export const authenticatedFetch = async (url, options = {}) => {
   };
 
   // ── First attempt ──
-  // credentials: 'include' → HttpOnly cookies automatically jayengi
   let res = await fetch(url, {
     ...options,
     credentials: 'include',
     headers: buildHeaders(accessToken),
   });
 
-  console.log('authenticatedFetch → status:', res.status);
+  console.log(`📡 authenticatedFetch [${res.status}] → ${url}`);
 
-  // ── 401 → try refresh ──
-  if (res.status === 401) {
-    console.log('401 mila — refresh kar rahe hain...');
+  // ── 401 → try refresh (only once) ──
+  if (res.status === 401 && !retried) {
+    console.log('🔒 Got 401 — attempting token refresh...');
+
     try {
       accessToken = await refreshAccessToken();
-      console.log('✅ Token refresh ho gaya');
+      console.log('✅ Token refreshed — retrying original request...');
 
       res = await fetch(url, {
         ...options,
@@ -221,13 +285,27 @@ export const authenticatedFetch = async (url, options = {}) => {
         headers: buildHeaders(accessToken),
       });
 
-      console.log('authenticatedFetch retry → status:', res.status);
+      console.log(`📡 authenticatedFetch retry [${res.status}]`);
     } catch (refreshError) {
-      console.error('❌ Refresh fail:', refreshError);
+      console.error('❌ Refresh failed:', refreshError.message);
+      triggerSessionExpired();
       throw new Error('Session expired. Please login again.');
     }
   }
 
+  // ── 401 even after retry — fully expired ──
+  if (res.status === 401 && retried) {
+    console.log('🔒 401 after refresh — session dead');
+    triggerSessionExpired();
+    throw new Error('Session expired. Please login again.');
+  }
+
+  // ── 403 ──
+  if (res.status === 403) {
+    throw new Error('Access denied. You do not have permission.');
+  }
+
+  // ── Parse response ──
   let data = {};
   try {
     data = await res.json();
@@ -236,10 +314,30 @@ export const authenticatedFetch = async (url, options = {}) => {
   }
 
   if (!res.ok) {
-    throw new Error(data?.message || 'Request failed');
+    throw new Error(data?.message || `Request failed (${res.status})`);
   }
 
   return data;
+};
+
+// ─────────────────────────────────────────
+// apiCall — Shortcut for authenticated calls
+// Uses authenticatedFetch with full URL
+// ─────────────────────────────────────────
+export const apiCall = async (endpoint, options = {}) => {
+  const url = `${BASE_URL}/cs-network${endpoint}`;
+
+  const fetchOptions = {
+    method: options.method || 'POST',
+    ...(options.body && {
+      body: typeof options.body === 'string'
+        ? options.body
+        : JSON.stringify(options.body),
+    }),
+    ...(options.headers && { headers: options.headers }),
+  };
+
+  return authenticatedFetch(url, fetchOptions);
 };
 
 // ── Google OAuth ──────────────────────────────────────────────────────────────

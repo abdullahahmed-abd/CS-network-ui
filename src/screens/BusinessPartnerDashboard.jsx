@@ -9,43 +9,39 @@ import {
   Hash, ArrowRight, MoreHorizontal, ExternalLink, Diamond,
   Send, User, ChevronDown, Sprout, PhoneCall, BadgeCheck,
   UserPlus, Scale, Trophy, XCircle, ClipboardList, Globe,
-  FileEdit, Link2, List, Rocket,
+  FileEdit, Link2, List, Rocket, ShoppingCart, Store, Package,
+  ChevronLeft, DollarSign, Wheat,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authenticatedFetch, getUserData } from '../api/auth';
+import BusinessPartnerSidebar from './BusinessPartnerSidebar';
 
 const BASE_URL =
-  'https://01cb-2405-201-3037-e150-441e-937-466f-13e7.ngrok-free.app';
+  'https://099e-2409-40c4-5f-5c06-f132-c99e-1b37-e348.ngrok-free.app';
 
-/* ═══════════════════ 🎨 DYNAMIC THEME SYSTEM ═══════════════════ */
-/* Just change these values to re-theme entire dashboard! */
+/* ═══════════════════ 🎨 GREEN THEME SYSTEM (like BuyerSellerDashboard) ═══════════════════ */
 const THEME = {
-  // 🎯 PRIMARY BRAND COLOR - Change this ONE color for full re-theme!
-  primary:        '#2196F3',    // ← Main brand color
-  primaryDark:    '#1976D2',    // Darker shade
-  primaryBright:  '#42A5F5',    // Bright accent
-  primaryLight:   '#64B5F6',    // Light shade
-  primarySoft:    '#90CAF9',    // Softer
-  primaryMist:    '#BBDEFB',    // Very light
-  primaryCloud:   '#E3F2FD',    // Palest
-  primarySky:     '#F0F7FF',    // Almost white
+  primary:        '#A2CB8B',
+  primaryDark:    '#7aab65',
+  primaryBright:  '#b8d9a4',
+  primaryLight:   '#c5e3b3',
+  primarySoft:    '#d4ecc5',
+  primaryMist:    '#e8f5e2',
+  primaryCloud:   '#f0f9eb',
+  primarySky:     '#f7fcf4',
 
-  // RGB values for rgba() usage (matches primary)
-  primaryRgb:     '33, 150, 243',
-  primaryLightRgb:'100, 181, 246',
-  primaryDarkRgb: '13, 71, 161',
+  primaryRgb:     '162, 203, 139',
+  primaryLightRgb:'197, 227, 179',
+  primaryDarkRgb: '122, 171, 101',
 
-  // Neutrals
   white:          '#FFFFFF',
   offWhite:       '#FAFCFF',
 
-  // Text
-  textDark:       '#0D2E5C',
-  textMed:        '#2C4A7B',
-  textLight:      '#5A7BA8',
-  textMuted:      '#8FA5C4',
+  textDark:       '#1a3a1a',
+  textMed:        '#2d5a2d',
+  textLight:      '#4a7a4a',
+  textMuted:      '#7a9a7a',
 
-  // Status
   success:        '#66BB6A',
   successDark:    '#43A047',
   warning:        '#FFA726',
@@ -53,8 +49,7 @@ const THEME = {
   danger:         '#EF5350',
   dangerDark:     '#E53935',
 
-  // Stage colors
-  stageNew:       '#42A5F5',
+  stageNew:       '#b8d9a4',
   stageContact:   '#26A69A',
   stageQualified: '#66BB6A',
   stageIntro:     '#7E57C2',
@@ -63,14 +58,12 @@ const THEME = {
   stageLost:      '#EF5350',
 };
 
-/* Auto-generate CSS variables from THEME object */
 const generateCSSVars = (theme) => {
   return Object.entries(theme)
     .map(([key, val]) => `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${val};`)
     .join('\n    ');
 };
 
-/* Stage configuration - all icons are React components now */
 const PIPELINE_STAGES = [
   { id: 'NEW_LEAD',     label: 'New Lead',     color: THEME.stageNew,       colorDark: THEME.primaryDark, IconComp: Sprout       },
   { id: 'CONTACTED',    label: 'Contacted',    color: THEME.stageContact,   colorDark: '#00897B',         IconComp: PhoneCall    },
@@ -108,14 +101,31 @@ const LEAD_TYPES = [
   },
 ];
 
+const CATEGORIES = [
+  'Wheat', 'Rice', 'Corn', 'Barley', 'Soybean',
+  'Cotton', 'Sugar', 'Coffee', 'Cocoa', 'Palm Oil',
+  'Vegetables', 'Fruits', 'Pulses', 'Spices', 'Other',
+];
+const UNITS = ['KG', 'TON', 'QUINTAL', 'POUND', 'LITER', 'BARREL'];
+
+const INTENT_STATUS = {
+  OPEN:    { color: '#43A047', bg: '#E8F5E9', label: 'Open' },
+  CLOSED:  { color: '#616161', bg: '#F5F5F5', label: 'Closed' },
+  EXPIRED: { color: '#E53935', bg: '#FFEBEE', label: 'Expired' },
+  MATCHED: { color: '#7aab65', bg: '#e8f5e2', label: 'Matched' },
+};
+
 const navItems = [
-  { label: 'Pipeline',     icon: LayoutGrid  },
-  { label: 'My Leads',    icon: Users       },
-  { label: 'Deals',       icon: Handshake   },
-  { label: 'Commissions', icon: Wallet      },
-  { label: 'Meetings',    icon: CalendarClock },
+  { id: 'pipeline',      label: 'Pipeline',      icon: LayoutGrid   },
+  { id: 'trade_intents', label: 'Trade Intents', icon: BarChart3    },
+  { id: 'my_intents',    label: 'My Intents',    icon: Package      },
+  { id: 'my_leads',      label: 'My Leads',      icon: Users        },
+  { id: 'deals',         label: 'Deals',         icon: Handshake    },
+  { id: 'commissions',   label: 'Commissions',   icon: Wallet       },
+  { id: 'meetings',      label: 'Meetings',      icon: CalendarClock},
 ];
 
+/* ═══════════════════ GREEN-THEMED CSS (Updated) ═══════════════════ */
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
 
@@ -349,7 +359,6 @@ const STYLES = `
     color: var(--white);
   }
 
-  /* Profile Card */
   .sidebar-foot {
     margin-top: auto;
     padding-top: 16px;
@@ -580,7 +589,6 @@ const STYLES = `
   .add-btn:hover::before { opacity: 1; }
   .add-btn:active { transform: translateY(0); }
 
-  /* ═══════════════════ SCROLL AREA ═══════════════════ */
   .main-scroll {
     flex: 1; overflow-y: auto; overflow-x: hidden;
     padding: 24px 28px 48px;
@@ -658,7 +666,6 @@ const STYLES = `
     display: flex; align-items: center; gap: 6px;
   }
 
-  /* ── KPI ── */
   .kpi-row {
     display: grid; grid-template-columns: repeat(4,1fr);
     gap: 16px; margin-bottom: 24px;
@@ -729,7 +736,6 @@ const STYLES = `
     display: flex; align-items: center; gap: 4px;
   }
 
-  /* ── Panel ── */
   .panel {
     background: rgba(255,255,255,0.6);
     backdrop-filter: blur(16px);
@@ -743,6 +749,7 @@ const STYLES = `
   .panel-head {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 20px; flex-shrink: 0;
+    flex-wrap: wrap; gap: 12px;
   }
   .panel-title {
     font-family: 'Inter', sans-serif;
@@ -768,9 +775,9 @@ const STYLES = `
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: var(--white);
   }
-  .panel-actions { display: flex; gap: 8px; align-items: center; }
+  .panel-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-  /* ═══════════════════ KANBAN ═══════════════════ */
+  /* ═══════════════════ KANBAN (Continued in next part due to length) ═══════════════════ */
   .kanban-board {
     display: flex; gap: 16px;
     overflow-x: auto; overflow-y: hidden;
@@ -849,7 +856,7 @@ const STYLES = `
     overflow-y: auto; padding: 0 4px 6px;
   }
 
-  /* ═══════════════════ LEAD CARD (Business Card Style) ═══════════════════ */
+  /* Lead Card */
   .lead-card {
     background: var(--white);
     border: 1px solid rgba(var(--primary-rgb), 0.12);
@@ -867,7 +874,6 @@ const STYLES = `
     box-shadow: 0 16px 40px rgba(var(--primary-rgb), 0.2);
     border-color: rgba(var(--primary-rgb), 0.3);
   }
-
   .lead-card-header {
     position: relative;
     padding: 18px 18px 14px;
@@ -894,19 +900,30 @@ const STYLES = `
     filter: blur(15px);
   }
 
-  .lead-card-avatar-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 0 14px;
+  /* Bottom Wave for Lead Card */
+  .lead-card-footer {
+    background: linear-gradient(135deg, var(--primary-sky) 0%, var(--primary-cloud) 100%);
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
     position: relative;
-    z-index: 1;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .lead-card-footer::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40px;
+  }
+
+  .lead-card-avatar-wrap {
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px 0 14px;
+    position: relative; z-index: 1;
   }
   .lead-card-diamond {
     width: 60px; height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     position: relative;
   }
   .lead-card-diamond::before {
@@ -919,20 +936,16 @@ const STYLES = `
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
   }
   .lead-card-initials {
-    position: relative;
-    z-index: 2;
+    position: relative; z-index: 2;
     color: var(--white);
     font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 15px; font-weight: 800;
     letter-spacing: 0.02em;
   }
-
   .lead-card-name-block {
     text-align: center;
     padding: 0 8px;
-    position: relative;
-    z-index: 1;
+    position: relative; z-index: 1;
   }
   .lead-card-company {
     font-family: 'Inter', sans-serif;
@@ -951,11 +964,8 @@ const STYLES = `
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
-
   .lead-card-divider-fancy {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     gap: 6px;
     padding: 12px 20px 4px;
   }
@@ -972,18 +982,12 @@ const STYLES = `
     border-radius: 50%;
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
   }
-
   .lead-card-info {
     padding: 12px 18px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: flex; flex-direction: column; gap: 8px;
   }
-
   .lead-info-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    display: flex; align-items: center; gap: 10px;
     font-family: 'DM Sans', sans-serif;
     font-size: 12px;
     color: var(--text-med);
@@ -993,31 +997,24 @@ const STYLES = `
     width: 28px; height: 28px;
     border-radius: 8px;
     background: linear-gradient(135deg, var(--primary-cloud), var(--primary-mist));
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     color: var(--primary-dark);
     flex-shrink: 0;
   }
   .lead-info-icon svg { width: 12px; height: 12px; }
   .lead-info-text {
-    flex: 1;
-    min-width: 0;
+    flex: 1; min-width: 0;
     color: var(--text-dark);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
   .lead-card-badges-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    display: flex; align-items: center; gap: 6px;
     padding: 4px 18px 8px;
     flex-wrap: wrap;
   }
-
   .chip {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 10px; border-radius: 8px;
@@ -1037,7 +1034,6 @@ const STYLES = `
     color: var(--primary-dark);
     border: 1px solid rgba(var(--primary-rgb), 0.2);
   }
-
   .lead-tag {
     font-family: 'DM Sans', sans-serif;
     font-size: 10px; font-weight: 600;
@@ -1056,20 +1052,14 @@ const STYLES = `
     color: #C62828;
     border: 1px solid rgba(198,40,40,0.2);
   }
-
   .lead-card-intent {
     margin: 8px 14px;
     padding: 12px 14px;
     background: linear-gradient(135deg, var(--primary-sky), var(--primary-cloud));
     border: 1px solid rgba(var(--primary-rgb), 0.15);
     border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    display: flex; align-items: center; gap: 10px;
     transition: all 0.2s ease;
-  }
-  .lead-card-intent:hover {
-    background: linear-gradient(135deg, var(--primary-cloud), var(--primary-mist));
   }
   .lead-card-intent-icon {
     width: 32px; height: 32px; border-radius: 10px;
@@ -1087,7 +1077,6 @@ const STYLES = `
     display: -webkit-box; -webkit-line-clamp: 1;
     -webkit-box-orient: vertical; overflow: hidden;
   }
-
   .lead-card-notes {
     margin: 4px 14px 8px;
     padding: 10px 14px;
@@ -1103,24 +1092,6 @@ const STYLES = `
     -webkit-box-orient: vertical; overflow: hidden;
   }
 
-  .lead-card-footer {
-    background: linear-gradient(135deg, var(--primary-sky) 0%, var(--primary-cloud) 100%);
-    padding: 14px 18px;
-    display: flex; align-items: center;
-    justify-content: space-between;
-    position: relative;
-    overflow: hidden;
-    margin-top: 8px;
-  }
-  .lead-card-footer::before {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0;
-    width: 80px; height: 40px;
-    background: linear-gradient(135deg, var(--card-color-light), var(--card-color));
-    clip-path: polygon(0 100%, 70% 100%, 0 0);
-    opacity: 0.15;
-  }
   .lead-card-time {
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px; color: var(--text-light);
@@ -1132,12 +1103,9 @@ const STYLES = `
     position: relative; z-index: 1;
   }
   .lead-card-time svg { width: 10px; height: 10px; }
-
   .lead-card-actions {
-    display: flex;
-    gap: 6px;
-    position: relative;
-    z-index: 1;
+    display: flex; gap: 6px;
+    position: relative; z-index: 1;
   }
   .lead-action-btn {
     width: 32px; height: 32px; border-radius: 10px;
@@ -1165,7 +1133,6 @@ const STYLES = `
     background: linear-gradient(135deg, var(--stage-contact), #00897B);
     color: var(--white);
   }
-
   .lead-card-id {
     position: absolute;
     top: 10px; right: 10px;
@@ -1205,6 +1172,240 @@ const STYLES = `
     font-weight: 400;
   }
 
+  /* ═══════════════════ INTENTS GRID ═══════════════════ */
+  .intents-toolbar {
+    display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .intents-filter-btn {
+    padding: 8px 16px; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s ease;
+    border: 1px solid rgba(var(--primary-rgb), 0.15);
+    background: var(--white);
+    color: var(--text-med);
+  }
+  .intents-filter-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary-dark);
+  }
+  .intents-filter-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+  }
+
+  .intents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    padding-bottom: 8px;
+  }
+
+  .intent-card {
+    background: var(--white);
+    border: 1px solid rgba(var(--primary-rgb), 0.12);
+    border-radius: 18px;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.06);
+  }
+  .intent-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(var(--primary-rgb), 0.2);
+    border-color: rgba(var(--primary-rgb), 0.3);
+  }
+
+  /* Bottom Wave for Intent Card */
+  .intent-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary-sky), var(--primary-cloud));
+    opacity: 0.3;
+    z-index: 0;
+  }
+
+  .intent-header {
+    display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 14px;
+    padding: 18px 18px 0;
+    position: relative;
+    z-index: 1;
+  }
+  .intent-type-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .intent-type-icon svg { width: 18px; height: 18px; color: var(--white); }
+  .intent-type-icon.buy {
+    background: linear-gradient(135deg, #64B5F6, #1976D2);
+    box-shadow: 0 4px 12px rgba(25,118,210,0.3);
+  }
+  .intent-type-icon.sell {
+    background: linear-gradient(135deg, #FFB74D, #F57C00);
+    box-shadow: 0 4px 12px rgba(245,124,0,0.3);
+  }
+  .intent-header-text {
+    flex: 1; min-width: 0;
+  }
+  .intent-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.3;
+    margin-bottom: 3px;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .intent-category {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px; font-weight: 600;
+    color: var(--text-light);
+  }
+
+  .intent-badges {
+    display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
+    padding: 0 18px;
+    position: relative;
+    z-index: 1;
+  }
+  .intent-badge {
+    padding: 3px 10px; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.03em;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .intent-badge.type-buy {
+    background: rgba(25,118,210,0.1);
+    color: #1976D2;
+  }
+  .intent-badge.type-sell {
+    background: rgba(245,124,0,0.1);
+    color: #F57C00;
+  }
+
+  .intent-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-bottom: 14px;
+    padding: 0 18px;
+    position: relative;
+    z-index: 1;
+  }
+  .intent-detail-box {
+    background: linear-gradient(135deg, var(--primary-sky), var(--primary-cloud));
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .intent-detail-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px; font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+  .intent-detail-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 700;
+    color: var(--text-dark);
+  }
+  .intent-detail-value.highlight {
+    color: var(--success-dark);
+  }
+
+  .intent-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px 18px;
+    border-top: 1px solid rgba(var(--primary-rgb), 0.08);
+    position: relative;
+    z-index: 1;
+  }
+  .intent-creator {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    color: var(--text-light);
+  }
+  .intent-view-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px; font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.25);
+  }
+  .intent-view-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.35);
+  }
+
+  .intent-pagination {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; margin-top: 20px;
+  }
+  .pagination-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    background: var(--white);
+    color: var(--primary-dark);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .pagination-btn:hover:not(:disabled) {
+    background: var(--primary);
+    color: var(--white);
+    border-color: transparent;
+  }
+  .pagination-btn:disabled {
+    opacity: 0.4; cursor: not-allowed;
+  }
+  .pagination-info {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  /* ═══════════════════ EMPTY STATE ═══════════════════ */
+  .empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 20px; gap: 16px;
+    background: var(--white);
+    border: 2px dashed rgba(var(--primary-rgb), 0.15);
+    border-radius: 20px;
+  }
+  .empty-state-icon-box {
+    width: 72px; height: 72px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--primary-cloud), var(--primary-mist));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .empty-state-icon-box svg { width: 32px; height: 32px; color: var(--primary-dark); }
+  .empty-state-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px; font-weight: 700;
+    color: var(--text-dark);
+  }
+  .empty-state-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--text-light);
+    text-align: center;
+  }
+
   /* ═══════════════════ LOADING / ERROR ═══════════════════ */
   .bp-loading {
     display: flex; flex-direction: column;
@@ -1216,7 +1417,6 @@ const STYLES = `
     font-size: 14px; font-weight: 600;
     color: var(--primary-dark);
   }
-
   .bp-error {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -1251,7 +1451,7 @@ const STYLES = `
   }
   .modal-backdrop {
     position: absolute; inset: 0;
-    background: rgba(var(--primary-dark-rgb), 0.35);
+    background: rgba(26, 58, 26, 0.35);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
@@ -1262,7 +1462,7 @@ const STYLES = `
     border-radius: 24px;
     width: 100%; max-width: 540px; max-height: 88vh;
     overflow-y: auto;
-    box-shadow: 0 32px 80px rgba(var(--primary-dark-rgb), 0.25);
+    box-shadow: 0 32px 80px rgba(122, 171, 101, 0.25);
   }
   .modal-content::before {
     content: '';
@@ -1274,7 +1474,6 @@ const STYLES = `
     opacity: 0.15;
     border-radius: 24px 24px 0 0;
   }
-
   .modal-header {
     display: flex; align-items: flex-start; justify-content: space-between;
     padding: 24px 24px 18px;
@@ -1306,9 +1505,7 @@ const STYLES = `
     border-color: var(--danger);
     color: var(--white);
   }
-
   .modal-body { padding: 18px 24px 24px; }
-
   .modal-section { margin-bottom: 20px; }
   .modal-section-title {
     font-family: 'DM Sans', sans-serif;
@@ -1365,7 +1562,7 @@ const STYLES = `
     box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.35);
   }
 
-  /* ── Add Lead ── */
+  /* Add Lead type list */
   .lead-type-list { display: flex; flex-direction: column; gap: 10px; }
   .lead-type-option {
     display: flex; align-items: center; gap: 14px;
@@ -1406,7 +1603,7 @@ const STYLES = `
   }
   .lead-type-arrow { color: var(--primary); flex-shrink: 0; }
 
-  /* ── Form ── */
+  /* Form */
   .form-group { margin-bottom: 14px; }
   .form-label {
     display: block;
@@ -1471,7 +1668,6 @@ const STYLES = `
     box-shadow: 0 8px 28px rgba(var(--primary-rgb), 0.45);
   }
   .form-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
   .form-error {
     background: linear-gradient(135deg, #FFEBEE, #FFCDD2);
     border: 1px solid rgba(239,83,80,0.25);
@@ -1483,7 +1679,37 @@ const STYLES = `
     display: flex; align-items: center; gap: 6px;
   }
 
-  /* ── Toast ── */
+  /* Intent type toggle */
+  .intent-type-toggle {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 14px;
+  }
+  .intent-type-btn {
+    padding: 12px; border-radius: 12px;
+    border: 2px solid rgba(var(--primary-rgb), 0.15);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all 0.2s ease;
+    color: var(--text-med);
+  }
+  .intent-type-btn svg { width: 14px; height: 14px; }
+  .intent-type-btn.active-buy {
+    background: linear-gradient(135deg, #64B5F6, #1976D2);
+    color: var(--white);
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(25,118,210,0.3);
+  }
+  .intent-type-btn.active-sell {
+    background: linear-gradient(135deg, #FFB74D, #F57C00);
+    color: var(--white);
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(245,124,0,0.3);
+  }
+
+  /* Toast */
   .bp-toast {
     position: fixed; top: 20px; right: 20px; z-index: 200;
     padding: 14px 20px; border-radius: 14px;
@@ -1503,7 +1729,6 @@ const STYLES = `
     box-shadow: 0 12px 40px rgba(229,57,53,0.35);
   }
 
-  /* ── Scroll Top ── */
   .scroll-top-btn {
     position: fixed; bottom: 28px; right: 28px;
     width: 48px; height: 48px; border-radius: 14px;
@@ -1528,6 +1753,33 @@ const STYLES = `
     to   { transform: rotate(360deg); }
   }
 
+  /* Coming soon placeholder */
+  .coming-soon {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 80px 20px; gap: 16px; text-align: center;
+    background: rgba(255,255,255,0.5);
+    border-radius: 20px;
+    border: 2px dashed rgba(var(--primary-rgb), 0.15);
+  }
+  .coming-soon-icon {
+    width: 80px; height: 80px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, var(--primary-cloud), var(--primary-mist));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .coming-soon-icon svg { width: 36px; height: 36px; color: var(--primary-dark); }
+  .coming-soon-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 20px; font-weight: 800;
+    color: var(--text-dark);
+  }
+  .coming-soon-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: var(--text-light);
+    max-width: 300px;
+  }
+
   @media (max-width: 900px) {
     .kpi-row { grid-template-columns: repeat(2,1fr); }
   }
@@ -1550,6 +1802,7 @@ const STYLES = `
     .kpi-row { grid-template-columns: 1fr 1fr; }
     .greeting-hero { padding: 20px; }
     .greeting-inner { flex-direction: column; text-align: center; }
+    .intents-grid { grid-template-columns: 1fr; }
   }
 `;
 
@@ -1583,6 +1836,19 @@ const formatFollowUp = (dateStr) => {
   } catch { return { text: dateStr, overdue: false }; }
 };
 
+const formatFullDate = (iso) =>
+  iso ? new Date(iso).toLocaleDateString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  }) : '—';
+
+const fmtNumber = (n) =>
+  new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(n ?? 0);
+
+const fmtCurrency = (n, currency = 'INR') =>
+  new Intl.NumberFormat('en-IN', {
+    style: 'currency', currency, maximumFractionDigits: 0,
+  }).format(n ?? 0);
+
 const getInitials = (name) => {
   if (!name) return 'BP';
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -1591,6 +1857,404 @@ const getInitials = (name) => {
 const getStageConfig = (stageId) => PIPELINE_STAGES.find(s => s.id === stageId);
 
 /* ══════════════════════════════════════════════════════════════ */
+// Due to message length limit, I'll continue in the next message with:
+// - IntentCard component
+// - All modals (Create Intent, Intent Detail, Lead Modal, Add Lead)
+// - Toast component
+// - Main Dashboard component
+
+// Would you like me to continue with Part 2 of the dashboard file?/* ══════════════════════════════════════════════════════════════ */
+/* Intent Card Component */
+function IntentCard({ intent, onView }) {
+  const isBuy = intent.intentType === 'BUY';
+  const status = INTENT_STATUS[intent.status] || INTENT_STATUS.OPEN;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.97 }}
+      className="intent-card"
+      onClick={() => onView(intent)}
+    >
+      <div className="intent-header">
+        <div className={`intent-type-icon ${isBuy ? 'buy' : 'sell'}`}>
+          {isBuy ? <ShoppingCart /> : <Store />}
+        </div>
+        <div className="intent-header-text">
+          <div className="intent-title">{intent.title}</div>
+          <div className="intent-category">{intent.category}</div>
+        </div>
+      </div>
+
+      <div className="intent-badges">
+        <span className={`intent-badge ${isBuy ? 'type-buy' : 'type-sell'}`}>
+          {isBuy ? 'BUY' : 'SELL'}
+        </span>
+        <span
+          className="intent-badge"
+          style={{ background: status.bg, color: status.color }}
+        >
+          {status.label}
+        </span>
+      </div>
+
+      <div className="intent-grid">
+        <div className="intent-detail-box">
+          <div className="intent-detail-label">Quantity</div>
+          <div className="intent-detail-value">
+            {fmtNumber(intent.quantity)} {intent.unit}
+          </div>
+        </div>
+        <div className="intent-detail-box">
+          <div className="intent-detail-label">Price/Unit</div>
+          <div className="intent-detail-value">
+            {fmtCurrency(intent.pricePerUnit, intent.currency)}
+          </div>
+        </div>
+        <div className="intent-detail-box">
+          <div className="intent-detail-label">Total Value</div>
+          <div className="intent-detail-value highlight">
+            {fmtCurrency(intent.totalValue, intent.currency)}
+          </div>
+        </div>
+        <div className="intent-detail-box">
+          <div className="intent-detail-label">Expires</div>
+          <div className="intent-detail-value">
+            {formatFullDate(intent.expiresAt)}
+          </div>
+        </div>
+      </div>
+
+      <div className="intent-footer">
+        <span className="intent-creator">By {intent.createdByName || '—'}</span>
+        <button
+          className="intent-view-btn"
+          onClick={(e) => { e.stopPropagation(); onView(intent); }}
+        >
+          <Eye size={11} /> View
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/* Create Intent Modal */
+function CreateIntentModal({ onClose, onSuccess, showToast }) {
+  const [form, setForm] = useState({
+    intentType:   'BUY',
+    category:     'Wheat',
+    title:        '',
+    description:  '',
+    quantity:     '',
+    unit:         'KG',
+    pricePerUnit: '',
+    currency:     'INR',
+    expiresAt:    '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+
+  const update = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!form.title.trim())    return setError('Title is required');
+    if (!form.quantity)        return setError('Quantity is required');
+    if (!form.pricePerUnit)    return setError('Price per unit is required');
+    if (!form.expiresAt)       return setError('Expiry date is required');
+
+    setLoading(true);
+    try {
+      const payload = {
+        businessPartnerRequestType: 'CREATE_INTENT',
+        franchiseId: 2,
+        intentType:   form.intentType,
+        category:     form.category,
+        title:        form.title,
+        description:  form.description,
+        quantity:     Number(form.quantity),
+        unit:         form.unit,
+        pricePerUnit: Number(form.pricePerUnit),
+        currency:     form.currency,
+        expiresAt:    new Date(form.expiresAt).toISOString(),
+      };
+
+      await authenticatedFetch(
+        `${BASE_URL}/cs-network/business-partner`,
+        { method: 'POST', body: JSON.stringify(payload) }
+      );
+
+      showToast('Trade intent created successfully!', 'success');
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Failed to create intent');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <motion.div
+        className="modal-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="modal-content"
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ duration: 0.25 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header">
+          <div>
+            <h2>Create Trade Intent</h2>
+            <p>Post a buy or sell offer to the market</p>
+          </div>
+          <button className="modal-close" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div className="modal-body">
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <div className="form-error">
+                <AlertCircle size={14} /> {error}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label">Intent Type</label>
+              <div className="intent-type-toggle">
+                <button
+                  type="button"
+                  className={`intent-type-btn ${form.intentType === 'BUY' ? 'active-buy' : ''}`}
+                  onClick={() => update('intentType', 'BUY')}
+                >
+                  <ShoppingCart /> BUY
+                </button>
+                <button
+                  type="button"
+                  className={`intent-type-btn ${form.intentType === 'SELL' ? 'active-sell' : ''}`}
+                  onClick={() => update('intentType', 'SELL')}
+                >
+                  <Store /> SELL
+                </button>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label form-label-required">Title</label>
+              <input
+                className="form-input"
+                placeholder="e.g. Premium Basmati Rice"
+                value={form.title}
+                onChange={(e) => update('title', e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <select
+                className="form-select"
+                value={form.category}
+                onChange={(e) => update('category', e.target.value)}
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <textarea
+                className="form-textarea"
+                placeholder="Describe your trade intent..."
+                value={form.description}
+                onChange={(e) => update('description', e.target.value)}
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label form-label-required">Quantity</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  placeholder="e.g. 5000"
+                  value={form.quantity}
+                  onChange={(e) => update('quantity', e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Unit</label>
+                <select
+                  className="form-select"
+                  value={form.unit}
+                  onChange={(e) => update('unit', e.target.value)}
+                >
+                  {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label form-label-required">Price/Unit</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  placeholder="e.g. 46"
+                  value={form.pricePerUnit}
+                  onChange={(e) => update('pricePerUnit', e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Currency</label>
+                <select
+                  className="form-select"
+                  value={form.currency}
+                  onChange={(e) => update('currency', e.target.value)}
+                >
+                  <option value="INR">INR ₹</option>
+                  <option value="USD">USD $</option>
+                  <option value="AED">AED د.إ</option>
+                  <option value="EUR">EUR €</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label form-label-required">Expires At</label>
+              <input
+                className="form-input"
+                type="datetime-local"
+                value={form.expiresAt}
+                onChange={(e) => update('expiresAt', e.target.value)}
+              />
+            </div>
+
+            <button type="submit" className="form-submit-btn" disabled={loading}>
+              {loading
+                ? <><Loader2 size={15} style={{ animation:'spin 1s linear infinite' }} /> Creating…</>
+                : <><CheckCircle2 size={15} /> Create Intent</>
+              }
+            </button>
+          </form>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/* Intent Detail Modal */
+function IntentDetailModal({ intent, onClose }) {
+  if (!intent) return null;
+  const isBuy = intent.intentType === 'BUY';
+  const status = INTENT_STATUS[intent.status] || INTENT_STATUS.OPEN;
+
+  return (
+    <div className="modal-overlay">
+      <motion.div
+        className="modal-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="modal-content"
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ duration: 0.25 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header">
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap' }}>
+              <span className={`intent-badge ${isBuy ? 'type-buy' : 'type-sell'}`}>
+                {isBuy ? <ShoppingCart size={10} /> : <Store size={10} />}
+                {intent.intentType}
+              </span>
+              <span
+                className="intent-badge"
+                style={{ background: status.bg, color: status.color }}
+              >
+                {status.label}
+              </span>
+            </div>
+            <h2>{intent.title}</h2>
+            <p>{intent.category}</p>
+          </div>
+          <button className="modal-close" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div className="modal-body">
+          {intent.description && (
+            <div className="modal-section">
+              <div className="modal-section-title">Description</div>
+              <div className="modal-notes">{intent.description}</div>
+            </div>
+          )}
+
+          <div className="modal-section">
+            <div className="modal-section-title">Details</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+              {[
+                { label: 'Quantity',    value: `${fmtNumber(intent.quantity)} ${intent.unit}` },
+                { label: 'Price/Unit',  value: fmtCurrency(intent.pricePerUnit, intent.currency) },
+                { label: 'Total Value', value: fmtCurrency(intent.totalValue, intent.currency) },
+                { label: 'Expires',     value: formatFullDate(intent.expiresAt) },
+                { label: 'Created',     value: formatFullDate(intent.createdAt) },
+                { label: 'Currency',    value: intent.currency || 'INR' },
+              ].map((item) => (
+                <div key={item.label} className="intent-detail-box">
+                  <div className="intent-detail-label">{item.label}</div>
+                  <div className="intent-detail-value">{item.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="modal-section">
+            <div className="modal-section-title">Posted By</div>
+            <div className="modal-field">
+              <div className="modal-field-icon"><Users /></div>
+              <div style={{ minWidth: 0 }}>
+                <div className="modal-field-label">Creator</div>
+                <div className="modal-field-value">{intent.createdByName || '—'}</div>
+              </div>
+            </div>
+            {intent.franchiseName && (
+              <div className="modal-field">
+                <div className="modal-field-icon"><Building2 /></div>
+                <div style={{ minWidth: 0 }}>
+                  <div className="modal-field-label">Franchise</div>
+                  <div className="modal-field-value">{intent.franchiseName}</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/* Lead Modal */
 function LeadModal({ lead, currentStageId, stages, onClose }) {
   if (!lead) return null;
   const stage     = stages.find(s => s.id === currentStageId);
@@ -1660,9 +2324,8 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
                   width:44, height:44, borderRadius:12,
                   background:'linear-gradient(135deg, var(--primary), var(--primary-dark))',
                   display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-                  boxShadow: '0 4px 12px rgba(var(--primary-rgb), 0.3)',
                 }}>
-                  <Briefcase size={18} color="var(--white)" />
+                  <Briefcase size={18} color="#FFF" />
                 </div>
                 <div style={{ minWidth:0 }}>
                   <div style={{ fontFamily:"'Inter',sans-serif", fontSize:14, fontWeight:700, color:'var(--text-dark)' }}>
@@ -1740,15 +2403,16 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
 }
 
 /* ══════════════════════════════════════════════════════════════ */
+/* Add Lead Modal */
 function AddLeadModal({ onClose, onSuccess, showToast }) {
-  const [step,          setStep]     = useState('choose');
-  const [selectedType,  setSelected] = useState(null);
-  const [loading,       setLoading]  = useState(false);
-  const [error,         setError]    = useState('');
+  const [step, setStep]        = useState('choose');
+  const [selectedType, setSelected] = useState(null);
+  const [loading, setLoading]  = useState(false);
+  const [error, setError]      = useState('');
 
-  const [externalForm,     setExternalForm]     = useState({ companyName:'', contactPerson:'', phone:'', email:'', tradeIntentTitle:'', tradeIntentDescription:'', notes:'', followUpDate:'' });
+  const [externalForm, setExternalForm]         = useState({ companyName:'', contactPerson:'', phone:'', email:'', tradeIntentTitle:'', tradeIntentDescription:'', notes:'', followUpDate:'' });
   const [memberIntentForm, setMemberIntentForm] = useState({ memberId:'', tradeIntentTitle:'', tradeIntentDescription:'', notes:'', followUpDate:'' });
-  const [internalForm,     setInternalForm]     = useState({ memberId:'', tradeIntentId:'', notes:'', followUpDate:'' });
+  const [internalForm, setInternalForm]         = useState({ memberId:'', tradeIntentId:'', notes:'', followUpDate:'' });
 
   const handleSelectType = (type) => { setSelected(type); setStep('form'); setError(''); };
   const handleBack = () => { setStep('choose'); setSelected(null); setError(''); };
@@ -1822,9 +2486,7 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 const TypeIcon = type.IconComp;
                 return (
                   <div key={type.id} className="lead-type-option" onClick={() => handleSelectType(type)}>
-                    <div className="lead-type-icon">
-                      <TypeIcon />
-                    </div>
+                    <div className="lead-type-icon"><TypeIcon /></div>
                     <div className="lead-type-info">
                       <div className="lead-type-title">{type.title}</div>
                       <div className="lead-type-subtitle" style={{ color: type.color }}>{type.subtitle}</div>
@@ -1957,28 +2619,44 @@ function Toast({ message, type, onDismiss }) {
       animate={{ opacity:1, x:0 }}
       exit={{ opacity:0, x:80 }}
     >
-      {type === 'success'
-        ? <CheckCircle2 size={16} />
-        : <AlertCircle  size={16} />
-      }
+      {type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
       {message}
     </motion.div>
   );
 }
 
 /* ══════════════════════════════════════════════════════════════ */
+/* MAIN DASHBOARD COMPONENT */
+/* ══════════════════════════════════════════════════════════════ */
 export default function BusinessPartnerDashboard({ onLogout }) {
-  const [activeStage,    setActiveStage]    = useState('all');
-  const [leads,          setLeads]          = useState({});
-  const [stageCounts,    setStageCounts]    = useState({});
-  const [loading,        setLoading]        = useState(true);
-  const [error,          setError]          = useState('');
-  const [refreshing,     setRefreshing]     = useState(false);
-  const [selectedLead,   setSelectedLead]   = useState(null);
-  const [selectedStage,  setSelectedStage]  = useState(null);
-  const [searchQuery,    setSearchQuery]    = useState('');
-  const [showAddLead,    setShowAddLead]    = useState(false);
-  const [toast,          setToast]          = useState(null);
+  const [activeNav, setActiveNav]       = useState('pipeline');
+  const [activeStage, setActiveStage]   = useState('all');
+
+  // Pipeline state
+  const [leads, setLeads]               = useState({});
+  const [stageCounts, setStageCounts]   = useState({});
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
+  const [refreshing, setRefreshing]     = useState(false);
+
+  // Intents state
+  const [intents, setIntents]           = useState([]);
+  const [myIntents, setMyIntents]       = useState([]);
+  const [intentsLoading, setIntentsLoading] = useState(false);
+  const [myIntentsLoading, setMyIntentsLoading] = useState(false);
+  const [intentsError, setIntentsError] = useState('');
+  const [intentPage, setIntentPage]     = useState(0);
+  const [intentTotalPages, setIntentTotalPages] = useState(1);
+  const [intentFilter, setIntentFilter] = useState('ALL');
+  const [selectedIntent, setSelectedIntent] = useState(null);
+  const [showCreateIntent, setShowCreateIntent] = useState(false);
+
+  // Lead state
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [selectedStage, setSelectedStage] = useState(null);
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [showAddLead, setShowAddLead]   = useState(false);
+  const [toast, setToast]               = useState(null);
 
   const scrollBtnRef  = useRef(null);
   const didFetchRef   = useRef(false);
@@ -1988,6 +2666,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
   const userData = getUserData() || {};
   const showToast = (message, type = 'success') => setToast({ message, type });
 
+  // ═══════════════ Fetch Pipeline ═══════════════
   const fetchPipeline = useCallback(async (isRefresh = false) => {
     if (requestRef.current) return;
     requestRef.current = true;
@@ -2016,11 +2695,68 @@ export default function BusinessPartnerDashboard({ onLogout }) {
     }
   }, []);
 
+  // ═══════════════ Fetch Trade Intents ═══════════════
+  const fetchIntents = useCallback(async (pg = 0) => {
+    setIntentsLoading(true);
+    setIntentsError('');
+    try {
+      const payload = {
+        memberRequestType: 'FETCH_INTENT',
+        page: pg,
+        size: 12,
+      };
+      if (intentFilter !== 'ALL') payload.intentType = intentFilter;
+
+      const data = await authenticatedFetch(
+        `${BASE_URL}/cs-network/member`,
+        { method: 'POST', body: JSON.stringify(payload) }
+      );
+
+      const content = data?.intents?.content || data?.intents || [];
+      setIntents(Array.isArray(content) ? content : []);
+      setIntentTotalPages(data?.intents?.totalPages || 1);
+    } catch (err) {
+      setIntentsError(err.message || 'Failed to load trade intents');
+    } finally {
+      setIntentsLoading(false);
+    }
+  }, [intentFilter]);
+
+  // ═══════════════ Fetch My Intents ═══════════════
+  const fetchMyIntents = useCallback(async () => {
+    setMyIntentsLoading(true);
+    try {
+      const data = await authenticatedFetch(
+        `${BASE_URL}/cs-network/business-partner`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ businessPartnerRequestType: 'GET_MY_INTENTS' }),
+        }
+      );
+      const content = data?.myIntents?.content || data?.intents?.content || data?.intents || [];
+      setMyIntents(Array.isArray(content) ? content : []);
+    } catch (err) {
+      console.error('My intents error:', err);
+    } finally {
+      setMyIntentsLoading(false);
+    }
+  }, []);
+
+  // Initial pipeline fetch
   useEffect(() => {
     if (didFetchRef.current) return;
     didFetchRef.current = true;
     fetchPipeline();
   }, [fetchPipeline]);
+
+  // Fetch intents when tab or filter changes
+  useEffect(() => {
+    if (activeNav === 'trade_intents') fetchIntents(intentPage);
+  }, [activeNav, intentPage, fetchIntents]);
+
+  useEffect(() => {
+    if (activeNav === 'my_intents') fetchMyIntents();
+  }, [activeNav, fetchMyIntents]);
 
   const handleLeadCreated = (newLead) => {
     if (newLead?.stage) {
@@ -2033,6 +2769,12 @@ export default function BusinessPartnerDashboard({ onLogout }) {
       setStageCounts(prev => ({ ...prev, [newLead.stage]: (prev[newLead.stage] || 0) + 1 }));
     }
     setTimeout(() => fetchPipeline(true), 500);
+  };
+
+  const handleIntentCreated = () => {
+    fetchIntents(0);
+    setIntentPage(0);
+    if (activeNav === 'my_intents') fetchMyIntents();
   };
 
   const getTotalLeads = () => Object.values(stageCounts).reduce((s, c) => s + c, 0);
@@ -2051,130 +2793,56 @@ export default function BusinessPartnerDashboard({ onLogout }) {
     );
   };
 
+  const filteredIntents = intents.filter((intent) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (intent.title    || '').toLowerCase().includes(q) ||
+      (intent.category || '').toLowerCase().includes(q)
+    );
+  });
+
   const kpiData = [
-    { label:'Total Leads',   value: getTotalLeads(), delta:`${PIPELINE_STAGES.length} stages`,   icon: Users,        color: THEME.primary,       colorDark: THEME.primaryDark },
-    { label:'Active Deals',  value: (stageCounts['CONTACTED']||0)+(stageCounts['QUALIFIED']||0)+(stageCounts['NEGOTIATION']||0), delta:'In progress', icon: Handshake, color: THEME.stageContact,  colorDark: '#00897B' },
-    { label:'Deals Won',     value: stageCounts['CLOSED_WON'] || 0, delta:'Closed successfully', icon: Trophy,        color: THEME.success,       colorDark: THEME.successDark },
-    { label:'New Leads',     value: stageCounts['NEW_LEAD']   || 0, delta:'Awaiting contact',    icon: Sprout,        color: THEME.warning,       colorDark: THEME.warningDark },
+    { label:'Total Leads',   value: getTotalLeads(), delta:`${PIPELINE_STAGES.length} stages`, icon: Users,     color: THEME.primary,      colorDark: THEME.primaryDark },
+    { label:'Active Deals',  value: (stageCounts['CONTACTED']||0)+(stageCounts['QUALIFIED']||0)+(stageCounts['NEGOTIATION']||0), delta:'In progress', icon: Handshake, color: THEME.stageContact, colorDark: '#00897B' },
+    { label:'Deals Won',     value: stageCounts['CLOSED_WON'] || 0, delta:'Closed successfully', icon: Trophy,    color: THEME.success,      colorDark: THEME.successDark },
+    { label:'Market Intents',value: intents.length,  delta:'Available now',                 icon: BarChart3, color: THEME.warning,      colorDark: THEME.warningDark },
   ];
+
+  const getPageTitle = () => {
+    const item = navItems.find(n => n.id === activeNav);
+    return item?.label || 'Dashboard';
+  };
 
   return (
     <div className="bp-app">
       <style>{STYLES}</style>
 
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-diamond" />
-          <div>
-            <div className="brand-text">CONNECT SOUQ</div>
-            <div className="brand-sub">Business Partner</div>
-          </div>
-        </div>
-
-        <nav className="nav">
-          <div className="nav-label">Main Menu</div>
-          {navItems.map((item) => (
-            <div
-              key={item.label}
-              className={`nav-item ${activeStage === 'all' && item.label === 'Pipeline' ? 'active' : ''}`}
-              onClick={() => { if (item.label === 'Pipeline') setActiveStage('all'); }}
-            >
-              <item.icon /> <span>{item.label}</span>
-            </div>
-          ))}
-        </nav>
-
-        <div className="nav-divider" />
-
-        <div>
-          <div className="nav-label">Pipeline Stages</div>
-          <div
-            className={`nav-stage ${activeStage === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveStage('all')}
-          >
-            <div
-              className="nav-stage-icon-box"
-              style={{ background: `rgba(${THEME.primaryRgb}, 0.12)` }}
-            >
-              <List style={{ color: THEME.primary }} />
-            </div>
-            <span style={{ flex:1 }}>All Stages</span>
-            <span className="nav-stage-count">{getTotalLeads()}</span>
-          </div>
-
-          {PIPELINE_STAGES.map((stage) => {
-            const StageIcon = stage.IconComp;
-            return (
-              <div
-                key={stage.id}
-                className={`nav-stage ${activeStage === stage.id ? 'active' : ''}`}
-                onClick={() => setActiveStage(stage.id)}
-              >
-                <div
-                  className="nav-stage-icon-box"
-                  style={{ background: `${stage.color}20` }}
-                >
-                  <StageIcon style={{ color: stage.color }} />
-                </div>
-                <span style={{ flex:1 }}>{stage.label}</span>
-                <span className="nav-stage-count">{stageCounts[stage.id] || 0}</span>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="sidebar-foot">
-          <div className="profile-card">
-            <div className="profile-header">
-              <div className="profile-avatar">{getInitials(userData?.fullName || 'BP')}</div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div className="profile-name">{(userData?.fullName || 'PARTNER').toUpperCase()}</div>
-                <div className="profile-role"><ShieldCheck size={10} /> Verified Broker</div>
-              </div>
-            </div>
-
-            <div className="profile-stats">
-              <div className="profile-stat">
-                <div className="profile-stat-val">{stageCounts['CLOSED_WON'] || 0}</div>
-                <div className="profile-stat-label">Won</div>
-              </div>
-              <div className="profile-stat">
-                <div className="profile-stat-val">{getTotalLeads()}</div>
-                <div className="profile-stat-label">Leads</div>
-              </div>
-            </div>
-
-            <div className="profile-rating">
-              {[1,2,3,4,5].map(i => (
-                <Star key={i} size={11}
-                  fill={i <= 4 ? THEME.primary : 'none'}
-                  stroke={THEME.primary}
-                />
-              ))}
-              <span style={{
-                fontFamily:"'JetBrains Mono',monospace",
-                fontSize:10, fontWeight:700, color: 'var(--primary)', marginLeft:4,
-              }}>
-                4.8
-              </span>
-            </div>
-
-            {onLogout && (
-              <button className="logout-btn" onClick={onLogout}>
-                <LogOut size={12} /> Logout
-              </button>
-            )}
-          </div>
-        </div>
-      </aside>
+      {/* Sidebar Component */}
+      <BusinessPartnerSidebar
+        navItems={navItems}
+        activeNav={activeNav}
+        setActiveNav={setActiveNav}
+        activeStage={activeStage}
+        setActiveStage={setActiveStage}
+        stageCounts={stageCounts}
+        getTotalLeads={getTotalLeads}
+        userData={userData}
+        onLogout={onLogout}
+      />
 
       <main className="main">
+        {/* Topbar */}
         <div className="topbar">
           <div className="topbar-left">
             <div className="search">
               <Search size={16} style={{ color: 'var(--text-muted)', flexShrink:0 }} />
               <input
-                placeholder="Search leads, contacts, companies…"
+                placeholder={
+                  activeNav === 'pipeline' ? 'Search leads…' :
+                  activeNav === 'trade_intents' || activeNav === 'my_intents' ? 'Search intents by title or category…' :
+                  'Search…'
+                }
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
@@ -2190,18 +2858,29 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           </div>
 
           <div className="topbar-right">
-            <button
-              className="refresh-btn"
-              onClick={() => fetchPipeline(true)}
-              disabled={refreshing}
-            >
-              <RefreshCw size={13} style={refreshing ? { animation:'spin 1s linear infinite' } : {}} />
-              {refreshing ? 'Refreshing…' : 'Refresh'}
-            </button>
+            {activeNav === 'pipeline' && (
+              <button className="refresh-btn" onClick={() => fetchPipeline(true)} disabled={refreshing}>
+                <RefreshCw size={13} style={refreshing ? { animation:'spin 1s linear infinite' } : {}} />
+                {refreshing ? 'Refreshing…' : 'Refresh'}
+              </button>
+            )}
+            {activeNav === 'trade_intents' && (
+              <button className="refresh-btn" onClick={() => fetchIntents(intentPage)} disabled={intentsLoading}>
+                <RefreshCw size={13} style={intentsLoading ? { animation:'spin 1s linear infinite' } : {}} />
+                Refresh
+              </button>
+            )}
 
-            <button className="add-btn" onClick={() => setShowAddLead(true)}>
-              <Plus size={15} /> Add Lead
-            </button>
+            {activeNav === 'pipeline' && (
+              <button className="add-btn" onClick={() => setShowAddLead(true)}>
+                <Plus size={15} /> Add Lead
+              </button>
+            )}
+            {(activeNav === 'trade_intents' || activeNav === 'my_intents') && (
+              <button className="add-btn" onClick={() => setShowCreateIntent(true)}>
+                <Plus size={15} /> New Intent
+              </button>
+            )}
 
             <div className="icon-btn"><Filter size={16} /></div>
 
@@ -2216,6 +2895,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           </div>
         </div>
 
+        {/* Main Content */}
         <div
           className="main-scroll"
           id="bp-main-scroll"
@@ -2227,18 +2907,25 @@ export default function BusinessPartnerDashboard({ onLogout }) {
             }
           }}
         >
+          {/* Greeting Hero */}
           <div className="greeting-hero">
             <div className="greeting-inner">
               <div className="greeting-diamond" />
               <div className="greeting-text">
-                <h1>My Pipeline Dashboard <Sparkles size={20} style={{ color: 'var(--primary)' }} /></h1>
+                <h1>{getPageTitle()} <Sparkles size={20} style={{ color: 'var(--primary)' }} /></h1>
                 <p>
-                  <Target size={13} /> {getTotalLeads()} leads across {PIPELINE_STAGES.length} stages — keep the momentum going <Rocket size={13} />
+                  <Target size={13} />
+                  {activeNav === 'pipeline' && `${getTotalLeads()} leads across ${PIPELINE_STAGES.length} stages`}
+                  {activeNav === 'trade_intents' && `Browse ${intents.length} live trade intents in the market`}
+                  {activeNav === 'my_intents' && `${myIntents.length} intents you created`}
+                  {!['pipeline','trade_intents','my_intents'].includes(activeNav) && 'Manage your business efficiently'}
+                  <Rocket size={13} />
                 </p>
               </div>
             </div>
           </div>
 
+          {/* KPI Cards */}
           <div className="kpi-row">
             {kpiData.map(k => (
               <div
@@ -2258,235 +2945,356 @@ export default function BusinessPartnerDashboard({ onLogout }) {
             ))}
           </div>
 
-          {loading && (
-            <div className="bp-loading">
-              <motion.div
-                animate={{ rotate:360 }}
-                transition={{ duration:1, repeat:Infinity, ease:'linear' }}
-              >
-                <Loader2 size={32} style={{ color: 'var(--primary)' }} />
-              </motion.div>
-              <div className="bp-loading-text">Loading your pipeline…</div>
-            </div>
+          {/* Pipeline Tab */}
+          {activeNav === 'pipeline' && (
+            <>
+              {loading && (
+                <div className="bp-loading">
+                  <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:'linear' }}>
+                    <Loader2 size={32} style={{ color: 'var(--primary)' }} />
+                  </motion.div>
+                  <div className="bp-loading-text">Loading your pipeline…</div>
+                </div>
+              )}
+
+              {error && !loading && (
+                <div className="bp-error">
+                  <AlertCircle size={28} style={{ color: 'var(--danger)' }} />
+                  <div className="bp-error-text">{error}</div>
+                  <button className="retry-btn" onClick={() => fetchPipeline()}>
+                    <RefreshCw size={13} /> Try Again
+                  </button>
+                </div>
+              )}
+
+              {!loading && !error && (
+                <div className="panel">
+                  <div className="panel-head">
+                    <div>
+                      <div className="panel-title">
+                        {activeStage === 'all' ? 'Deal Pipeline Board' : getStageConfig(activeStage)?.label}
+                      </div>
+                      <div className="panel-subtitle">
+                        {searchQuery ? `Searching: "${searchQuery}"` : 'Click any card for details'}
+                      </div>
+                    </div>
+                    <div className="panel-actions">
+                      <div className="panel-link" onClick={() => setActiveStage('all')}>
+                        View All <ChevronRight size={13} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="kanban-board">
+                    {filteredStages.map((stage) => {
+                      const stageLeads = filterLeads(leads[stage.id] || []);
+                      const StageIcon = stage.IconComp;
+                      return (
+                        <div className="kanban-column" key={stage.id}>
+                          <div className="kanban-col-header" style={{ '--col-color': stage.color }}>
+                            <div className="kanban-col-title">
+                              <div className="kanban-stage-icon" style={{ background: stage.color }}>
+                                <StageIcon />
+                              </div>
+                              {stage.label}
+                              <span className="kanban-col-count" style={{ background: stage.color }}>
+                                {stageLeads.length}
+                              </span>
+                            </div>
+                            <button className="kanban-col-add" onClick={() => setShowAddLead(true)}>
+                              <Plus size={13} />
+                            </button>
+                          </div>
+
+                          <div className="kanban-cards">
+                            <AnimatePresence>
+                              {stageLeads.map((lead, li) => {
+                                const isInternal = lead.leadType === 'INTERNAL';
+                                const followUp   = formatFollowUp(lead.followUpDate);
+                                const companyInitials = getInitials(lead.companyName || lead.contactPerson);
+                                return (
+                                  <motion.div
+                                    key={lead.id}
+                                    className="lead-card"
+                                    layout
+                                    initial={{ opacity:0, y:12 }}
+                                    animate={{ opacity:1, y:0 }}
+                                    exit={{ opacity:0, scale:0.95 }}
+                                    transition={{ delay: li * 0.05, duration: 0.35 }}
+                                    onClick={() => { setSelectedLead(lead); setSelectedStage(stage.id); }}
+                                    style={{
+                                      '--card-color': stage.color,
+                                      '--card-color-light': stage.color,
+                                      '--card-color-dark': stage.colorDark,
+                                    }}
+                                  >
+                                    <div className="lead-card-id"><Hash /> {lead.id}</div>
+
+                                    <div className="lead-card-header">
+                                      <div className="lead-card-avatar-wrap">
+                                        <div className="lead-card-diamond">
+                                          <span className="lead-card-initials">{companyInitials}</span>
+                                        </div>
+                                      </div>
+                                      <div className="lead-card-name-block">
+                                        <div className="lead-card-company">{lead.companyName || lead.contactPerson}</div>
+                                        {lead.companyName && lead.contactPerson && (
+                                          <div className="lead-card-title">{lead.contactPerson}</div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="lead-card-divider-fancy">
+                                      <div className="lead-card-divider-dot" />
+                                    </div>
+
+                                    <div className="lead-card-info">
+                                      {lead.phone && (
+                                        <div className="lead-info-row">
+                                          <div className="lead-info-icon"><Phone /></div>
+                                          <span className="lead-info-text">{lead.phone}</span>
+                                        </div>
+                                      )}
+                                      {lead.email && (
+                                        <div className="lead-info-row">
+                                          <div className="lead-info-icon"><Mail /></div>
+                                          <span className="lead-info-text">{lead.email}</span>
+                                        </div>
+                                      )}
+                                      {isInternal && lead.memberName && (
+                                        <div className="lead-info-row">
+                                          <div className="lead-info-icon"><User /></div>
+                                          <span className="lead-info-text">{lead.memberName}</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="lead-card-badges-row">
+                                      <span className={`chip ${isInternal ? 'internal' : 'external'}`}>
+                                        {isInternal ? <Link2 /> : <Globe />}
+                                        {isInternal ? 'Internal' : 'External'}
+                                      </span>
+                                      {followUp && (
+                                        <span className={`lead-tag ${followUp.overdue ? 'overdue' : 'followup'}`}>
+                                          <Calendar /> {followUp.text}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {isInternal && lead.tradeIntentTitle && (
+                                      <div className="lead-card-intent">
+                                        <div className="lead-card-intent-icon"><Briefcase /></div>
+                                        <span className="lead-card-intent-text">{lead.tradeIntentTitle}</span>
+                                      </div>
+                                    )}
+
+                                    {lead.notes && <div className="lead-card-notes">{lead.notes}</div>}
+
+                                    <div className="lead-card-footer">
+                                      <div className="lead-card-time">
+                                        <Clock /> {formatDate(lead.updatedAt)}
+                                      </div>
+                                      <div className="lead-card-actions">
+                                        {lead.phone && (
+                                          <button className="lead-action-btn call" title="Call"
+                                            onClick={e => { e.stopPropagation(); window.location.href = `tel:${lead.phone}`; }}>
+                                            <Phone size={13} />
+                                          </button>
+                                        )}
+                                        {lead.email && (
+                                          <button className="lead-action-btn email" title="Email"
+                                            onClick={e => { e.stopPropagation(); window.location.href = `mailto:${lead.email}`; }}>
+                                            <Mail size={13} />
+                                          </button>
+                                        )}
+                                        {lead.phone && (
+                                          <button className="lead-action-btn whatsapp" title="WhatsApp"
+                                            onClick={e => { e.stopPropagation(); window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g,'')}`, '_blank'); }}>
+                                            <MessageSquare size={13} />
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                );
+                              })}
+                            </AnimatePresence>
+
+                            {stageLeads.length === 0 && (
+                              <div className="kanban-empty">
+                                <div className="kanban-empty-icon"><StageIcon /></div>
+                                {searchQuery ? 'No matching leads' : 'No leads yet'}
+                                <div className="kanban-empty-sub">
+                                  {searchQuery ? 'Try a different search' : 'Add your first lead to get started'}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
-          {error && !loading && (
-            <div className="bp-error">
-              <AlertCircle size={28} style={{ color: 'var(--danger)' }} />
-              <div className="bp-error-text">{error}</div>
-              <button className="retry-btn" onClick={() => fetchPipeline()}>
-                <RefreshCw size={13} /> Try Again
-              </button>
-            </div>
-          )}
-
-          {!loading && !error && (
+          {/* Trade Intents Tab */}
+          {activeNav === 'trade_intents' && (
             <div className="panel">
               <div className="panel-head">
                 <div>
-                  <div className="panel-title">
-                    {activeStage === 'all'
-                      ? 'Deal Pipeline Board'
-                      : getStageConfig(activeStage)?.label
-                    }
-                  </div>
+                  <div className="panel-title">Trade Intents Market</div>
                   <div className="panel-subtitle">
-                    {searchQuery
-                      ? `Searching: "${searchQuery}"`
-                      : 'Click any card for details • Business Card Style Layout'
-                    }
+                    Live trade opportunities • Click any card for details
                   </div>
                 </div>
                 <div className="panel-actions">
-                  <div className="panel-link" onClick={() => setActiveStage('all')}>
-                    View All <ChevronRight size={13} />
+                  <div className="intents-toolbar" style={{ margin: 0 }}>
+                    {['ALL', 'BUY', 'SELL'].map((type) => (
+                      <button
+                        key={type}
+                        className={`intents-filter-btn ${intentFilter === type ? 'active' : ''}`}
+                        onClick={() => { setIntentFilter(type); setIntentPage(0); }}
+                      >
+                        {type}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              <div className="kanban-board">
-                {filteredStages.map((stage) => {
-                  const stageLeads = filterLeads(leads[stage.id] || []);
-                  const StageIcon = stage.IconComp;
-                  return (
-                    <div className="kanban-column" key={stage.id}>
-                      <div
-                        className="kanban-col-header"
-                        style={{ '--col-color': stage.color }}
+              {intentsLoading ? (
+                <div className="bp-loading">
+                  <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:'linear' }}>
+                    <Loader2 size={32} style={{ color: 'var(--primary)' }} />
+                  </motion.div>
+                  <div className="bp-loading-text">Loading market intents…</div>
+                </div>
+              ) : intentsError ? (
+                <div className="bp-error">
+                  <AlertCircle size={28} style={{ color: 'var(--danger)' }} />
+                  <div className="bp-error-text">{intentsError}</div>
+                  <button className="retry-btn" onClick={() => fetchIntents(intentPage)}>
+                    <RefreshCw size={13} /> Try Again
+                  </button>
+                </div>
+              ) : filteredIntents.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon-box"><Package /></div>
+                  <div className="empty-state-title">
+                    {searchQuery ? 'No matching intents' : 'No trade intents available'}
+                  </div>
+                  <div className="empty-state-desc">
+                    {searchQuery ? 'Try a different search' : 'Be the first to post a trade intent!'}
+                  </div>
+                  <button className="add-btn" onClick={() => setShowCreateIntent(true)}>
+                    <Plus size={15} /> Create Intent
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="intents-grid">
+                    <AnimatePresence mode="popLayout">
+                      {filteredIntents.map((intent) => (
+                        <IntentCard
+                          key={intent.id}
+                          intent={intent}
+                          onView={setSelectedIntent}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+
+                  {intentTotalPages > 1 && (
+                    <div className="intent-pagination">
+                      <button
+                        className="pagination-btn"
+                        onClick={() => setIntentPage((p) => Math.max(0, p - 1))}
+                        disabled={intentPage === 0}
                       >
-                        <div className="kanban-col-title">
-                          <div className="kanban-stage-icon" style={{ background: stage.color }}>
-                            <StageIcon />
-                          </div>
-                          {stage.label}
-                          <span
-                            className="kanban-col-count"
-                            style={{ background: stage.color }}
-                          >
-                            {stageLeads.length}
-                          </span>
-                        </div>
-                        <button className="kanban-col-add" onClick={() => setShowAddLead(true)}>
-                          <Plus size={13} />
-                        </button>
-                      </div>
-
-                      <div className="kanban-cards">
-                        <AnimatePresence>
-                          {stageLeads.map((lead, li) => {
-                            const isInternal = lead.leadType === 'INTERNAL';
-                            const followUp   = formatFollowUp(lead.followUpDate);
-                            const companyInitials = getInitials(lead.companyName || lead.contactPerson);
-                            return (
-                              <motion.div
-                                key={lead.id}
-                                className="lead-card"
-                                layout
-                                initial={{ opacity:0, y:12 }}
-                                animate={{ opacity:1, y:0 }}
-                                exit={{ opacity:0, scale:0.95 }}
-                                transition={{ delay: li * 0.05, duration: 0.35 }}
-                                onClick={() => { setSelectedLead(lead); setSelectedStage(stage.id); }}
-                                style={{
-                                  '--card-color': stage.color,
-                                  '--card-color-light': stage.color,
-                                  '--card-color-dark': stage.colorDark,
-                                }}
-                              >
-                                <div className="lead-card-id">
-                                  <Hash /> {lead.id}
-                                </div>
-
-                                <div className="lead-card-header">
-                                  <div className="lead-card-avatar-wrap">
-                                    <div className="lead-card-diamond">
-                                      <span className="lead-card-initials">
-                                        {companyInitials}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <div className="lead-card-name-block">
-                                    <div className="lead-card-company">
-                                      {lead.companyName || lead.contactPerson}
-                                    </div>
-                                    {lead.companyName && lead.contactPerson && (
-                                      <div className="lead-card-title">
-                                        {lead.contactPerson}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div className="lead-card-divider-fancy">
-                                  <div className="lead-card-divider-dot" />
-                                </div>
-
-                                <div className="lead-card-info">
-                                  {lead.phone && (
-                                    <div className="lead-info-row">
-                                      <div className="lead-info-icon">
-                                        <Phone />
-                                      </div>
-                                      <span className="lead-info-text">{lead.phone}</span>
-                                    </div>
-                                  )}
-                                  {lead.email && (
-                                    <div className="lead-info-row">
-                                      <div className="lead-info-icon">
-                                        <Mail />
-                                      </div>
-                                      <span className="lead-info-text">{lead.email}</span>
-                                    </div>
-                                  )}
-                                  {isInternal && lead.memberName && (
-                                    <div className="lead-info-row">
-                                      <div className="lead-info-icon">
-                                        <User />
-                                      </div>
-                                      <span className="lead-info-text">{lead.memberName}</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="lead-card-badges-row">
-                                  <span className={`chip ${isInternal ? 'internal' : 'external'}`}>
-                                    {isInternal ? <Link2 /> : <Globe />}
-                                    {isInternal ? 'Internal' : 'External'}
-                                  </span>
-                                  {followUp && (
-                                    <span className={`lead-tag ${followUp.overdue ? 'overdue' : 'followup'}`}>
-                                      <Calendar /> {followUp.text}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {isInternal && lead.tradeIntentTitle && (
-                                  <div className="lead-card-intent">
-                                    <div className="lead-card-intent-icon">
-                                      <Briefcase />
-                                    </div>
-                                    <span className="lead-card-intent-text">
-                                      {lead.tradeIntentTitle}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {lead.notes && (
-                                  <div className="lead-card-notes">{lead.notes}</div>
-                                )}
-
-                                <div className="lead-card-footer">
-                                  <div className="lead-card-time">
-                                    <Clock /> {formatDate(lead.updatedAt)}
-                                  </div>
-                                  <div className="lead-card-actions">
-                                    {lead.phone && (
-                                      <button className="lead-action-btn call" title="Call"
-                                        onClick={e => { e.stopPropagation(); window.location.href = `tel:${lead.phone}`; }}>
-                                        <Phone size={13} />
-                                      </button>
-                                    )}
-                                    {lead.email && (
-                                      <button className="lead-action-btn email" title="Email"
-                                        onClick={e => { e.stopPropagation(); window.location.href = `mailto:${lead.email}`; }}>
-                                        <Mail size={13} />
-                                      </button>
-                                    )}
-                                    {lead.phone && (
-                                      <button className="lead-action-btn whatsapp" title="WhatsApp"
-                                        onClick={e => { e.stopPropagation(); window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g,'')}`, '_blank'); }}>
-                                        <MessageSquare size={13} />
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              </motion.div>
-                            );
-                          })}
-                        </AnimatePresence>
-
-                        {stageLeads.length === 0 && (
-                          <div className="kanban-empty">
-                            <div className="kanban-empty-icon">
-                              <StageIcon />
-                            </div>
-                            {searchQuery ? 'No matching leads' : 'No leads yet'}
-                            <div className="kanban-empty-sub">
-                              {searchQuery ? 'Try a different search' : 'Add your first lead to get started'}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span className="pagination-info">
+                        Page {intentPage + 1} of {intentTotalPages}
+                      </span>
+                      <button
+                        className="pagination-btn"
+                        onClick={() => setIntentPage((p) => Math.min(intentTotalPages - 1, p + 1))}
+                        disabled={intentPage >= intentTotalPages - 1}
+                      >
+                        <ChevronRight size={16} />
+                      </button>
                     </div>
-                  );
-                })}
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* My Intents Tab */}
+          {activeNav === 'my_intents' && (
+            <div className="panel">
+              <div className="panel-head">
+                <div>
+                  <div className="panel-title">My Trade Intents</div>
+                  <div className="panel-subtitle">Intents you have created</div>
+                </div>
+              </div>
+
+              {myIntentsLoading ? (
+                <div className="bp-loading">
+                  <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:'linear' }}>
+                    <Loader2 size={32} style={{ color: 'var(--primary)' }} />
+                  </motion.div>
+                  <div className="bp-loading-text">Loading your intents…</div>
+                </div>
+              ) : myIntents.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon-box"><Package /></div>
+                  <div className="empty-state-title">No intents yet</div>
+                  <div className="empty-state-desc">
+                    Create your first trade intent to get started
+                  </div>
+                  <button className="add-btn" onClick={() => setShowCreateIntent(true)}>
+                    <Plus size={15} /> Create Intent
+                  </button>
+                </div>
+              ) : (
+                <div className="intents-grid">
+                  <AnimatePresence mode="popLayout">
+                    {myIntents.map((intent) => (
+                      <IntentCard
+                        key={intent.id}
+                        intent={intent}
+                        onView={setSelectedIntent}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Other Tabs (Coming Soon) */}
+          {['my_leads', 'deals', 'commissions', 'meetings'].includes(activeNav) && (
+            <div className="coming-soon">
+              <div className="coming-soon-icon">
+                {activeNav === 'my_leads'    && <Users />}
+                {activeNav === 'deals'       && <Handshake />}
+                {activeNav === 'commissions' && <Wallet />}
+                {activeNav === 'meetings'    && <CalendarClock />}
+              </div>
+              <div className="coming-soon-title">{getPageTitle()} — Coming Soon</div>
+              <div className="coming-soon-desc">
+                This feature is under development. Check back soon!
               </div>
             </div>
           )}
         </div>
       </main>
 
+      {/* Modals */}
       <AnimatePresence>
         {selectedLead && (
           <LeadModal
@@ -2499,10 +3307,29 @@ export default function BusinessPartnerDashboard({ onLogout }) {
       </AnimatePresence>
 
       <AnimatePresence>
+        {selectedIntent && (
+          <IntentDetailModal
+            intent={selectedIntent}
+            onClose={() => setSelectedIntent(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showAddLead && (
           <AddLeadModal
             onClose={() => setShowAddLead(false)}
             onSuccess={handleLeadCreated}
+            showToast={showToast}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showCreateIntent && (
+          <CreateIntentModal
+            onClose={() => setShowCreateIntent(false)}
+            onSuccess={handleIntentCreated}
             showToast={showToast}
           />
         )}
