@@ -12,7 +12,7 @@ import {
   Menu, FileText, Send, Clock, CheckCheck,
   Users, ArrowRight, BadgeCheck,
   Calendar, DollarSign, MessageCircle, Paperclip,
-  Inbox,
+  Inbox, Ticket,
 } from 'lucide-react';
 import { Client } from '@stomp/stompjs';
 import {
@@ -21,12 +21,14 @@ import {
   getAccessToken,
   refreshAccessToken,
 } from '../api/auth';
+import { EventsTab } from './EventsComponents';
+import MyRegistrationsTab from './MyRegistrationsTab';
 
-const BASE_URL = 'https://099e-2409-40c4-5f-5c06-f132-c99e-1b37-e348.ngrok-free.app';
+const BASE_URL = 'https://b25e-2401-4900-8821-90cd-dc64-5caf-48da-fbb3.ngrok-free.app';
 const WS_URL   = BASE_URL.replace(/^http/, 'ws') + '/cs-network/ws';
 
 // ─────────────────────────────────────────────
-// chatFetch — FormData + Bearer token + auto-refresh
+// chatFetch
 // ─────────────────────────────────────────────
 const chatFetch = async (url, formData) => {
   const doRequest = (token) =>
@@ -43,7 +45,6 @@ const chatFetch = async (url, formData) => {
   let token = getAccessToken();
   let res   = await doRequest(token);
 
-  // ── 401 → refresh → retry once ──
   if (res.status === 401) {
     console.log('🔒 chatFetch 401 — refreshing token...');
     try {
@@ -151,7 +152,6 @@ function AuthImage({ conversationId, messageId, alt, className, onClick }) {
           }
         );
 
-        // ── Auto refresh on 401 ──
         if (res.status === 401) {
           const newToken = await refreshAccessToken();
           const retryRes = await fetch(
@@ -291,7 +291,6 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 400); }, []);
 
-  // ── fetchHistory ──────────────────────────────
   const fetchHistory = useCallback(async () => {
     if (!conversationId) return;
     setHistoryLoading(true);
@@ -310,13 +309,11 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
 
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
 
-  // ── WebSocket with token in connectHeaders ─────
   useEffect(() => {
     if (!conversationId) return;
     setConnecting(true);
     setError('');
 
-    // ✅ Get fresh token every time
     const token = getAccessToken();
 
     const client = new Client({
@@ -326,7 +323,6 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
       heartbeatOutgoing: 4000,
       debug: () => {},
 
-      // ✅ Token in STOMP connect headers
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
@@ -376,7 +372,6 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
     };
   }, [conversationId]);
 
-  // ── sendMessage ───────────────────────────────
   const sendMessage = useCallback(() => {
     const text = input.trim();
     if (!text || !clientRef.current?.connected || sending) return;
@@ -396,7 +391,6 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
     finally  { setSending(false); }
   }, [input, sending, conversationId]);
 
-  // ── handleFileUpload ──────────────────────────
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -457,7 +451,6 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
       >
-        {/* Header */}
         <div className="flex-shrink-0 px-5 py-4 flex items-center justify-between gap-3"
              style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
           <div className="flex items-center gap-3 min-w-0">
@@ -487,7 +480,6 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
           </div>
         </div>
 
-        {/* Error bar */}
         <AnimatePresence>
           {error && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
@@ -499,7 +491,6 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
           )}
         </AnimatePresence>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-5 space-y-3"
              style={{ background: 'linear-gradient(180deg, #f8fdf5 0%, #f0f9eb 100%)' }}>
           {historyLoading && (
@@ -596,7 +587,6 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input bar */}
         <div className="flex-shrink-0 bg-white border-t border-gray-100 px-4 py-3">
           <div className="flex items-end gap-2">
             <input ref={fileRef} type="file" onChange={handleFileUpload} className="hidden"
@@ -638,7 +628,6 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
         </div>
       </motion.div>
 
-      {/* Image preview */}
       <AnimatePresence>
         {imagePreview && (
           <motion.div className="fixed inset-0 z-[80] flex items-center justify-center p-4"
@@ -857,7 +846,6 @@ function WindOpsShell({
       <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-3rem)] lg:h-[calc(100vh-3rem)] max-w-[1400px] overflow-hidden rounded-[28px] sm:rounded-[34px] border border-white/40 bg-white/25 backdrop-blur-xl"
            style={{ boxShadow: `0 30px 90px ${BRAND}40` }}>
 
-        {/* Desktop Sidebar */}
         <aside className="hidden lg:flex w-60 flex-shrink-0 flex-col p-6 text-white"
                style={{ background: `linear-gradient(180deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
           <div className="flex items-center gap-3 mb-10">
@@ -901,7 +889,6 @@ function WindOpsShell({
           </div>
         </aside>
 
-        {/* Mobile Drawer */}
         <AnimatePresence>
           {drawerOpen && (
             <>
@@ -951,7 +938,6 @@ function WindOpsShell({
           )}
         </AnimatePresence>
 
-        {/* Main content */}
         <section className="flex min-w-0 flex-1 flex-col gap-4 sm:gap-6 p-4 sm:p-6 overflow-hidden min-h-0">
           <div className="flex items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -1513,7 +1499,6 @@ function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefreshMyInte
       </AnimatePresence>
 
       <div className="flex flex-col lg:flex-row gap-5 min-h-0">
-        {/* Left: Intent list */}
         <div className="lg:w-80 xl:w-96 flex-shrink-0">
           <div className="rounded-2xl border border-white/60 bg-white/35 backdrop-blur-md p-4">
             <div className="flex items-center justify-between mb-3 px-1">
@@ -1577,7 +1562,6 @@ function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefreshMyInte
           </div>
         </div>
 
-        {/* Right: Proposals */}
         <div className="flex-1 min-w-0">
           {!selectedIntent ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[300px] rounded-2xl border-2 border-dashed border-gray-200 bg-white/20">
@@ -2248,11 +2232,14 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
         { icon: Store,        label: 'Sell Intents',        value: sellCount,               delay: 0.15, accent: SELLER_COLOR },
       ];
 
+  // ⭐ UPDATED NAV_ITEMS - Added Events & My Tickets
   const NAV_ITEMS = [
-    { id: 'market',     label: 'Market',     icon: BarChart3,  badge: 0           },
-    { id: 'my_intents', label: 'My Intents', icon: Package,    badge: 0           },
-    { id: 'proposals',  label: 'Proposals',  icon: FileText,   badge: 0           },
-    { id: 'inbox',      label: 'Inbox',      icon: Inbox,      badge: inboxUnread },
+    { id: 'market',           label: 'Market',       icon: BarChart3, badge: 0           },
+    { id: 'my_intents',       label: 'My Intents',   icon: Package,   badge: 0           },
+    { id: 'proposals',        label: 'Proposals',    icon: FileText,  badge: 0           },
+    { id: 'events',           label: 'Events',       icon: Calendar,  badge: 0           },
+    { id: 'my_registrations', label: 'My Tickets',   icon: Ticket,    badge: 0           },
+    { id: 'inbox',            label: 'Inbox',        icon: Inbox,     badge: inboxUnread },
   ];
 
   const isOwnerOfSelected = selectedIntent ? myIntentIds.has(selectedIntent.id) : false;
@@ -2494,6 +2481,12 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
             onRefreshMyIntents={fetchMyIntents}
           />
         )}
+
+        {/* ══ EVENTS TAB ══ */}
+        {activeTab === 'events' && <EventsTab />}
+
+        {/* ══ MY REGISTRATIONS TAB ══ */}
+        {activeTab === 'my_registrations' && <MyRegistrationsTab />}
 
         {/* ══ INBOX TAB ══ */}
         {activeTab === 'inbox' && <InboxTab />}

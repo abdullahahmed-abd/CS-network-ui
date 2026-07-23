@@ -17,7 +17,7 @@ import { authenticatedFetch, getUserData } from '../api/auth';
 import BusinessPartnerSidebar from './BusinessPartnerSidebar';
 
 const BASE_URL =
-  'https://099e-2409-40c4-5f-5c06-f132-c99e-1b37-e348.ngrok-free.app';
+  'https://b25e-2401-4900-8821-90cd-dc64-5caf-48da-fbb3.ngrok-free.app';
 
 /* ═══════════════════ 🎨 GREEN THEME SYSTEM (like BuyerSellerDashboard) ═══════════════════ */
 const THEME = {
