@@ -1,18 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { clearTokens, getUserData } from '../api/auth';
+import { clearTokens, getUserData, authenticatedFetch } from '../api/auth';
 import { inviteMember } from '../api/adminApi';
 
+const BASE_URL = 'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
+
 const navItems = [
-  { id: 'overview',    label: 'Overview',    icon: '🏠' },
-  { id: 'invitations', label: 'Invite Members', icon: '📨' },
-  { id: 'members',    label: 'Members',     icon: '👥' },
-  { id: 'settings',   label: 'Settings',    icon: '⚙️' },
+  { id: 'overview',      label: 'Overview',      icon: '🏠' },
+  { id: 'applications',  label: 'Applications',  icon: '📋' },
+  { id: 'invitations',   label: 'Invite Members', icon: '📨' },
+  { id: 'members',       label: 'Members',       icon: '👥' },
+  { id: 'settings',      label: 'Settings',      icon: '⚙️' },
 ];
 
 export default function GeneralOperatorDashboard({ onLogout }) {
   const [activeNav, setActiveNav] = useState('overview');
   const [sidebarOpen, setSidebar] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
   const user = getUserData() || {};
 
   const handleLogout = () => {
@@ -84,6 +88,7 @@ export default function GeneralOperatorDashboard({ onLogout }) {
 
               {navItems.map((item) => {
                 const isActive = activeNav === item.id;
+                const showBadge = item.id === 'applications' && pendingCount > 0;
                 return (
                   <motion.button
                     key={item.id}
@@ -99,11 +104,27 @@ export default function GeneralOperatorDashboard({ onLogout }) {
                       background: isActive ? 'rgba(255,255,255,0.2)' : 'transparent',
                       color: isActive ? '#fff' : 'rgba(255,255,255,0.65)',
                       transition: 'all 0.2s ease',
+                      position: 'relative',
                     }}
                   >
                     <span style={{ fontSize: 17 }}>{item.icon}</span>
                     {item.label}
-                    {isActive && (
+
+                    {/* ✅ Pending count badge */}
+                    {showBadge && (
+                      <span style={{
+                        marginLeft: 'auto', minWidth: 20, height: 20,
+                        borderRadius: 10, background: '#EF4444',
+                        color: '#fff', fontSize: 10, fontWeight: 800,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '0 6px',
+                        boxShadow: '0 0 8px rgba(239,68,68,0.4)',
+                      }}>
+                        {pendingCount}
+                      </span>
+                    )}
+
+                    {isActive && !showBadge && (
                       <motion.div layoutId="go-nav"
                         style={{
                           marginLeft: 'auto', width: 6, height: 6,
@@ -212,18 +233,45 @@ export default function GeneralOperatorDashboard({ onLogout }) {
             </div>
           </div>
 
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '7px 16px', borderRadius: 20,
-            background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)',
-            border: '1px solid #BBF7D0',
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Pending badge in topbar */}
+            {pendingCount > 0 && (
+              <motion.button
+                onClick={() => setActiveNav('applications')}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 20,
+                  background: '#FEF2F2', border: '1px solid #FECACA',
+                  cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                  color: '#991B1B',
+                }}
+              >
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: '#EF4444',
+                  animation: 'pulse 2s infinite',
+                }} />
+                {pendingCount} Pending
+              </motion.button>
+            )}
+
             <div style={{
-              width: 8, height: 8, borderRadius: '50%', background: '#22C55E',
-            }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#166534' }}>
-              🏪 Franchise Operator
-            </span>
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '7px 16px', borderRadius: 20,
+              background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)',
+              border: '1px solid #BBF7D0',
+            }}>
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%', background: '#22C55E',
+              }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#166534' }}>
+                🏪 Franchise Operator
+              </span>
+            </div>
           </div>
         </header>
 
@@ -241,10 +289,11 @@ export default function GeneralOperatorDashboard({ onLogout }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.22 }}
             >
-              {activeNav === 'overview'    && <OverviewTab onNavigate={setActiveNav} />}
-              {activeNav === 'invitations' && <InviteMembersTab />}
-              {activeNav === 'members'     && <PlaceholderTab name="members" />}
-              {activeNav === 'settings'    && <PlaceholderTab name="settings" />}
+              {activeNav === 'overview'     && <OverviewTab onNavigate={setActiveNav} pendingCount={pendingCount} />}
+              {activeNav === 'applications' && <ApplicationsTab onCountChange={setPendingCount} />}
+              {activeNav === 'invitations'  && <InviteMembersTab />}
+              {activeNav === 'members'      && <PlaceholderTab name="members" />}
+              {activeNav === 'settings'     && <PlaceholderTab name="settings" />}
             </motion.div>
           </AnimatePresence>
           <div style={{ height: 40 }} />
@@ -256,6 +305,10 @@ export default function GeneralOperatorDashboard({ onLogout }) {
         *::-webkit-scrollbar { width: 6px; }
         *::-webkit-scrollbar-track { background: transparent; }
         *::-webkit-scrollbar-thumb { background: #BBF7D0; border-radius: 10px; }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
       `}</style>
     </div>
   );
@@ -302,7 +355,7 @@ function Toast({ message, type = 'success', onClose }) {
 /* ══════════════════════════════════════ */
 /* ══ OVERVIEW TAB                    ══ */
 /* ══════════════════════════════════════ */
-function OverviewTab({ onNavigate }) {
+function OverviewTab({ onNavigate, pendingCount }) {
   return (
     <div>
       {/* Welcome */}
@@ -330,9 +383,42 @@ function OverviewTab({ onNavigate }) {
           fontSize: 13, margin: 0, opacity: 0.85,
           position: 'relative', zIndex: 1,
         }}>
-          Manage your franchise and invite members
+          Manage your franchise, review applications, and invite members
         </p>
       </motion.div>
+
+      {/* ✅ Pending alert banner */}
+      {pendingCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => onNavigate('applications')}
+          style={{
+            background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
+            border: '1px solid #F59E0B',
+            borderRadius: 16, padding: '18px 24px', marginBottom: 24,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14,
+          }}
+        >
+          <div style={{
+            width: 48, height: 48, borderRadius: 14,
+            background: '#F59E0B', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            fontSize: 24, flexShrink: 0,
+          }}>⏳</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#92400E' }}>
+              {pendingCount} Pending Application{pendingCount > 1 ? 's' : ''}
+            </div>
+            <div style={{ fontSize: 12, color: '#B45309', marginTop: 2 }}>
+              Click to review and approve/reject business partner applications
+            </div>
+          </div>
+          <div style={{
+            fontSize: 20, color: '#92400E',
+          }}>→</div>
+        </motion.div>
+      )}
 
       {/* Quick Actions */}
       <div style={{
@@ -341,6 +427,13 @@ function OverviewTab({ onNavigate }) {
         gap: 18,
       }}>
         {[
+          {
+            label: 'Applications',
+            icon: '📋',
+            desc: 'Review pending BP applications',
+            nav: 'applications',
+            badge: pendingCount > 0 ? pendingCount : null,
+          },
           {
             label: 'Invite Members',
             icon: '📨',
@@ -372,8 +465,19 @@ function OverviewTab({ onNavigate }) {
               background: '#fff', borderRadius: 18, padding: '24px',
               border: '1px solid #E8F0E0', cursor: 'pointer', textAlign: 'left',
               boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+              position: 'relative',
             }}
           >
+            {a.badge && (
+              <div style={{
+                position: 'absolute', top: 12, right: 12,
+                minWidth: 22, height: 22, borderRadius: 11,
+                background: '#EF4444', color: '#fff',
+                fontSize: 11, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '0 6px',
+              }}>{a.badge}</div>
+            )}
             <div style={{
               width: 48, height: 48, borderRadius: 14, background: '#F0FDF4',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -390,14 +494,533 @@ function OverviewTab({ onNavigate }) {
   );
 }
 
+/* ══════════════════════════════════════════════════════════ */
+/* ══ APPLICATIONS TAB (Approve / Reject BP applications) ══ */
+/* ══════════════════════════════════════════════════════════ */
+function ApplicationsTab({ onCountChange }) {
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
+  const [toast, setToast]               = useState(null);
+  const [actionLoading, setActionLoading] = useState(null); // applicationId being acted on
+  const [reviewNotes, setReviewNotes]   = useState({});
+  const [expandedId, setExpandedId]     = useState(null);
+  const [filter, setFilter]             = useState('PENDING'); // PENDING | ALL
+
+  // ── Fetch pending applications ──
+  const fetchApplications = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
+        method: 'POST',
+        body: JSON.stringify({
+          franchiseOperatorRequestType: 'FETCH_PENDING_APPLICATIONS',
+        }),
+      });
+
+      console.log('📋 Applications response:', data);
+
+      const apps = data?.applications || data?.pendingApplications || data?.content || [];
+      const list = Array.isArray(apps) ? apps : [];
+      setApplications(list);
+
+      // Update parent count
+      const pendingCount = list.filter((a) => a.status === 'PENDING').length;
+      onCountChange?.(pendingCount || list.length);
+
+    } catch (err) {
+      console.error('❌ Fetch applications error:', err);
+      setError(err.message || 'Failed to load applications');
+    } finally {
+      setLoading(false);
+    }
+  }, [onCountChange]);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  // ── Approve / Reject ──
+  const handleAction = async (applicationId, action) => {
+    setActionLoading(applicationId);
+    try {
+      const notes = reviewNotes[applicationId]?.trim() || (
+        action === 'APPROVE'
+          ? 'Application verified and approved.'
+          : 'Application rejected.'
+      );
+
+      const payload = {
+        franchiseOperatorRequestType: action === 'APPROVE'
+          ? 'APPROVE_APPLICATION'
+          : 'REJECT_APPLICATION',
+        applicationId: applicationId,
+        reviewNotes: notes,
+      };
+
+      console.log(`📤 ${action} application:`, payload);
+
+      await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      setToast({
+        message: action === 'APPROVE'
+          ? `Application #${applicationId} approved successfully!`
+          : `Application #${applicationId} rejected.`,
+        type: 'success',
+      });
+
+      // Remove from list or refresh
+      setApplications((prev) =>
+        prev.filter((a) => a.id !== applicationId && a.applicationId !== applicationId)
+      );
+
+      // Update count
+      onCountChange?.((prev) => Math.max(0, (prev || 1) - 1));
+
+      setExpandedId(null);
+
+    } catch (err) {
+      console.error(`❌ ${action} error:`, err);
+      setToast({
+        message: err.message || `Failed to ${action.toLowerCase()} application`,
+        type: 'error',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // ── Filtered list ──
+  const filteredApps = filter === 'ALL'
+    ? applications
+    : applications.filter((a) => (a.status || 'PENDING') === 'PENDING');
+
+  return (
+    <div>
+      <AnimatePresence>
+        {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+      </AnimatePresence>
+
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 24, flexWrap: 'wrap', gap: 12,
+      }}>
+        <div>
+          <h2 style={{
+            fontSize: 20, fontWeight: 800, color: '#1A3A1A', margin: '0 0 4px',
+          }}>
+            Business Partner Applications
+          </h2>
+          <p style={{ fontSize: 12, color: '#6B8F71', margin: 0 }}>
+            Review and approve/reject business partner requests
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          {/* Filter */}
+          {['PENDING', 'ALL'].map((f) => (
+            <motion.button
+              key={f}
+              onClick={() => setFilter(f)}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                padding: '8px 18px', borderRadius: 10,
+                background: filter === f
+                  ? 'linear-gradient(135deg, #16A34A, #15803D)'
+                  : '#fff',
+                color: filter === f ? '#fff' : '#6B8F71',
+                border: filter === f ? 'none' : '1px solid #E8F0E0',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                fontFamily: 'Manrope, sans-serif',
+              }}
+            >
+              {f === 'PENDING' ? `⏳ Pending (${applications.filter((a) => (a.status || 'PENDING') === 'PENDING').length})` : '📋 All'}
+            </motion.button>
+          ))}
+
+          {/* Refresh */}
+          <motion.button
+            onClick={fetchApplications}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            disabled={loading}
+            style={{
+              padding: '8px 16px', borderRadius: 10,
+              background: '#F0FDF4', border: '1px solid #BBF7D0',
+              color: '#16A34A', fontSize: 12, fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontFamily: 'Manrope, sans-serif',
+              opacity: loading ? 0.6 : 1,
+            }}
+          >
+            {loading ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
+                style={{
+                  width: 14, height: 14,
+                  border: '2px solid #BBF7D0',
+                  borderTopColor: '#16A34A', borderRadius: '50%',
+                }}
+              />
+            ) : '🔄'} Refresh
+          </motion.button>
+        </div>
+      </div>
+
+      {/* Loading */}
+      {loading && applications.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          style={{
+            textAlign: 'center', padding: '60px 0',
+          }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+            style={{
+              width: 48, height: 48, margin: '0 auto 20px',
+              border: '3px solid #E8F0E0',
+              borderTopColor: '#16A34A', borderRadius: '50%',
+            }}
+          />
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#6B8F71' }}>
+            Loading applications...
+          </p>
+        </motion.div>
+      )}
+
+      {/* Error */}
+      {error && !loading && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: '#FEF2F2', border: '1px solid #FECACA',
+            borderRadius: 16, padding: '20px 24px', textAlign: 'center',
+            marginBottom: 20,
+          }}
+        >
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#991B1B', margin: '0 0 12px' }}>
+            ❌ {error}
+          </p>
+          <motion.button
+            onClick={fetchApplications}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              padding: '10px 24px', borderRadius: 10,
+              background: 'linear-gradient(135deg, #16A34A, #15803D)',
+              color: '#fff', border: 'none', fontSize: 13, fontWeight: 700,
+              cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
+            }}
+          >
+            🔄 Retry
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && filteredApps.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{
+            background: '#fff', borderRadius: 20, padding: '60px 40px',
+            textAlign: 'center', border: '1px solid #E8F0E0',
+          }}
+        >
+          <div style={{
+            width: 80, height: 80, borderRadius: 24, background: '#F0FDF4',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 40, margin: '0 auto 20px', border: '1px solid #BBF7D0',
+          }}>🎉</div>
+          <h3 style={{
+            fontSize: 18, fontWeight: 800, color: '#1A3A1A', margin: '0 0 8px',
+          }}>
+            No Pending Applications
+          </h3>
+          <p style={{ color: '#6B8F71', fontSize: 13 }}>
+            All business partner applications have been reviewed.
+          </p>
+        </motion.div>
+      )}
+
+      {/* ── Application Cards ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {filteredApps.map((app, i) => {
+          const appId = app.id || app.applicationId;
+          const isExpanded = expandedId === appId;
+          const isActing = actionLoading === appId;
+          const status = app.status || 'PENDING';
+
+          return (
+            <motion.div
+              key={appId}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              style={{
+                background: '#fff', borderRadius: 20,
+                border: status === 'PENDING'
+                  ? '2px solid #FDE68A'
+                  : '1px solid #E8F0E0',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Card Header */}
+              <div
+                onClick={() => setExpandedId(isExpanded ? null : appId)}
+                style={{
+                  padding: '20px 24px',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16,
+                }}
+              >
+                {/* Avatar */}
+                <div style={{
+                  width: 50, height: 50, borderRadius: 16,
+                  background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, fontWeight: 800, color: '#166534',
+                  border: '1px solid #BBF7D0', flexShrink: 0,
+                }}>
+                  {(app.fullName || app.applicantName || 'U')[0].toUpperCase()}
+                </div>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 15, fontWeight: 800, color: '#1A3A1A',
+                    marginBottom: 4,
+                  }}>
+                    {app.fullName || app.applicantName || 'Unknown'}
+                  </div>
+                  <div style={{
+                    display: 'flex', flexWrap: 'wrap', gap: 6,
+                    alignItems: 'center',
+                  }}>
+                    {app.companyName && (
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, color: '#6B8F71',
+                        background: '#F0FDF4', padding: '3px 10px',
+                        borderRadius: 8, border: '1px solid #E8F0E0',
+                      }}>🏢 {app.companyName}</span>
+                    )}
+                    {app.businessSector && (
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, color: '#7C3AED',
+                        background: '#F5F3FF', padding: '3px 10px',
+                        borderRadius: 8, border: '1px solid #DDD6FE',
+                      }}>🏭 {app.businessSector.replace(/_/g, ' ')}</span>
+                    )}
+                    {(app.country || app.city) && (
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, color: '#0369A1',
+                        background: '#F0F9FF', padding: '3px 10px',
+                        borderRadius: 8, border: '1px solid #BAE6FD',
+                      }}>📍 {[app.city, app.state, app.country].filter(Boolean).join(', ')}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status + Expand */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  <span style={{
+                    padding: '5px 14px', borderRadius: 20,
+                    fontSize: 11, fontWeight: 700,
+                    background: status === 'PENDING' ? '#FEF3C7' : status === 'APPROVED' ? '#DCFCE7' : '#FEE2E2',
+                    color: status === 'PENDING' ? '#92400E' : status === 'APPROVED' ? '#166534' : '#991B1B',
+                    border: `1px solid ${status === 'PENDING' ? '#F59E0B' : status === 'APPROVED' ? '#86EFAC' : '#FCA5A5'}`,
+                  }}>
+                    {status === 'PENDING' ? '⏳' : status === 'APPROVED' ? '✅' : '❌'} {status}
+                  </span>
+                  <motion.div
+                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                    style={{ color: '#6B8F71', fontSize: 18 }}
+                  >▼</motion.div>
+                </div>
+              </div>
+
+              {/* ── Expanded Details ── */}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div style={{
+                      padding: '0 24px 24px',
+                      borderTop: '1px solid #F0F5EC',
+                    }}>
+                      {/* Details grid */}
+                      <div style={{
+                        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                        gap: 12, padding: '20px 0',
+                      }}>
+                        {[
+                          { label: 'Full Name', value: app.fullName || app.applicantName, icon: '👤' },
+                          { label: 'Company', value: app.companyName, icon: '🏢' },
+                          { label: 'Position', value: app.position, icon: '💼' },
+                          { label: 'Phone', value: app.alternatePhoneNumber || app.phone, icon: '📱' },
+                          { label: 'Business Age', value: app.businessAge?.replace(/_/g, ' '), icon: '📅' },
+                          { label: 'Sector', value: app.businessSector?.replace(/_/g, ' '), icon: '🏭' },
+                          { label: 'Contact Method', value: app.preferredContactMethod, icon: '💬' },
+                          { label: 'Language', value: app.languagePreference, icon: '🌐' },
+                          { label: 'Location', value: [app.city, app.state, app.country].filter(Boolean).join(', '), icon: '📍' },
+                          { label: 'Applied', value: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : '-', icon: '📆' },
+                        ].filter((d) => d.value).map((detail, di) => (
+                          <div key={di} style={{
+                            background: '#F7FAF4', padding: '12px 16px',
+                            borderRadius: 12, border: '1px solid #E8F0E0',
+                          }}>
+                            <div style={{
+                              fontSize: 10, fontWeight: 700, color: '#6B8F71',
+                              textTransform: 'uppercase', marginBottom: 4,
+                              letterSpacing: '0.5px',
+                            }}>{detail.icon} {detail.label}</div>
+                            <div style={{
+                              fontSize: 13, fontWeight: 700, color: '#1A3A1A',
+                            }}>{detail.value}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* ── Action section (only for PENDING) ── */}
+                      {status === 'PENDING' && (
+                        <div style={{
+                          background: '#F7FAF4', borderRadius: 16,
+                          padding: '20px', border: '1px solid #E8F0E0',
+                          marginTop: 8,
+                        }}>
+                          <div style={{
+                            fontSize: 13, fontWeight: 700, color: '#1A3A1A',
+                            marginBottom: 12,
+                          }}>
+                            📝 Review Notes (optional)
+                          </div>
+                          <textarea
+                            placeholder="Add notes about this application..."
+                            value={reviewNotes[appId] || ''}
+                            onChange={(e) =>
+                              setReviewNotes((prev) => ({
+                                ...prev,
+                                [appId]: e.target.value,
+                              }))
+                            }
+                            style={{
+                              width: '100%', minHeight: 80, padding: '12px 16px',
+                              borderRadius: 12, border: '1px solid #E8F0E0',
+                              background: '#fff', fontSize: 13, fontWeight: 500,
+                              color: '#1A3A1A', fontFamily: 'Manrope, sans-serif',
+                              resize: 'vertical', outline: 'none',
+                              boxSizing: 'border-box',
+                            }}
+                            onFocus={(e) => { e.target.style.borderColor = '#16A34A'; }}
+                            onBlur={(e) => { e.target.style.borderColor = '#E8F0E0'; }}
+                          />
+
+                          {/* Action buttons */}
+                          <div style={{
+                            display: 'flex', gap: 12, marginTop: 16,
+                          }}>
+                            {/* Reject */}
+                            <motion.button
+                              onClick={() => handleAction(appId, 'REJECT')}
+                              disabled={isActing}
+                              whileHover={{ scale: isActing ? 1 : 1.02 }}
+                              whileTap={{ scale: isActing ? 1 : 0.97 }}
+                              style={{
+                                flex: 1, padding: '14px', borderRadius: 12,
+                                background: '#fff',
+                                border: '2px solid #FCA5A5',
+                                color: '#DC2626', fontSize: 14, fontWeight: 700,
+                                cursor: isActing ? 'not-allowed' : 'pointer',
+                                fontFamily: 'Manrope, sans-serif',
+                                display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', gap: 8,
+                                opacity: isActing ? 0.6 : 1,
+                              }}
+                            >
+                              {isActing ? (
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
+                                  style={{
+                                    width: 16, height: 16,
+                                    border: '2px solid #FCA5A5',
+                                    borderTopColor: '#DC2626', borderRadius: '50%',
+                                  }}
+                                />
+                              ) : '❌'} Reject
+                            </motion.button>
+
+                            {/* Approve */}
+                            <motion.button
+                              onClick={() => handleAction(appId, 'APPROVE')}
+                              disabled={isActing}
+                              whileHover={{ scale: isActing ? 1 : 1.02 }}
+                              whileTap={{ scale: isActing ? 1 : 0.97 }}
+                              style={{
+                                flex: 2, padding: '14px', borderRadius: 12,
+                                background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                                border: 'none', color: '#fff',
+                                fontSize: 14, fontWeight: 700,
+                                cursor: isActing ? 'not-allowed' : 'pointer',
+                                fontFamily: 'Manrope, sans-serif',
+                                boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
+                                display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', gap: 8,
+                                opacity: isActing ? 0.6 : 1,
+                              }}
+                            >
+                              {isActing ? (
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
+                                  style={{
+                                    width: 16, height: 16,
+                                    border: '2px solid rgba(255,255,255,0.3)',
+                                    borderTopColor: '#fff', borderRadius: '50%',
+                                  }}
+                                />
+                              ) : '✅'} Approve
+                            </motion.button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════ */
 /* ══ INVITE MEMBERS TAB              ══ */
 /* ══════════════════════════════════════ */
 function InviteMembersTab() {
-  const [loading, setLoading]       = useState(false);
-  const [toast, setToast]           = useState(null);
+  const [loading, setLoading]           = useState(false);
+  const [toast, setToast]               = useState(null);
   const [inviteResult, setInviteResult] = useState(null);
-  const [history, setHistory]       = useState([]);
+  const [history, setHistory]           = useState([]);
 
   const handleInvite = async () => {
     setLoading(true);
@@ -409,7 +1032,6 @@ function InviteMembersTab() {
       setInviteResult(res);
       setToast({ message: res.message || 'Invite link generated!', type: 'success' });
 
-      // Add to history
       setHistory((prev) => [
         {
           link: res.inviteLink,
@@ -430,7 +1052,6 @@ function InviteMembersTab() {
     navigator.clipboard.writeText(text).then(() => {
       setToast({ message: 'Link copied to clipboard!', type: 'success' });
     }).catch(() => {
-      // Fallback
       const input = document.createElement('input');
       input.value = text;
       document.body.appendChild(input);
@@ -449,16 +1070,11 @@ function InviteMembersTab() {
 
       <h2 style={{
         fontSize: 20, fontWeight: 800, color: '#1A3A1A', margin: '0 0 6px',
-      }}>
-        Invite Members
-      </h2>
+      }}>Invite Members</h2>
       <p style={{
         fontSize: 12, color: '#6B8F71', margin: '0 0 24px',
-      }}>
-        Generate invite links to add new members to your franchise
-      </p>
+      }}>Generate invite links to add new members to your franchise</p>
 
-      {/* Generate Button Card */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -476,20 +1092,15 @@ function InviteMembersTab() {
             width: 56, height: 56, borderRadius: 18,
             background: 'linear-gradient(135deg, #F0FDF4, #DCFCE7)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 28, border: '1px solid #BBF7D0',
-            flexShrink: 0,
+            fontSize: 28, border: '1px solid #BBF7D0', flexShrink: 0,
           }}>📨</div>
           <div>
-            <div style={{
-              fontSize: 18, fontWeight: 800, color: '#1A3A1A',
-            }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#1A3A1A' }}>
               Generate Member Invite
             </div>
             <div style={{
               fontSize: 13, color: '#6B8F71', fontWeight: 500, marginTop: 2,
-            }}>
-              Click below to create a new invite link for a member
-            </div>
+            }}>Click below to create a new invite link for a member</div>
           </div>
         </div>
 
@@ -499,17 +1110,14 @@ function InviteMembersTab() {
           whileHover={{ scale: loading ? 1 : 1.02 }}
           whileTap={{ scale: loading ? 1 : 0.97 }}
           style={{
-            width: '100%', padding: '16px',
-            borderRadius: 14,
+            width: '100%', padding: '16px', borderRadius: 14,
             background: 'linear-gradient(135deg, #16A34A, #15803D)',
-            border: 'none', color: '#fff',
-            fontSize: 15, fontWeight: 700,
+            border: 'none', color: '#fff', fontSize: 15, fontWeight: 700,
             cursor: loading ? 'not-allowed' : 'pointer',
             fontFamily: 'Manrope, sans-serif',
             boxShadow: '0 4px 14px rgba(22,163,74,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 10, opacity: loading ? 0.7 : 1,
-            transition: 'opacity 0.2s',
           }}
         >
           {loading ? (
@@ -525,14 +1133,9 @@ function InviteMembersTab() {
               />
               Generating...
             </>
-          ) : (
-            <>
-              🔗 Generate Invite Link
-            </>
-          )}
+          ) : '🔗 Generate Invite Link'}
         </motion.button>
 
-        {/* Result */}
         <AnimatePresence>
           {inviteResult && (
             <motion.div
@@ -542,18 +1145,14 @@ function InviteMembersTab() {
               style={{
                 marginTop: 24, padding: '22px',
                 background: '#F0FDF4', borderRadius: 16,
-                border: '1px solid #BBF7D0',
-                overflow: 'hidden',
+                border: '1px solid #BBF7D0', overflow: 'hidden',
               }}
             >
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                marginBottom: 16,
+                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16,
               }}>
                 <span style={{ fontSize: 18 }}>✅</span>
-                <span style={{
-                  fontSize: 14, fontWeight: 700, color: '#166534',
-                }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#166534' }}>
                   Invite Link Generated!
                 </span>
               </div>
@@ -561,11 +1160,8 @@ function InviteMembersTab() {
               {inviteResult.inviteLink && (
                 <div style={{ marginBottom: 14 }}>
                   <div style={{
-                    fontSize: 11, fontWeight: 600, color: '#6B8F71',
-                    marginBottom: 8,
-                  }}>
-                    Share this link with the member:
-                  </div>
+                    fontSize: 11, fontWeight: 600, color: '#6B8F71', marginBottom: 8,
+                  }}>Share this link with the member:</div>
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 8,
                     background: '#fff', padding: '12px 16px',
@@ -573,11 +1169,8 @@ function InviteMembersTab() {
                   }}>
                     <div style={{
                       flex: 1, fontSize: 12, color: '#1A3A1A',
-                      wordBreak: 'break-all', fontFamily: 'monospace',
-                      lineHeight: 1.5,
-                    }}>
-                      {inviteResult.inviteLink}
-                    </div>
+                      wordBreak: 'break-all', fontFamily: 'monospace', lineHeight: 1.5,
+                    }}>{inviteResult.inviteLink}</div>
                     <motion.button
                       onClick={() => copyLink(inviteResult.inviteLink)}
                       whileHover={{ scale: 1.05 }}
@@ -589,23 +1182,17 @@ function InviteMembersTab() {
                         fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
                         boxShadow: '0 2px 8px rgba(22,163,74,0.2)',
                       }}
-                    >
-                      📋 Copy
-                    </motion.button>
+                    >📋 Copy</motion.button>
                   </div>
                 </div>
               )}
 
               {inviteResult.expiresAt && (
-                <div style={{
-                  fontSize: 11, color: '#6B8F71',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}>
+                <div style={{ fontSize: 11, color: '#6B8F71', display: 'flex', alignItems: 'center', gap: 6 }}>
                   ⏰ Expires: {new Date(inviteResult.expiresAt).toLocaleString()}
                 </div>
               )}
 
-              {/* Generate another */}
               <motion.button
                 onClick={() => setInviteResult(null)}
                 whileHover={{ scale: 1.02 }}
@@ -616,10 +1203,7 @@ function InviteMembersTab() {
                   border: '1.5px solid #BBF7D0',
                   color: '#16A34A', fontSize: 13, fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'Manrope, sans-serif',
-                }}
-              >
-                ➕ Generate Another Link
-              </motion.button>
+                }}>➕ Generate Another Link</motion.button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -633,16 +1217,12 @@ function InviteMembersTab() {
           transition={{ delay: 0.2 }}
           style={{
             marginTop: 24, background: '#fff', borderRadius: 20,
-            padding: '24px 28px', border: '1px solid #E8F0E0',
-            maxWidth: 560,
+            padding: '24px 28px', border: '1px solid #E8F0E0', maxWidth: 560,
           }}
         >
           <h3 style={{
-            fontSize: 15, fontWeight: 800, color: '#1A3A1A',
-            margin: '0 0 16px',
-          }}>
-            📋 Recent Invites ({history.length})
-          </h3>
+            fontSize: 15, fontWeight: 800, color: '#1A3A1A', margin: '0 0 16px',
+          }}>📋 Recent Invites ({history.length})</h3>
 
           {history.map((item, i) => (
             <motion.div
@@ -662,20 +1242,16 @@ function InviteMembersTab() {
                 alignItems: 'center', justifyContent: 'center',
                 fontSize: 16, flexShrink: 0, border: '1px solid #E8F0E0',
               }}>📨</div>
-
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: 12, color: '#1A3A1A', fontWeight: 600,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   fontFamily: 'monospace',
-                }}>
-                  {item.link || 'Link generated'}
-                </div>
+                }}>{item.link || 'Link generated'}</div>
                 <div style={{ fontSize: 10, color: '#6B8F71', marginTop: 2 }}>
                   Created: {new Date(item.createdAt).toLocaleString()}
                 </div>
               </div>
-
               {item.link && (
                 <motion.button
                   onClick={() => copyLink(item.link)}
@@ -687,9 +1263,7 @@ function InviteMembersTab() {
                     color: '#16A34A', fontSize: 11, fontWeight: 700,
                     cursor: 'pointer', whiteSpace: 'nowrap',
                   }}
-                >
-                  📋 Copy
-                </motion.button>
+                >📋 Copy</motion.button>
               )}
             </motion.div>
           ))}
@@ -719,9 +1293,7 @@ function PlaceholderTab({ name }) {
       }}>🚧</div>
       <h3 style={{
         fontSize: 20, fontWeight: 800, color: '#1A3A1A', marginBottom: 8,
-      }}>
-        {name.charAt(0).toUpperCase() + name.slice(1)} Module
-      </h3>
+      }}>{name.charAt(0).toUpperCase() + name.slice(1)} Module</h3>
       <p style={{ color: '#6B8F71', fontSize: 14 }}>
         Under development. Check back soon!
       </p>

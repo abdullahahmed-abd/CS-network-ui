@@ -15,9 +15,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { authenticatedFetch, getUserData } from '../api/auth';
 import BusinessPartnerSidebar from './BusinessPartnerSidebar';
+import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
 
 const BASE_URL =
-  'https://b25e-2401-4900-8821-90cd-dc64-5caf-48da-fbb3.ngrok-free.app';
+  'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
 
 /* ═══════════════════ 🎨 GREEN THEME SYSTEM (like BuyerSellerDashboard) ═══════════════════ */
 const THEME = {
@@ -2139,6 +2140,7 @@ function CreateIntentModal({ onClose, onSuccess, showToast }) {
               <input
                 className="form-input"
                 type="datetime-local"
+                min={getNowDateTimeString()}
                 value={form.expiresAt}
                 onChange={(e) => update('expiresAt', e.target.value)}
               />
@@ -2543,7 +2545,7 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Follow-up Date</label>
-                  <input className="form-input" type="date" value={externalForm.followUpDate} onChange={e => setExternalForm({...externalForm, followUpDate:e.target.value})} />
+                  <input className="form-input" type="date" min={getTodayDateString()} value={externalForm.followUpDate} onChange={e => setExternalForm({...externalForm, followUpDate:e.target.value})} />
                 </div>
               </>)}
 
@@ -2566,7 +2568,7 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Follow-up Date</label>
-                  <input className="form-input" type="date" value={memberIntentForm.followUpDate} onChange={e => setMemberIntentForm({...memberIntentForm, followUpDate:e.target.value})} />
+                  <input className="form-input" type="date" min={getTodayDateString()} value={memberIntentForm.followUpDate} onChange={e => setMemberIntentForm({...memberIntentForm, followUpDate:e.target.value})} />
                 </div>
               </>)}
 
@@ -2587,7 +2589,7 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Follow-up Date</label>
-                  <input className="form-input" type="date" value={internalForm.followUpDate} onChange={e => setInternalForm({...internalForm, followUpDate:e.target.value})} />
+                  <input className="form-input" type="date" min={getTodayDateString()} value={internalForm.followUpDate} onChange={e => setInternalForm({...internalForm, followUpDate:e.target.value})} />
                 </div>
               </>)}
 

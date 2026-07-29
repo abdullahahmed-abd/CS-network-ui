@@ -1,11 +1,14 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Check, Zap, TrendingUp, Building2, Star, Loader2 } from 'lucide-react';
+import {
+  Check, Zap, TrendingUp, Building2,
+  Star, Loader2, Shield, ArrowLeft,
+} from 'lucide-react';
 import Backgroundimage from '../assets/image/Backgroundimg19.png';
 import { authenticatedFetch } from '../api/auth';
 
 const BASE_URL =
-  'https://b25e-2401-4900-8821-90cd-dc64-5caf-48da-fbb3.ngrok-free.app';
+  'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
 
 const PLANS = [
   {
@@ -98,12 +101,16 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
   const [loadingPlanId, setLoadingPlanId] = useState(null);
   const [error, setError] = useState('');
 
+  /* ═══════════════════════════════════════════════════════
+   * Plan select → API call → directly go to Dashboard
+   * No Stripe redirect — backend handles 30-day free trial
+   * ═══════════════════════════════════════════════════════ */
   const handleSelectPlan = async (planId) => {
     setLoadingPlanId(planId);
     setError('');
 
     try {
-      console.log('🛒 Purchasing plan:', planId);
+      console.log('🛒 Selecting plan:', planId);
 
       const data = await authenticatedFetch(
         `${BASE_URL}/cs-network/member`,
@@ -116,27 +123,16 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
         }
       );
 
-      console.log('✅ Stripe response:', data);
+      console.log('✅ Plan response:', data);
 
-      // Backend se Stripe URL milegi
-      const stripeUrl =
-        data?.stripeUrl ||
-        data?.url ||
-        data?.checkoutUrl ||
-        data?.sessionUrl ||
-        data?.redirectUrl;
+      // ✅ Ignore Stripe URL completely
+      // Backend handles 30-day free trial validation
+      // Payment will be enforced by backend after trial expires
+      // Directly go to dashboard via onPlanSelect
+      onPlanSelect?.(planId);
 
-      if (stripeUrl) {
-        console.log('🔗 Redirecting to Stripe:', stripeUrl);
-        // Stripe pe redirect karo
-        window.location.href = stripeUrl;
-      } else {
-        // Agar koi URL nahi mili — maybe free trial direct activate hua
-        console.log('✅ No Stripe URL — plan activated directly');
-        onPlanSelect?.(planId);
-      }
     } catch (err) {
-      console.error('❌ Plan purchase error:', err);
+      console.error('❌ Plan selection error:', err);
       setError(err.message || 'Something went wrong. Please try again.');
       setLoadingPlanId(null);
     }
@@ -149,7 +145,7 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
         .plans-scroll { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* Background */}
+      {/* ── Background ── */}
       <div className="fixed inset-0">
         <img
           src={Backgroundimage}
@@ -160,7 +156,7 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
         <div className="absolute inset-0 bg-black/20" />
       </div>
 
-      {/* Floating blobs */}
+      {/* ── Floating blobs ── */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute -left-40 -top-20 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-green-200/20 to-emerald-300/15"
@@ -174,11 +170,11 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
         />
       </div>
 
-      {/* Content */}
+      {/* ── Content ── */}
       <div className="plans-scroll relative z-10 h-screen overflow-y-auto">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 pb-20">
 
-          {/* Header */}
+          {/* ── Header ── */}
           <motion.div
             className="mb-12 text-center"
             initial={{ opacity: 0, y: -20 }}
@@ -206,6 +202,7 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
             >
               Choose Your Plan
             </motion.h1>
+
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -226,19 +223,27 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white/10 backdrop-blur-sm px-4 py-2 border border-white/20"
             >
               <span className="text-sm text-white/90">
-                🎉 All plans include <strong className="text-green-300">30 days free trial</strong> — billing starts after trial period
+                🎉 All plans include{' '}
+                <strong className="text-green-300">30 days free trial</strong>
+                {' '}— billing starts after trial period
               </span>
             </motion.div>
           </motion.div>
 
-          {/* Error message */}
+          {/* ── Error message ── */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-8 mx-auto max-w-xl flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4"
             >
-              <svg className="h-5 w-5 shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg
+                className="h-5 w-5 shrink-0 text-red-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -253,7 +258,7 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
             </motion.div>
           )}
 
-          {/* Plans Grid */}
+          {/* ── Plans Grid ── */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {PLANS.map((plan, index) => {
               const Icon = plan.icon;
@@ -267,22 +272,41 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + index * 0.15 }}
                   whileHover={!isDisabled ? { y: -6, scale: 1.02 } : {}}
-                  className={`relative flex flex-col overflow-hidden rounded-3xl border-2 bg-gradient-to-br ${plan.color.gradient} ${plan.color.border} p-7 shadow-xl ${plan.color.shadow} backdrop-blur-sm ${isDisabled && !isLoading ? 'opacity-60' : ''}`}
+                  className={`
+                    relative flex flex-col overflow-hidden rounded-3xl border-2
+                    bg-gradient-to-br ${plan.color.gradient} ${plan.color.border}
+                    p-7 shadow-xl ${plan.color.shadow} backdrop-blur-sm
+                    ${isDisabled && !isLoading ? 'opacity-60' : ''}
+                  `}
                 >
                   {/* Badge */}
                   {plan.badge && (
-                    <div className={`absolute -right-8 top-6 rotate-45 ${plan.color.badge} px-10 py-1.5 text-xs font-bold text-white shadow-lg`}>
+                    <div
+                      className={`
+                        absolute -right-8 top-6 rotate-45
+                        ${plan.color.badge} px-10 py-1.5
+                        text-xs font-bold text-white shadow-lg
+                      `}
+                    >
                       {plan.badge}
                     </div>
                   )}
 
                   {/* Plan icon + name */}
                   <div className="mb-6 flex items-center gap-4">
-                    <div className={`flex h-13 w-13 items-center justify-center rounded-2xl bg-gradient-to-br ${plan.color.iconBg} p-3 shadow-md`}>
+                    <div
+                      className={`
+                        flex h-13 w-13 items-center justify-center
+                        rounded-2xl bg-gradient-to-br ${plan.color.iconBg}
+                        p-3 shadow-md
+                      `}
+                    >
                       <Icon className={`h-7 w-7 ${plan.color.iconColor}`} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {plan.name}
+                      </h3>
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         {plan.period}
                       </p>
@@ -294,10 +318,12 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
                     <span className="text-5xl font-black text-gray-900">
                       ${plan.price.toFixed(2)}
                     </span>
-                    <span className="mb-2 text-sm font-semibold text-gray-500">/mo</span>
+                    <span className="mb-2 text-sm font-semibold text-gray-500">
+                      /mo
+                    </span>
                   </div>
 
-                  {/* Trial info */}
+                  {/* Trial badge */}
                   <div className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1.5 w-fit">
                     <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse inline-block" />
                     <span className="text-xs font-bold text-green-700">
@@ -309,27 +335,43 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
                   <ul className="mb-8 flex-1 space-y-3">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${plan.color.checkBg}`}>
-                          <Check className={`h-3 w-3 ${plan.color.check} font-bold`} strokeWidth={3} />
+                        <div
+                          className={`
+                            mt-0.5 flex h-5 w-5 shrink-0 items-center
+                            justify-center rounded-full ${plan.color.checkBg}
+                          `}
+                        >
+                          <Check
+                            className={`h-3 w-3 ${plan.color.check} font-bold`}
+                            strokeWidth={3}
+                          />
                         </div>
-                        <span className="text-sm font-medium text-gray-700">{feature}</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          {feature}
+                        </span>
                       </li>
                     ))}
                   </ul>
 
-                  {/* CTA Button */}
+                  {/* ✅ CTA Button — "Start Free Trial" → goes to Dashboard */}
                   <motion.button
                     whileHover={!isDisabled ? { scale: 1.03 } : {}}
                     whileTap={!isDisabled ? { scale: 0.97 } : {}}
                     onClick={() => handleSelectPlan(plan.id)}
                     disabled={isDisabled}
-                    className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-r ${plan.color.button} px-6 py-4 text-base font-bold text-white shadow-lg ${plan.color.shadow} transition-all disabled:cursor-not-allowed disabled:opacity-70`}
+                    className={`
+                      relative w-full overflow-hidden rounded-2xl
+                      bg-gradient-to-r ${plan.color.button}
+                      px-6 py-4 text-base font-bold text-white shadow-lg
+                      ${plan.color.shadow} transition-all
+                      disabled:cursor-not-allowed disabled:opacity-70
+                    `}
                   >
                     <span className="relative z-10 flex items-center justify-center gap-2">
                       {isLoading ? (
                         <>
                           <Loader2 className="h-5 w-5 animate-spin" />
-                          Redirecting to Stripe...
+                          Activating Trial...
                         </>
                       ) : (
                         <>
@@ -343,7 +385,11 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
                             animate={!isDisabled ? { x: [0, 4, 0] } : {}}
                             transition={{ duration: 1.5, repeat: Infinity }}
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M13 7l5 5m0 0l-5 5m5-5H6"
+                            />
                           </motion.svg>
                         </>
                       )}
@@ -354,7 +400,7 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
             })}
           </div>
 
-          {/* Stripe security badge */}
+          {/* ── Security badge — No Stripe mention ── */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -362,16 +408,26 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
             className="mt-8 flex items-center justify-center gap-3"
           >
             <div className="flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-4 py-2 border border-white/20">
-              <svg className="h-4 w-4 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <svg
+                className="h-4 w-4 text-white/80"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                />
               </svg>
               <span className="text-xs font-semibold text-white/80">
-                Secured by Stripe — 256-bit encryption
+                30-day free trial • No payment required now • Cancel anytime
               </span>
             </div>
           </motion.div>
 
-          {/* Back link */}
+          {/* ── Back link ── */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -381,9 +437,10 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
             <button
               onClick={onBack}
               disabled={loadingPlanId !== null}
-              className="text-sm font-semibold text-white/80 underline underline-offset-4 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/80 underline underline-offset-4 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ← Go back to form
+              <ArrowLeft className="h-4 w-4" />
+              Go back to form
             </button>
           </motion.div>
         </div>

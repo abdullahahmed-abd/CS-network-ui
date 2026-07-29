@@ -9,17 +9,17 @@ import {
 import Backgroundimage from '../assets/image/Backgroundimg19.png';
 import { authenticatedFetch, removeItem, clearTokens } from '../api/auth';
 
-const BASE_URL = 'https://b25e-2401-4900-8821-90cd-dc64-5caf-48da-fbb3.ngrok-free.app';
+const BASE_URL = 'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
 
 const COUNTRY_CODES = [
-  { code: '+966', flag: '🇸🇦', name: 'Saudi Arabia', short: 'SA', maxLen: 9 },
-  { code: '+971', flag: '🇦🇪', name: 'UAE',          short: 'AE', maxLen: 9 },
-  { code: '+965', flag: '🇰🇼', name: 'Kuwait',       short: 'KW', maxLen: 8 },
-  { code: '+974', flag: '🇶🇦', name: 'Qatar',        short: 'QA', maxLen: 8 },
-  { code: '+973', flag: '🇧🇭', name: 'Bahrain',      short: 'BH', maxLen: 8 },
-  { code: '+968', flag: '🇴🇲', name: 'Oman',         short: 'OM', maxLen: 8 },
+  { code: '+966', flag: '🇸🇦', name: 'Saudi Arabia', short: 'SA', maxLen: 9  },
+  { code: '+971', flag: '🇦🇪', name: 'UAE',          short: 'AE', maxLen: 9  },
+  { code: '+965', flag: '🇰🇼', name: 'Kuwait',       short: 'KW', maxLen: 8  },
+  { code: '+974', flag: '🇶🇦', name: 'Qatar',        short: 'QA', maxLen: 8  },
+  { code: '+973', flag: '🇧🇭', name: 'Bahrain',      short: 'BH', maxLen: 8  },
+  { code: '+968', flag: '🇴🇲', name: 'Oman',         short: 'OM', maxLen: 8  },
   { code: '+20',  flag: '🇪🇬', name: 'Egypt',        short: 'EG', maxLen: 10 },
-  { code: '+962', flag: '🇯🇴', name: 'Jordan',       short: 'JO', maxLen: 9 },
+  { code: '+962', flag: '🇯🇴', name: 'Jordan',       short: 'JO', maxLen: 9  },
   { code: '+1',   flag: '🇺🇸', name: 'USA',          short: 'US', maxLen: 10 },
   { code: '+44',  flag: '🇬🇧', name: 'UK',           short: 'GB', maxLen: 10 },
   { code: '+91',  flag: '🇮🇳', name: 'India',        short: 'IN', maxLen: 10 },
@@ -34,30 +34,30 @@ const COUNTRY_TO_CODE_MAP = {
 };
 
 const BUSINESS_SECTOR_OPTIONS = [
-  { label: 'Agriculture',             value: 'AGRICULTURE',              icon: '🌾', color: 'from-green-400 to-lime-500' },
-  { label: 'Textile',                 value: 'TEXTILE',                  icon: '🧵', color: 'from-pink-400 to-rose-500' },
-  { label: 'Electronics',             value: 'ELECTRONICS',              icon: '💻', color: 'from-blue-400 to-cyan-500' },
-  { label: 'Manufacturing',           value: 'MANUFACTURING',            icon: '🏭', color: 'from-gray-400 to-slate-500' },
-  { label: 'Food & Beverage',         value: 'FOOD_AND_BEVERAGE',        icon: '🍽️', color: 'from-orange-400 to-amber-500' },
-  { label: 'Construction',            value: 'CONSTRUCTION',             icon: '🏗️', color: 'from-yellow-400 to-orange-500' },
-  { label: 'Automotive',              value: 'AUTOMOTIVE',               icon: '🚗', color: 'from-red-400 to-rose-500' },
-  { label: 'Chemicals',               value: 'CHEMICALS',                icon: '⚗️', color: 'from-purple-400 to-violet-500' },
-  { label: 'Pharmaceuticals',         value: 'PHARMACEUTICALS',          icon: '💊', color: 'from-teal-400 to-emerald-500' },
-  { label: 'IT & Software',           value: 'IT_AND_SOFTWARE',          icon: '💾', color: 'from-indigo-400 to-blue-500' },
-  { label: 'Real Estate',             value: 'REAL_ESTATE',              icon: '🏘️', color: 'from-emerald-400 to-green-500' },
-  { label: 'Logistics & Transportation', value: 'LOGISTICS_AND_TRANSPORTATION', icon: '🚛', color: 'from-blue-400 to-indigo-500' },
-  { label: 'Retail',                  value: 'RETAIL',                   icon: '🛒', color: 'from-pink-400 to-fuchsia-500' },
-  { label: 'Handicrafts',             value: 'HANDICRAFTS',              icon: '🎨', color: 'from-amber-400 to-yellow-500' },
-  { label: 'Energy',                  value: 'ENERGY',                   icon: '⚡', color: 'from-yellow-400 to-lime-500' },
-  { label: 'Mining',                  value: 'MINING',                   icon: '⛏️', color: 'from-stone-400 to-gray-500' },
-  { label: 'Other',                   value: 'OTHER',                    icon: '🔧', color: 'from-gray-400 to-slate-500' },
+  { label: 'Agriculture',                  value: 'AGRICULTURE',                    icon: '🌾', color: 'from-green-400 to-lime-500'    },
+  { label: 'Textile',                      value: 'TEXTILE',                        icon: '🧵', color: 'from-pink-400 to-rose-500'     },
+  { label: 'Electronics',                  value: 'ELECTRONICS',                    icon: '💻', color: 'from-blue-400 to-cyan-500'     },
+  { label: 'Manufacturing',                value: 'MANUFACTURING',                  icon: '🏭', color: 'from-gray-400 to-slate-500'    },
+  { label: 'Food & Beverage',              value: 'FOOD_AND_BEVERAGE',              icon: '🍽️', color: 'from-orange-400 to-amber-500'  },
+  { label: 'Construction',                 value: 'CONSTRUCTION',                   icon: '🏗️', color: 'from-yellow-400 to-orange-500' },
+  { label: 'Automotive',                   value: 'AUTOMOTIVE',                     icon: '🚗', color: 'from-red-400 to-rose-500'      },
+  { label: 'Chemicals',                    value: 'CHEMICALS',                      icon: '⚗️', color: 'from-purple-400 to-violet-500' },
+  { label: 'Pharmaceuticals',              value: 'PHARMACEUTICALS',                icon: '💊', color: 'from-teal-400 to-emerald-500'  },
+  { label: 'IT & Software',                value: 'IT_AND_SOFTWARE',                icon: '💾', color: 'from-indigo-400 to-blue-500'   },
+  { label: 'Real Estate',                  value: 'REAL_ESTATE',                    icon: '🏘️', color: 'from-emerald-400 to-green-500' },
+  { label: 'Logistics & Transportation',   value: 'LOGISTICS_AND_TRANSPORTATION',   icon: '🚛', color: 'from-blue-400 to-indigo-500'  },
+  { label: 'Retail',                       value: 'RETAIL',                         icon: '🛒', color: 'from-pink-400 to-fuchsia-500'  },
+  { label: 'Handicrafts',                  value: 'HANDICRAFTS',                    icon: '🎨', color: 'from-amber-400 to-yellow-500'  },
+  { label: 'Energy',                       value: 'ENERGY',                         icon: '⚡', color: 'from-yellow-400 to-lime-500'   },
+  { label: 'Mining',                       value: 'MINING',                         icon: '⛏️', color: 'from-stone-400 to-gray-500'   },
+  { label: 'Other',                        value: 'OTHER',                          icon: '🔧', color: 'from-gray-400 to-slate-500'   },
 ];
 
 const BUSINESS_AGE_OPTIONS = [
-  { label: 'Less than 1 year',   value: 'LESS_THAN_ONE_YEAR',    icon: '🌱' },
-  { label: '1 to 3 years',       value: 'ONE_TO_THREE_YEARS',    icon: '🌿' },
-  { label: '3 to 5 years',       value: 'THREE_TO_FIVE_YEARS',   icon: '🌳' },
-  { label: 'More than 5 years',  value: 'MORE_THAN_FIVE_YEARS',  icon: '🏆' },
+  { label: 'Less than 1 year',  value: 'LESS_THAN_ONE_YEAR',   icon: '🌱' },
+  { label: '1 to 3 years',      value: 'ONE_TO_THREE_YEARS',   icon: '🌿' },
+  { label: '3 to 5 years',      value: 'THREE_TO_FIVE_YEARS',  icon: '🌳' },
+  { label: 'More than 5 years', value: 'MORE_THAN_FIVE_YEARS', icon: '🏆' },
 ];
 
 const POSITION_OPTIONS = [
@@ -80,20 +80,19 @@ const LANGUAGE_OPTIONS = [
   { label: 'Urdu',    value: 'ur', flag: '🇵🇰' },
 ];
 
-// ✅ Event Interest Options (matches backend enum)
 const EVENT_INTEREST_OPTIONS = [
-  { label: 'Networking',       value: 'NETWORKING',      icon: '🤝', desc: 'Connect with professionals' },
-  { label: 'Business Growth',  value: 'BUSINESS_GROWTH', icon: '📈', desc: 'Expand your business' },
-  { label: 'Online Event',     value: 'ONLINE_EVENT',    icon: '💻', desc: 'Virtual events & webinars' },
-  { label: 'In-Person Event',  value: 'IN_PERSON_EVENT', icon: '🏢', desc: 'Physical meetups' },
-  { label: 'In Country',       value: 'IN_COUNTRY',      icon: '🌍', desc: 'Local country events' },
-  { label: 'Overseas',         value: 'OVERSEAS',         icon: '✈️', desc: 'International events' },
+  { label: 'Networking',      value: 'NETWORKING',      icon: '🤝', desc: 'Connect with professionals' },
+  { label: 'Business Growth', value: 'BUSINESS_GROWTH', icon: '📈', desc: 'Expand your business'       },
+  { label: 'Online Event',    value: 'ONLINE_EVENT',    icon: '💻', desc: 'Virtual events & webinars'  },
+  { label: 'In-Person Event', value: 'IN_PERSON_EVENT', icon: '🏢', desc: 'Physical meetups'            },
+  { label: 'In Country',      value: 'IN_COUNTRY',      icon: '🌍', desc: 'Local country events'       },
+  { label: 'Overseas',        value: 'OVERSEAS',        icon: '✈️', desc: 'International events'       },
 ];
 
 const ROLE_OPTIONS = [
-  { label: 'Buyer',            value: 'BUYER',            icon: '🛒', desc: 'Purchase products & services',   color: 'from-blue-500 via-indigo-500 to-purple-600' },
-  { label: 'Seller',           value: 'SELLER',           icon: '🏪', desc: 'Sell your products & services',  color: 'from-emerald-500 via-green-500 to-teal-600' },
-  { label: 'Business Partner', value: 'BUSINESS_PARTNER', icon: '🤝', desc: 'Partner with businesses',        color: 'from-amber-500 via-orange-500 to-red-600' },
+  { label: 'Buyer',            value: 'BUYER',            icon: '🛒', desc: 'Purchase products & services',  color: 'from-blue-500 via-indigo-500 to-purple-600' },
+  { label: 'Seller',           value: 'SELLER',           icon: '🏪', desc: 'Sell your products & services', color: 'from-emerald-500 via-green-500 to-teal-600' },
+  { label: 'Business Partner', value: 'BUSINESS_PARTNER', icon: '🤝', desc: 'Partner with businesses',       color: 'from-amber-500 via-orange-500 to-red-600'   },
 ];
 
 const LOCATION_DATA = {
@@ -125,10 +124,10 @@ const LOCATION_DATA = {
     'Eastern Province': ['Dammam','Dhahran','Al Khobar','Jubail','Qatif'],
   },
   Pakistan: {
-    Punjab:                  ['Lahore','Faisalabad','Rawalpindi','Multan','Gujranwala'],
-    Sindh:                   ['Karachi','Hyderabad','Sukkur','Larkana','Nawabshah'],
-    'Khyber Pakhtunkhwa':    ['Peshawar','Mardan','Abbottabad','Swat','Kohat'],
-    Balochistan:             ['Quetta','Gwadar','Turbat','Khuzdar','Hub'],
+    Punjab:               ['Lahore','Faisalabad','Rawalpindi','Multan','Gujranwala'],
+    Sindh:                ['Karachi','Hyderabad','Sukkur','Larkana','Nawabshah'],
+    'Khyber Pakhtunkhwa': ['Peshawar','Mardan','Abbottabad','Swat','Kohat'],
+    Balochistan:          ['Quetta','Gwadar','Turbat','Khuzdar','Hub'],
   },
   Bangladesh: {
     Dhaka:      ['Dhaka City','Gazipur','Narayanganj','Tangail','Manikganj'],
@@ -165,10 +164,10 @@ const getPlanId = (roles) => {
 // COUNTRY CODE SELECTOR
 // ══════════════════════════════════════════════════════════
 function CountryCodeSelector({ value, onChange }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const wrapperRef = useRef(null);
-  const buttonRef  = useRef(null);
+  const [open, setOpen]       = useState(false);
+  const [search, setSearch]   = useState('');
+  const wrapperRef            = useRef(null);
+  const buttonRef             = useRef(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
 
   const selected = COUNTRY_CODES.find((c) => c.code === value) || COUNTRY_CODES[10];
@@ -185,10 +184,10 @@ function CountryCodeSelector({ value, onChange }) {
 
   useEffect(() => {
     if (!open || !buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const vh = window.innerHeight;
+    const rect       = buttonRef.current.getBoundingClientRect();
+    const vh         = window.innerHeight;
     const spaceBelow = vh - rect.bottom;
-    const openUp = spaceBelow < 320 && rect.top > spaceBelow;
+    const openUp     = spaceBelow < 320 && rect.top > spaceBelow;
     setDropdownStyle({
       position: 'fixed', left: rect.left,
       width: Math.max(rect.width, 260), zIndex: 999999,
@@ -227,7 +226,8 @@ function CountryCodeSelector({ value, onChange }) {
             <div className="border-b border-gray-100 bg-gray-50 p-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input autoFocus type="text" placeholder="Search country..."
+                <input
+                  autoFocus type="text" placeholder="Search country..."
                   value={search} onChange={(e) => setSearch(e.target.value)}
                   className="w-full rounded-xl border-2 border-gray-200 bg-white py-2 pl-10 pr-8 text-sm font-semibold outline-none focus:border-green-400"
                 />
@@ -266,8 +266,8 @@ function CountryCodeSelector({ value, onChange }) {
 // ══════════════════════════════════════════════════════════
 function PhoneInputWithCode({ value, countryCode, onPhoneChange, onCodeChange, error }) {
   const [focused, setFocused] = useState(false);
-  const selectedCountry = COUNTRY_CODES.find((c) => c.code === countryCode);
-  const maxLen = selectedCountry?.maxLen || 15;
+  const selectedCountry       = COUNTRY_CODES.find((c) => c.code === countryCode);
+  const maxLen                = selectedCountry?.maxLen || 15;
 
   return (
     <div>
@@ -282,13 +282,16 @@ function PhoneInputWithCode({ value, countryCode, onPhoneChange, onCodeChange, e
       }`}>
         <CountryCodeSelector value={countryCode} onChange={onCodeChange} />
         <input
-          type="tel" inputMode="numeric" placeholder={`Enter ${maxLen}-digit number`}
+          type="tel" inputMode="numeric"
+          placeholder={`Enter ${maxLen}-digit number`}
           value={value} maxLength={maxLen}
           onChange={(e) => onPhoneChange(e.target.value.replace(/[^0-9]/g, ''))}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           className={`flex-1 rounded-r-2xl border-2 border-l-0 bg-white/80 px-4 py-4 text-sm font-semibold text-gray-900 outline-none transition-all duration-300 placeholder:font-medium placeholder:text-gray-400 ${
-            error ? 'border-red-300' : focused ? 'border-green-400 bg-white' : 'border-gray-200/60 hover:border-green-300'
+            error   ? 'border-red-300'
+            : focused ? 'border-green-400 bg-white'
+            : 'border-gray-200/60 hover:border-green-300'
           }`}
         />
       </div>
@@ -321,9 +324,9 @@ function PortalDropdown({ anchorRef, open, children }) {
     if (!open || !anchorRef.current) return;
     const update = () => {
       if (!anchorRef.current) return;
-      const rect = anchorRef.current.getBoundingClientRect();
-      const vh = window.innerHeight;
-      const vw = window.innerWidth;
+      const rect  = anchorRef.current.getBoundingClientRect();
+      const vh    = window.innerHeight;
+      const vw    = window.innerWidth;
       const dropH = 380;
       const dropW = rect.width;
       const openUp = (vh - rect.bottom) < dropH && rect.top > (vh - rect.bottom);
@@ -352,10 +355,10 @@ function PortalDropdown({ anchorRef, open, children }) {
 // BUSINESS SECTOR DROPDOWN
 // ══════════════════════════════════════════════════════════
 function BusinessSectorDropdown({ value, onSelect, error }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]     = useState(false);
   const [search, setSearch] = useState('');
-  const wrapperRef = useRef(null);
-  const buttonRef  = useRef(null);
+  const wrapperRef          = useRef(null);
+  const buttonRef           = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
@@ -368,7 +371,7 @@ function BusinessSectorDropdown({ value, onSelect, error }) {
   }, []);
 
   const selectedOption = BUSINESS_SECTOR_OPTIONS.find((o) => o.value === value);
-  const filtered = BUSINESS_SECTOR_OPTIONS.filter((o) =>
+  const filtered       = BUSINESS_SECTOR_OPTIONS.filter((o) =>
     o.label.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -380,7 +383,8 @@ function BusinessSectorDropdown({ value, onSelect, error }) {
         </div>
         Business Sector
       </label>
-      <motion.button ref={buttonRef} type="button"
+      <motion.button
+        ref={buttonRef} type="button"
         onClick={() => { setOpen((p) => !p); if (open) setSearch(''); }}
         whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
         className={`relative flex w-full items-center justify-between rounded-2xl px-5 py-4 text-left text-sm font-semibold shadow-lg backdrop-blur-xl transition-all duration-300 ${
@@ -418,7 +422,8 @@ function BusinessSectorDropdown({ value, onSelect, error }) {
                 <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-purple-50/40 p-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input type="text" placeholder="Search sector..." value={search}
+                    <input
+                      type="text" placeholder="Search sector..." value={search}
                       onChange={(e) => setSearch(e.target.value)} autoFocus
                       className="w-full rounded-xl border-2 border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm font-semibold outline-none focus:border-green-400"
                     />
@@ -437,11 +442,13 @@ function BusinessSectorDropdown({ value, onSelect, error }) {
                       {filtered.map((opt) => {
                         const sel = value === opt.value;
                         return (
-                          <motion.button key={opt.value} type="button"
+                          <motion.button
+                            key={opt.value} type="button"
                             whileHover={{ scale: 1.03, y: -1 }} whileTap={{ scale: 0.97 }}
                             onClick={() => { onSelect(opt.value); setOpen(false); setSearch(''); }}
                             className={`group relative flex flex-col items-center gap-2 rounded-xl p-3 text-center transition-all duration-200 ${
-                              sel ? 'bg-gradient-to-br from-green-50 to-emerald-50 ring-2 ring-green-400' : 'bg-gray-50 hover:bg-white hover:shadow-md'
+                              sel ? 'bg-gradient-to-br from-green-50 to-emerald-50 ring-2 ring-green-400'
+                              : 'bg-gray-50 hover:bg-white hover:shadow-md'
                             }`}
                           >
                             <span className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${opt.color} text-xl shadow-md`}>
@@ -529,7 +536,8 @@ function SearchableDropdown({
           {label}
         </label>
       )}
-      <motion.button ref={buttonRef} type="button" disabled={disabled} onClick={handleOpen}
+      <motion.button
+        ref={buttonRef} type="button" disabled={disabled} onClick={handleOpen}
         whileHover={{ scale: disabled ? 1 : 1.01 }} whileTap={{ scale: disabled ? 1 : 0.99 }}
         className={`relative flex w-full items-center justify-between rounded-2xl px-5 py-4 text-left text-sm font-semibold shadow-lg backdrop-blur-xl transition-all duration-300 ${
           disabled ? 'cursor-not-allowed border-2 border-gray-200 bg-white/40 text-gray-400'
@@ -561,7 +569,8 @@ function SearchableDropdown({
                   <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-green-50/30 p-3">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <input type="text" placeholder="Type to search..." value={search}
+                      <input
+                        type="text" placeholder="Type to search..." value={search}
                         onChange={(e) => setSearch(e.target.value)} autoFocus
                         className="w-full rounded-xl border-2 border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm font-semibold outline-none focus:border-green-400"
                       />
@@ -600,10 +609,12 @@ function SearchableDropdown({
                         );
                       }
                       return (
-                        <button key={`${optVal}-${i}`} type="button"
+                        <button
+                          key={`${optVal}-${i}`} type="button"
                           onClick={() => { onSelect(opt); setOpen(false); setSearch(''); }}
                           className={`flex w-full items-center gap-3 px-5 py-3.5 text-left text-sm font-semibold transition-all ${
-                            sel ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-700' : 'text-gray-700 hover:bg-gray-50'
+                            sel ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-700'
+                            : 'text-gray-700 hover:bg-gray-50'
                           }`}
                         >
                           <span className="flex-1">{optLabel}</span>
@@ -651,13 +662,15 @@ function LocationRow({ form, errors, updateField, availableStates, availableCiti
           error={errors.country} icon={Globe} dropdownId="country-dd"
         />
         <SearchableDropdown
-          label="State / Province" placeholder={form.country ? 'Select state (optional)' : '—'}
+          label="State / Province"
+          placeholder={form.country ? 'Select state (optional)' : '—'}
           value={form.state} options={availableStates}
           onSelect={(v) => updateField('state', v)}
           error={errors.state} disabled={!form.country} icon={MapPin} dropdownId="state-dd"
         />
         <SearchableDropdown
-          label="City" placeholder={form.state ? 'Select city (optional)' : '—'}
+          label="City"
+          placeholder={form.state ? 'Select city (optional)' : '—'}
           value={form.city} options={availableCities}
           onSelect={(v) => updateField('city', v)}
           error={errors.city} disabled={!form.state} icon={MapPin} dropdownId="city-dd"
@@ -670,8 +683,14 @@ function LocationRow({ form, errors, updateField, availableStates, availableCiti
         >
           <MapPin className="h-4 w-4 shrink-0 text-green-600" />
           {form.country && <span className="rounded-lg bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">{form.country}</span>}
-          {form.state  && <><ChevronDown className="h-3 w-3 -rotate-90 text-gray-400" /><span className="rounded-lg bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">{form.state}</span></>}
-          {form.city   && <><ChevronDown className="h-3 w-3 -rotate-90 text-gray-400" /><span className="rounded-lg bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-700">{form.city}</span></>}
+          {form.state && (
+            <><ChevronDown className="h-3 w-3 -rotate-90 text-gray-400" />
+            <span className="rounded-lg bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">{form.state}</span></>
+          )}
+          {form.city && (
+            <><ChevronDown className="h-3 w-3 -rotate-90 text-gray-400" />
+            <span className="rounded-lg bg-purple-100 px-2 py-0.5 text-xs font-bold text-purple-700">{form.city}</span></>
+          )}
         </motion.div>
       )}
     </div>
@@ -695,7 +714,8 @@ function FloatingInput({ label, error, icon: Icon, ...props }) {
           {label}
         </label>
       )}
-      <input {...props}
+      <input
+        {...props}
         onFocus={(e) => { setFocused(true);  props.onFocus?.(e); }}
         onBlur={(e)  => { setFocused(false); props.onBlur?.(e);  }}
         className={`w-full rounded-2xl border-2 bg-white/80 px-5 py-4 text-sm font-semibold text-gray-900 shadow-lg outline-none transition-all duration-300 placeholder:font-medium placeholder:text-gray-400 ${
@@ -724,7 +744,8 @@ function EnhancedSelect({ label, options, error, ...props }) {
     <div>
       <label className="mb-3 block text-sm font-bold text-gray-800">{label}</label>
       <div className="relative">
-        <select {...props}
+        <select
+          {...props}
           onFocus={(e) => { setFocused(true);  props.onFocus?.(e); }}
           onBlur={(e)  => { setFocused(false); props.onBlur?.(e);  }}
           className={`w-full appearance-none rounded-2xl border-2 bg-white/80 px-5 py-4 pr-12 text-sm font-semibold text-gray-900 shadow-lg outline-none transition-all duration-300 ${
@@ -772,61 +793,70 @@ export default function UserFormScreen({
   countryCode,
   onComplete,
   onSessionExpired,
-  inviteData = null,   // ✅ NEW: inviteData from invite link
+  inviteData = null,
 }) {
   const [step, setStep] = useState(1);
-  const totalSteps = 4;
+  const totalSteps      = 4;
+
+  // ✅ Derived helpers
+  const isInviteFlow = Boolean(inviteData);
+
+  const inviteAssignedFranchiseName =
+    inviteData?.franchiseName ||
+    inviteData?.operatorName ||
+    inviteData?.franchiseOperatorName ||
+    'Assigned via invite';
+
+  // ✅ Backend now sends franchiseId in invite verify response
+  const inviteFranchiseId = inviteData?.franchiseId || '';
 
   const [form, setForm] = useState({
-    fullName: '',
-    alternatePhoneNumber: '',
+    fullName:                  '',
+    alternatePhoneNumber:      '',
     alternatePhoneCountryCode: '+91',
-    preferredContactMethod: 'WHATSAPP',
-    companyName: '',
-    businessAge: 'ONE_TO_THREE_YEARS',
-    businessSector: '',
-    otherBusinessSector: '',
-    position: 'OWNER',
-    country: '',
-    state: '',
-    city: '',
-    languagePreference: 'en',
-    roles: [],
-    franchiseId: '',
-    eventInterests: [],   // ✅ NEW
+    preferredContactMethod:    'WHATSAPP',
+    companyName:               '',
+    businessAge:               'ONE_TO_THREE_YEARS',
+    businessSector:            '',
+    otherBusinessSector:       '',
+    position:                  'OWNER',
+    country:                   '',
+    state:                     '',
+    city:                      '',
+    languagePreference:        'en',
+    roles:                     [],
+    franchiseId:               '',
+    eventInterests:            [],
   });
 
-  const [errors, setErrors]                 = useState({});
-  const [loading, setLoading]               = useState(false);
-  const [submitError, setSubmitError]       = useState('');
-  const [availableStates, setAvailableStates] = useState([]);
-  const [availableCities, setAvailableCities] = useState([]);
-  const [franchises, setFranchises]         = useState([]);
+  const [errors,           setErrors]           = useState({});
+  const [loading,          setLoading]          = useState(false);
+  const [submitError,      setSubmitError]      = useState('');
+  const [availableStates,  setAvailableStates]  = useState([]);
+  const [availableCities,  setAvailableCities]  = useState([]);
+  const [franchises,       setFranchises]       = useState([]);
   const [franchiseLoading, setFranchiseLoading] = useState(false);
-  const [franchiseError, setFranchiseError] = useState('');
+  const [franchiseError,   setFranchiseError]   = useState('');
   const [franchiseFetched, setFranchiseFetched] = useState(false);
 
-  // ✅ Pre-fill from inviteData (no API call needed)
+  // ✅ Pre-fill from inviteData
   useEffect(() => {
     if (!inviteData) return;
     console.log('📨 InviteData in UserForm:', inviteData);
-
     setForm((prev) => ({
       ...prev,
-      // Pre-fill country from invite if available
       ...(inviteData.country && { country: inviteData.country }),
-      // DO NOT set franchiseId — backend handles it via invite token
     }));
   }, [inviteData]);
 
-  // Auto-set country code from location country
+  // Auto-set country code
   useEffect(() => {
     if (form.country && COUNTRY_TO_CODE_MAP[form.country]) {
       setForm((p) => ({ ...p, alternatePhoneCountryCode: COUNTRY_TO_CODE_MAP[form.country] }));
     }
   }, [form.country]);
 
-  // Cascading location
+  // Cascading location — country
   useEffect(() => {
     if (form.country && LOCATION_DATA[form.country]) {
       setAvailableStates(Object.keys(LOCATION_DATA[form.country]));
@@ -839,6 +869,7 @@ export default function UserFormScreen({
     setFranchiseFetched(false);
   }, [form.country]);
 
+  // Cascading location — state
   useEffect(() => {
     if (form.country && form.state && LOCATION_DATA[form.country]?.[form.state]) {
       setAvailableCities(LOCATION_DATA[form.country][form.state]);
@@ -850,13 +881,14 @@ export default function UserFormScreen({
     setFranchiseFetched(false);
   }, [form.state]);
 
+  // Cascading location — city
   useEffect(() => {
     setForm((p) => ({ ...p, franchiseId: '' }));
     setFranchises([]);
     setFranchiseFetched(false);
   }, [form.city]);
 
-  // Fetch franchises
+  // Fetch franchises (only for direct signup)
   const fetchFranchises = useCallback(async () => {
     if (!form.country) { setFranchiseError('Select a country first'); return; }
     setFranchiseLoading(true);
@@ -868,7 +900,7 @@ export default function UserFormScreen({
         requestType: 'FETCH_FRANCHISES_BY_COUNTRY',
         country: capitalizeFirstLetter(form.country),
         ...(form.state && { state: capitalizeFirstLetter(form.state) }),
-        ...(form.city  && { city: capitalizeFirstLetter(form.city) }),
+        ...(form.city  && { city:  capitalizeFirstLetter(form.city)  }),
       };
       const res = await fetch(`${BASE_URL}/cs-network/auth-operations`, {
         method: 'POST',
@@ -900,7 +932,9 @@ export default function UserFormScreen({
     setForm((prev) => {
       let roles;
       if (role === 'BUSINESS_PARTNER') {
-        roles = prev.roles.includes(role) ? prev.roles.filter((r) => r !== role) : ['BUSINESS_PARTNER'];
+        roles = prev.roles.includes(role)
+          ? prev.roles.filter((r) => r !== role)
+          : ['BUSINESS_PARTNER'];
       } else {
         const exists = prev.roles.includes(role);
         roles = exists
@@ -912,7 +946,6 @@ export default function UserFormScreen({
     setErrors((p) => ({ ...p, roles: '' }));
   };
 
-  // ✅ Toggle event interest
   const toggleEventInterest = (interest) => {
     setForm((prev) => ({
       ...prev,
@@ -922,6 +955,7 @@ export default function UserFormScreen({
     }));
   };
 
+  // ✅ VALIDATE — invite uses inviteFranchiseId, direct uses form.franchiseId
   const validateStep = (s) => {
     const e = {};
     if (s === 1) {
@@ -938,8 +972,11 @@ export default function UserFormScreen({
     }
     if (s === 3) {
       if (!form.country) e.country = 'Select a country';
-      // ✅ franchiseId required ONLY if NOT coming via invite link
-      if (!inviteData && !form.franchiseId) e.franchiseId = 'Select a franchise';
+      if (isInviteFlow) {
+        if (!inviteFranchiseId) e.franchiseId = 'Franchise not found in invitation';
+      } else {
+        if (!form.franchiseId) e.franchiseId = 'Select a franchise';
+      }
     }
     if (s === 4) {
       if (!form.roles.length) e.roles = 'Select at least one role';
@@ -951,6 +988,7 @@ export default function UserFormScreen({
   const nextStep = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, totalSteps)); };
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
+  // ✅ SUBMIT — always sends franchiseId (from invite or from dropdown)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep(4)) return;
@@ -959,6 +997,11 @@ export default function UserFormScreen({
     try {
       const isBusinessPartner = form.roles.includes('BUSINESS_PARTNER');
       const planId = isBusinessPartner ? null : getPlanId(form.roles);
+
+      // ✅ Final franchiseId: invite → inviteFranchiseId, direct → form.franchiseId
+      const finalFranchiseId = isInviteFlow
+        ? Number(inviteFranchiseId)
+        : Number(form.franchiseId);
 
       const payload = {
         memberRequestType: 'SUBMIT_PERSONAL_FORM',
@@ -969,37 +1012,55 @@ export default function UserFormScreen({
         position: form.position,
         businessAge: form.businessAge,
         businessSector: form.businessSector,
-        ...(form.businessSector === 'OTHER' && { otherBusinessSector: form.otherBusinessSector.trim() }),
+        ...(form.businessSector === 'OTHER' && {
+          otherBusinessSector: form.otherBusinessSector.trim(),
+        }),
         country: capitalizeFirstLetter(form.country),
         ...(form.state && { state: capitalizeFirstLetter(form.state) }),
-        ...(form.city  && { city:  capitalizeFirstLetter(form.city) }),
+        ...(form.city  && { city:  capitalizeFirstLetter(form.city)  }),
         languagePreference: form.languagePreference,
         roles: form.roles,
-        eventInterests: form.eventInterests,  // ✅ NEW
+        eventInterests: form.eventInterests,
 
-        // ✅ franchiseId logic:
-        // - Via invite link → null (backend uses invite token)
-        // - Direct signup → selected franchiseId
-        ...(inviteData
-          ? { franchiseId: null }
-          : form.franchiseId
-          ? { franchiseId: Number(form.franchiseId) }
-          : { franchiseId: null }
-        ),
+        // ✅ Always send franchiseId
+        franchiseId: finalFranchiseId,
 
         ...(!isBusinessPartner && planId !== null && { planId }),
       };
 
       console.log('📤 Submitting form payload:', payload);
+      console.log('📨 inviteData:', inviteData);
+      console.log('📨 finalFranchiseId:', finalFranchiseId);
 
       const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
         method: 'POST',
         body: JSON.stringify(payload),
       });
 
+      console.log('📥 Form response:', data);
+
       removeItem('formFilled');
       removeItem('phoneVerified');
-      onComplete?.({ roles: form.roles, data });
+
+      // ✅ Clear invite token after successful submit
+      if (isInviteFlow) {
+        removeItem('pendingInviteToken');
+      }
+
+      onComplete?.({
+        roles: form.roles,
+        data: {
+          ...data,
+          businessPartnerApplicationStatus: isBusinessPartner
+            ? (data?.businessPartnerApplicationStatus || 'PENDING')
+            : null,
+          franchiseName:
+            data?.franchiseName ||
+            inviteAssignedFranchiseName ||
+            getSelectedFranchise()?.name ||
+            '',
+        },
+      });
 
     } catch (error) {
       if (error.message?.includes('Session expired')) {
@@ -1032,38 +1093,42 @@ export default function UserFormScreen({
         .animate-pulse-glow { animation:pulse-glow 2s ease-in-out infinite }
       `}</style>
 
+      {/* Background */}
       <div className="fixed inset-0" style={{ zIndex: 0 }}>
         <img src={Backgroundimage} alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-green-50/60 to-emerald-100/70 backdrop-blur-sm" />
       </div>
 
+      {/* Floating orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 1 }}>
         <motion.div
           className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-green-300/30 via-emerald-400/20 to-teal-300/10 blur-3xl"
-          animate={{ scale: [1,1.2,1], rotate: [0,90,0], x: [0,50,0], y: [0,30,0] }}
+          animate={{ scale:[1,1.2,1], rotate:[0,90,0], x:[0,50,0], y:[0,30,0] }}
           transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
           className="absolute -right-40 top-1/4 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-emerald-300/25 via-green-400/15 to-teal-300/10 blur-3xl"
-          animate={{ scale: [1.2,1,1.2], rotate: [90,0,90], x: [0,-50,0], y: [0,50,0] }}
+          animate={{ scale:[1.2,1,1.2], rotate:[90,0,90], x:[0,-50,0], y:[0,50,0] }}
           transition={{ duration: 30, repeat: Infinity, ease: 'easeInOut' }}
         />
       </div>
 
-      <div className="form-scroll relative"
-        style={{ position: 'fixed', inset: 0, zIndex: 10, overflowY: 'auto', overflowX: 'hidden' }}
+      {/* Scrollable container */}
+      <div
+        className="form-scroll relative"
+        style={{ position:'fixed', inset:0, zIndex:10, overflowY:'auto', overflowX:'hidden' }}
       >
         <div className="mx-auto max-w-3xl px-4 py-8 pb-24 sm:px-6 lg:px-8">
 
           {/* Header */}
-          <motion.div initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }} className="mb-10 text-center"
+          <motion.div initial={{ opacity:0, y:-30 }} animate={{ opacity:1, y:0 }}
+            transition={{ duration:0.6 }} className="mb-10 text-center"
           >
-            <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
+            <motion.div initial={{ scale:0, rotate:-180 }} animate={{ scale:1, rotate:0 }}
+              transition={{ type:'spring', stiffness:200, delay:0.2 }}
               className="mb-6 inline-flex items-center gap-2 rounded-full border-2 border-green-200/60 bg-white/80 px-5 py-2.5 shadow-xl backdrop-blur-xl"
             >
-              <motion.div animate={{ rotate: [0,360] }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}>
+              <motion.div animate={{ rotate:[0,360] }} transition={{ duration:3, repeat:Infinity, ease:'linear' }}>
                 <Sparkles className="h-4 w-4 text-green-600" />
               </motion.div>
               <span className="text-sm font-bold text-green-700">Step {step} of {totalSteps}</span>
@@ -1078,23 +1143,23 @@ export default function UserFormScreen({
           </motion.div>
 
           {/* Progress Stepper */}
-          <motion.div initial={{ opacity: 0, scaleX: 0.8 }} animate={{ opacity: 1, scaleX: 1 }}
-            transition={{ delay: 0.3 }} className="mb-10"
+          <motion.div initial={{ opacity:0, scaleX:0.8 }} animate={{ opacity:1, scaleX:1 }}
+            transition={{ delay:0.3 }} className="mb-10"
           >
             <div className="relative mb-4 flex items-center justify-between">
               <div className="absolute left-0 top-1/2 h-1 w-full -translate-y-1/2">
                 <div className="h-full w-full rounded-full bg-gray-200" />
                 <motion.div
                   className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-green-500 via-emerald-500 to-green-600"
-                  initial={{ width: '0%' }} animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  initial={{ width:'0%' }} animate={{ width:`${progress}%` }}
+                  transition={{ duration:0.5, ease:'easeOut' }}
                 />
               </div>
               {[
-                { num: 1, label: 'Business', icon: Building2 },
-                { num: 2, label: 'Contact',  icon: Phone },
-                { num: 3, label: 'Location', icon: MapPin },
-                { num: 4, label: 'Role',     icon: Award },
+                { num:1, label:'Business', icon:Building2 },
+                { num:2, label:'Contact',  icon:Phone     },
+                { num:3, label:'Location', icon:MapPin    },
+                { num:4, label:'Role',     icon:Award     },
               ].map((s) => (
                 <motion.button key={s.num} type="button"
                   onClick={() => { if (s.num < step) setStep(s.num); }}
@@ -1102,12 +1167,12 @@ export default function UserFormScreen({
                   className={`group relative z-10 flex flex-col items-center gap-2 ${s.num < step ? 'cursor-pointer' : 'cursor-default'}`}
                 >
                   <div className={`relative flex h-14 w-14 items-center justify-center rounded-2xl font-bold shadow-xl transition-all duration-500 ${
-                    s.num < step ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
+                    s.num < step  ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
                     : s.num === step ? 'scale-110 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 text-white ring-4 ring-green-200'
                     : 'bg-white/80 text-gray-400'
                   }`}>
                     {s.num < step ? (
-                      <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500 }}>
+                      <motion.div initial={{ scale:0, rotate:-180 }} animate={{ scale:1, rotate:0 }} transition={{ type:'spring', stiffness:500 }}>
                         <CheckCircle2 className="h-7 w-7" />
                       </motion.div>
                     ) : (
@@ -1115,7 +1180,8 @@ export default function UserFormScreen({
                     )}
                     {s.num === step && (
                       <motion.div className="absolute inset-0 rounded-2xl bg-green-400"
-                        animate={{ scale: [1,1.2,1], opacity: [0.4,0,0.4] }} transition={{ duration: 2, repeat: Infinity }}
+                        animate={{ scale:[1,1.2,1], opacity:[0.4,0,0.4] }}
+                        transition={{ duration:2, repeat:Infinity }}
                       />
                     )}
                   </div>
@@ -1130,8 +1196,8 @@ export default function UserFormScreen({
           </motion.div>
 
           {/* ✅ Invite Banner */}
-          {inviteData && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          {isInviteFlow && (
+            <motion.div initial={{ opacity:0, y:-10 }} animate={{ opacity:1, y:0 }}
               className="mb-6 rounded-2xl border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4 shadow-lg"
             >
               <div className="flex items-center gap-3">
@@ -1140,7 +1206,7 @@ export default function UserFormScreen({
                 </div>
                 <div>
                   <p className="text-sm font-black text-green-800">
-                    Invited to {inviteData.franchiseName || 'Connect Souq'}
+                    Invited to {inviteAssignedFranchiseName}
                     {inviteData.country && ` — ${inviteData.country}`}
                   </p>
                   <p className="text-xs font-medium text-green-600 mt-0.5">
@@ -1152,8 +1218,8 @@ export default function UserFormScreen({
           )}
 
           {/* Phone Verified Banner */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
+            transition={{ delay:0.4 }}
             className="relative mb-10 overflow-hidden rounded-3xl border-2 border-green-200/60 bg-gradient-to-r from-white/80 via-green-50/50 to-emerald-50/40 p-5 shadow-2xl backdrop-blur-xl"
           >
             <div className="relative flex items-center gap-5">
@@ -1177,13 +1243,13 @@ export default function UserFormScreen({
           <form onSubmit={handleSubmit}>
             <AnimatePresence mode="wait">
 
-              {/* ══ STEP 1: Business ══ */}
+              {/* ══ STEP 1 ══ */}
               {step === 1 && (
                 <motion.div key="step1"
-                  initial={{ opacity: 0, x: 60, scale: 0.95 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -60, scale: 0.95 }}
-                  transition={{ duration: 0.4 }}
+                  initial={{ opacity:0, x:60, scale:0.95 }}
+                  animate={{ opacity:1, x:0, scale:1 }}
+                  exit={{ opacity:0, x:-60, scale:0.95 }}
+                  transition={{ duration:0.4 }}
                 >
                   <div className="relative rounded-3xl border-2 border-gray-200/60 bg-white/80 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
                     <div className="relative mb-8 flex items-center gap-4">
@@ -1196,7 +1262,6 @@ export default function UserFormScreen({
                       </div>
                     </div>
 
-                    {/* Personal Details */}
                     <div className="mb-6 rounded-2xl border-2 border-gray-100/80 bg-gradient-to-br from-gray-50/60 to-green-50/20 p-5">
                       <div className="mb-4 flex items-center gap-2">
                         <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 shadow-md">
@@ -1216,7 +1281,6 @@ export default function UserFormScreen({
                       </div>
                     </div>
 
-                    {/* Business Profile */}
                     <div className="mb-6 rounded-2xl border-2 border-gray-100/80 bg-gradient-to-br from-gray-50/60 to-blue-50/20 p-5">
                       <div className="mb-4 flex items-center gap-2">
                         <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 shadow-md">
@@ -1226,15 +1290,16 @@ export default function UserFormScreen({
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <EnhancedSelect label="Your Position" value={form.position}
-                          onChange={(e) => updateField('position', e.target.value)} options={POSITION_OPTIONS}
+                          onChange={(e) => updateField('position', e.target.value)}
+                          options={POSITION_OPTIONS}
                         />
                         <EnhancedSelect label="Business Age" value={form.businessAge}
-                          onChange={(e) => updateField('businessAge', e.target.value)} options={BUSINESS_AGE_OPTIONS}
+                          onChange={(e) => updateField('businessAge', e.target.value)}
+                          options={BUSINESS_AGE_OPTIONS}
                         />
                       </div>
                     </div>
 
-                    {/* Sector */}
                     <div className="rounded-2xl border-2 border-gray-100/80 bg-gradient-to-br from-gray-50/60 to-purple-50/20 p-5">
                       <div className="mb-4 flex items-center gap-2">
                         <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-purple-400 to-pink-500 shadow-md">
@@ -1248,9 +1313,10 @@ export default function UserFormScreen({
                       />
                       <AnimatePresence>
                         {form.businessSector === 'OTHER' && (
-                          <motion.div initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                            animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
-                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                          <motion.div
+                            initial={{ opacity:0, height:0, marginTop:0 }}
+                            animate={{ opacity:1, height:'auto', marginTop:16 }}
+                            exit={{ opacity:0, height:0, marginTop:0 }}
                             className="overflow-hidden"
                           >
                             <FloatingInput label="" placeholder="e.g. Handloom Weaving…"
@@ -1265,13 +1331,13 @@ export default function UserFormScreen({
                 </motion.div>
               )}
 
-              {/* ══ STEP 2: Contact ══ */}
+              {/* ══ STEP 2 ══ */}
               {step === 2 && (
                 <motion.div key="step2"
-                  initial={{ opacity: 0, x: 60, scale: 0.95 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -60, scale: 0.95 }}
-                  transition={{ duration: 0.4 }}
+                  initial={{ opacity:0, x:60, scale:0.95 }}
+                  animate={{ opacity:1, x:0, scale:1 }}
+                  exit={{ opacity:0, x:-60, scale:0.95 }}
+                  transition={{ duration:0.4 }}
                 >
                   <div className="relative rounded-3xl border-2 border-gray-200/60 bg-white/80 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
                     <div className="relative mb-8 flex items-center gap-4">
@@ -1286,13 +1352,13 @@ export default function UserFormScreen({
 
                     <div className="space-y-6">
                       <PhoneInputWithCode
-                        value={form.alternatePhoneNumber} countryCode={form.alternatePhoneCountryCode}
+                        value={form.alternatePhoneNumber}
+                        countryCode={form.alternatePhoneCountryCode}
                         onPhoneChange={(v) => updateField('alternatePhoneNumber', v)}
                         onCodeChange={(v) => updateField('alternatePhoneCountryCode', v)}
                         error={errors.alternatePhoneNumber}
                       />
 
-                      {/* Contact method */}
                       <div>
                         <label className="mb-4 block text-sm font-bold text-gray-800">Preferred Contact Method</label>
                         <div className="grid grid-cols-3 gap-3">
@@ -1300,7 +1366,7 @@ export default function UserFormScreen({
                             const active = form.preferredContactMethod === m.value;
                             return (
                               <motion.button key={m.value} type="button"
-                                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                                whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                                 onClick={() => updateField('preferredContactMethod', m.value)}
                                 className={`relative rounded-2xl border-2 p-5 text-center transition-all duration-300 ${
                                   active ? 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-50 shadow-xl'
@@ -1310,7 +1376,7 @@ export default function UserFormScreen({
                                 <span className="mb-2 block text-3xl">{m.icon}</span>
                                 <span className={`block text-xs font-bold ${active ? 'text-green-700' : 'text-gray-600'}`}>{m.label}</span>
                                 {active && (
-                                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute right-2 top-2">
+                                  <motion.div initial={{ scale:0 }} animate={{ scale:1 }} className="absolute right-2 top-2">
                                     <CheckCircle2 className="h-5 w-5 text-green-600" />
                                   </motion.div>
                                 )}
@@ -1320,7 +1386,6 @@ export default function UserFormScreen({
                         </div>
                       </div>
 
-                      {/* Language */}
                       <div>
                         <label className="mb-4 block text-sm font-bold text-gray-800">Language Preference</label>
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -1328,7 +1393,7 @@ export default function UserFormScreen({
                             const active = form.languagePreference === lang.value;
                             return (
                               <motion.button key={lang.value} type="button"
-                                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                                whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                                 onClick={() => updateField('languagePreference', lang.value)}
                                 className={`relative rounded-2xl border-2 p-4 text-center transition-all duration-300 ${
                                   active ? 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-50 shadow-xl'
@@ -1338,7 +1403,7 @@ export default function UserFormScreen({
                                 <span className="mb-1.5 block text-2xl">{lang.flag}</span>
                                 <span className={`block text-xs font-bold ${active ? 'text-green-700' : 'text-gray-600'}`}>{lang.label}</span>
                                 {active && (
-                                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute right-1.5 top-1.5">
+                                  <motion.div initial={{ scale:0 }} animate={{ scale:1 }} className="absolute right-1.5 top-1.5">
                                     <div className="h-2 w-2 rounded-full bg-green-500" />
                                   </motion.div>
                                 )}
@@ -1352,13 +1417,13 @@ export default function UserFormScreen({
                 </motion.div>
               )}
 
-              {/* ══ STEP 3: Location & Franchise ══ */}
+              {/* ══ STEP 3 ══ */}
               {step === 3 && (
                 <motion.div key="step3"
-                  initial={{ opacity: 0, x: 60, scale: 0.95 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -60, scale: 0.95 }}
-                  transition={{ duration: 0.4 }}
+                  initial={{ opacity:0, x:60, scale:0.95 }}
+                  animate={{ opacity:1, x:0, scale:1 }}
+                  exit={{ opacity:0, x:-60, scale:0.95 }}
+                  transition={{ duration:0.4 }}
                 >
                   <div className="relative rounded-3xl border-2 border-gray-200/60 bg-white/80 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
                     <div className="relative mb-8 flex items-center gap-4">
@@ -1368,7 +1433,7 @@ export default function UserFormScreen({
                       <div>
                         <h2 className="text-2xl font-black text-gray-900">Location & Franchise</h2>
                         <p className="text-sm font-medium text-gray-500">
-                          {inviteData ? 'Confirm your location details' : 'Select country, then choose your franchise'}
+                          {isInviteFlow ? 'Confirm your location details' : 'Select country, then choose your franchise'}
                         </p>
                       </div>
                     </div>
@@ -1378,7 +1443,7 @@ export default function UserFormScreen({
                         availableStates={availableStates} availableCities={availableCities}
                       />
 
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
                         className="flex items-start gap-3 rounded-2xl border-2 border-blue-100 bg-blue-50/60 px-4 py-3"
                       >
                         <span className="mt-0.5 text-base">💡</span>
@@ -1387,24 +1452,36 @@ export default function UserFormScreen({
                         </p>
                       </motion.div>
 
-                      {/* ✅ Franchise section — hidden if invite link */}
-                      {inviteData ? (
-                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      {/* ✅ FRANCHISE SECTION */}
+                      {isInviteFlow ? (
+                        /* ── Invite flow: show assigned franchise, NO dropdown ── */
+                        <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
                           className="rounded-2xl border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-5"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500 text-2xl">⭐</div>
-                            <div>
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 text-2xl shadow-md">
+                              ⭐
+                            </div>
+                            <div className="flex-1">
                               <p className="text-sm font-black text-green-800">
-                                {inviteData.franchiseName || 'Franchise (via invite)'}
+                                {inviteAssignedFranchiseName}
                               </p>
                               <p className="text-xs font-medium text-green-600">
-                                Your franchise is assigned via invitation — no selection needed
+                                Assigned via invitation — no selection needed
                               </p>
+                              {inviteFranchiseId && (
+                                <p className="text-[10px] font-semibold text-green-500 mt-0.5">
+                                  Franchise ID: {inviteFranchiseId}
+                                </p>
+                              )}
+                            </div>
+                            <div className="ml-auto">
+                              <CheckCircle2 className="h-6 w-6 text-green-600" />
                             </div>
                           </div>
                         </motion.div>
                       ) : (
+                        /* ── Direct signup: show franchise dropdown ── */
                         <div className="rounded-2xl border-2 border-gray-100/80 bg-gradient-to-br from-gray-50/60 to-yellow-50/20 p-5">
                           <div className="mb-4 flex items-center gap-2">
                             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 shadow-md">
@@ -1416,7 +1493,7 @@ export default function UserFormScreen({
                           <SearchableDropdown
                             label="Select Franchise"
                             placeholder={
-                              !form.country ? 'Select country first'
+                              !form.country     ? 'Select country first'
                               : franchiseLoading ? 'Loading franchises…'
                               : 'Click to load & select franchise'
                             }
@@ -1440,18 +1517,24 @@ export default function UserFormScreen({
                                 }`}
                               >
                                 <div className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg shadow-md ${
-                                  franchise.type === 'GENERAL' ? 'bg-gradient-to-br from-green-100 to-emerald-200' : 'bg-gradient-to-br from-blue-100 to-indigo-200'
+                                  franchise.type === 'GENERAL'
+                                    ? 'bg-gradient-to-br from-green-100 to-emerald-200'
+                                    : 'bg-gradient-to-br from-blue-100 to-indigo-200'
                                 }`}>
                                   {franchise.type === 'GENERAL' ? '🌐' : '🏭'}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className={`mb-1.5 text-sm font-bold ${selected ? 'text-green-700' : 'text-gray-800'}`}>{franchise.name}</p>
+                                  <p className={`mb-1.5 text-sm font-bold ${selected ? 'text-green-700' : 'text-gray-800'}`}>
+                                    {franchise.name}
+                                  </p>
                                   <div className="flex flex-wrap items-center gap-2">
                                     <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${
                                       franchise.type === 'GENERAL' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                                     }`}>{franchise.type}</span>
                                     {franchise.sectorName && (
-                                      <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-1 text-[10px] font-bold text-purple-700">{franchise.sectorName}</span>
+                                      <span className="inline-flex rounded-full bg-purple-100 px-2.5 py-1 text-[10px] font-bold text-purple-700">
+                                        {franchise.sectorName}
+                                      </span>
                                     )}
                                     <span className="text-[10px] font-medium text-gray-500">
                                       📍 {[franchise.city, franchise.state].filter(Boolean).join(', ')}
@@ -1464,8 +1547,8 @@ export default function UserFormScreen({
                           />
 
                           {franchiseFetched && franchiseError && franchises.length === 0 && (
-                            <motion.button initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                              type="button" onClick={fetchFranchises} whileHover={{ scale: 1.02 }}
+                            <motion.button initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }}
+                              type="button" onClick={fetchFranchises} whileHover={{ scale:1.02 }}
                               className="mt-3 flex items-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg"
                             >
                               <TrendingUp className="h-4 w-4" /> Retry Loading Franchises
@@ -1473,7 +1556,7 @@ export default function UserFormScreen({
                           )}
 
                           {form.franchiseId && getSelectedFranchise() && (
-                            <motion.div initial={{ opacity: 0, scale: 0.9, y: -8 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+                            <motion.div initial={{ opacity:0, scale:0.9, y:-8 }} animate={{ opacity:1, scale:1, y:0 }}
                               className="mt-4 rounded-2xl border-2 border-green-200/80 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 p-4 shadow-xl"
                             >
                               <div className="flex items-center gap-4">
@@ -1498,13 +1581,13 @@ export default function UserFormScreen({
                 </motion.div>
               )}
 
-              {/* ══ STEP 4: Role + Event Interests ══ */}
+              {/* ══ STEP 4 ══ */}
               {step === 4 && (
                 <motion.div key="step4"
-                  initial={{ opacity: 0, x: 60, scale: 0.95 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -60, scale: 0.95 }}
-                  transition={{ duration: 0.4 }}
+                  initial={{ opacity:0, x:60, scale:0.95 }}
+                  animate={{ opacity:1, x:0, scale:1 }}
+                  exit={{ opacity:0, x:-60, scale:0.95 }}
+                  transition={{ duration:0.4 }}
                 >
                   <div className="relative rounded-3xl border-2 border-gray-200/60 bg-white/80 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
                     <div className="relative mb-8 flex items-center gap-4">
@@ -1517,14 +1600,13 @@ export default function UserFormScreen({
                       </div>
                     </div>
 
-                    {/* Roles */}
                     <div className="space-y-4 mb-8">
                       {ROLE_OPTIONS.map((role) => {
                         const active = form.roles.includes(role.value);
                         return (
                           <motion.button key={role.value} type="button"
                             onClick={() => toggleRole(role.value)}
-                            whileHover={{ scale: 1.01, y: -2 }} whileTap={{ scale: 0.99 }}
+                            whileHover={{ scale:1.01, y:-2 }} whileTap={{ scale:0.99 }}
                             className={`group relative flex w-full items-center gap-5 rounded-2xl border-2 p-6 text-left transition-all duration-300 ${
                               active ? 'border-green-400 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 shadow-2xl shadow-green-500/20'
                               : 'border-gray-200/60 bg-white/80 hover:border-green-300 hover:shadow-xl'
@@ -1543,7 +1625,7 @@ export default function UserFormScreen({
                               active ? 'border-green-500 bg-green-500 shadow-lg' : 'border-gray-300 bg-white'
                             }`}>
                               {active && (
-                                <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500 }}>
+                                <motion.div initial={{ scale:0, rotate:-180 }} animate={{ scale:1, rotate:0 }} transition={{ type:'spring', stiffness:500 }}>
                                   <CheckCircle2 className="h-5 w-5 text-white" />
                                 </motion.div>
                               )}
@@ -1554,7 +1636,7 @@ export default function UserFormScreen({
                     </div>
 
                     {errors.roles && (
-                      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                      <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }}
                         className="mb-8 flex items-center gap-3 rounded-2xl border-2 border-red-200 bg-red-50 p-4"
                       >
                         <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
@@ -1562,7 +1644,6 @@ export default function UserFormScreen({
                       </motion.div>
                     )}
 
-                    {/* ✅ Event Interests */}
                     <div className="mb-8">
                       <div className="mb-4 flex items-center gap-2">
                         <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-400 to-purple-500 shadow-md">
@@ -1577,7 +1658,7 @@ export default function UserFormScreen({
                           return (
                             <motion.button key={interest.value} type="button"
                               onClick={() => toggleEventInterest(interest.value)}
-                              whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
+                              whileHover={{ scale:1.02, y:-2 }} whileTap={{ scale:0.98 }}
                               className={`relative flex flex-col items-center gap-2 rounded-2xl border-2 p-4 text-center transition-all duration-300 ${
                                 active ? 'border-indigo-400 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-xl shadow-indigo-500/20'
                                 : 'border-gray-200/60 bg-white/80 hover:border-indigo-300 hover:shadow-lg'
@@ -1591,7 +1672,7 @@ export default function UserFormScreen({
                                 {interest.desc}
                               </span>
                               {active && (
-                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                                <motion.div initial={{ scale:0 }} animate={{ scale:1 }}
                                   className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500"
                                 >
                                   <CheckCircle2 className="h-3.5 w-3.5 text-white" />
@@ -1604,8 +1685,8 @@ export default function UserFormScreen({
                     </div>
 
                     {/* Summary */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
+                    <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
+                      transition={{ delay:0.3 }}
                       className="rounded-2xl border-2 border-gray-200/80 bg-gradient-to-br from-gray-50/80 to-green-50/30 p-6"
                     >
                       <div className="mb-4 flex items-center gap-2">
@@ -1613,18 +1694,21 @@ export default function UserFormScreen({
                         <p className="text-sm font-bold uppercase tracking-wider text-gray-600">Review Your Details</p>
                       </div>
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        <SummaryCard label="Name"       value={form.fullName}    icon="👤" />
-                        <SummaryCard label="Company"    value={form.companyName} icon="🏢" />
+                        <SummaryCard label="Name"      value={form.fullName}    icon="👤" />
+                        <SummaryCard label="Company"   value={form.companyName} icon="🏢" />
                         <SummaryCard label="Phone"
-                          value={form.alternatePhoneNumber ? `${form.alternatePhoneCountryCode} ${form.alternatePhoneNumber}` : ''}
+                          value={form.alternatePhoneNumber
+                            ? `${form.alternatePhoneCountryCode} ${form.alternatePhoneNumber}` : ''}
                           icon="📱"
                         />
                         <SummaryCard label="Contact Via" value={form.preferredContactMethod} icon="💬" />
                         <SummaryCard label="Location"
                           value={[form.city, form.state, form.country].filter(Boolean).join(', ')} icon="📍"
                         />
-                        <SummaryCard label="Franchise"
-                          value={inviteData?.franchiseName || getSelectedFranchise()?.name || (inviteData ? 'Via Invite' : '-')}
+                        {/* ✅ Franchise summary */}
+                        <SummaryCard
+                          label="Franchise"
+                          value={isInviteFlow ? inviteAssignedFranchiseName : (getSelectedFranchise()?.name || '-')}
                           icon="⭐"
                         />
                         <SummaryCard label="Sector"
@@ -1635,16 +1719,15 @@ export default function UserFormScreen({
                           }
                           icon={BUSINESS_SECTOR_OPTIONS.find((o) => o.value === form.businessSector)?.icon || '🔧'}
                         />
-                        <SummaryCard label="Position"  value={form.position}    icon="💼" />
+                        <SummaryCard label="Position" value={form.position} icon="💼" />
                         <SummaryCard label="Bus. Age"
                           value={BUSINESS_AGE_OPTIONS.find((o) => o.value === form.businessAge)?.label || '-'}
                           icon="📅"
                         />
                       </div>
 
-                      {/* Event interests summary */}
                       {form.eventInterests.length > 0 && (
-                        <div className="mt-3 col-span-2 sm:col-span-3 rounded-xl border-2 border-gray-200/60 bg-white/80 p-3">
+                        <div className="mt-3 rounded-xl border-2 border-gray-200/60 bg-white/80 p-3">
                           <div className="mb-2 flex items-center gap-2">
                             <span className="text-base">🎯</span>
                             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Event Interests</p>
@@ -1666,7 +1749,7 @@ export default function UserFormScreen({
 
             {/* Submit Error */}
             {submitError && (
-              <motion.div initial={{ opacity: 0, y: -8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+              <motion.div initial={{ opacity:0, y:-8, scale:0.95 }} animate={{ opacity:1, y:0, scale:1 }}
                 className="mt-6 flex items-center gap-4 rounded-2xl border-2 border-red-200/80 bg-gradient-to-r from-red-50 to-pink-50 p-5 shadow-xl"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500 shadow-lg">
@@ -1677,12 +1760,12 @@ export default function UserFormScreen({
             )}
 
             {/* Navigation */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }} className="mt-8 flex items-center gap-4"
+            <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
+              transition={{ delay:0.4 }} className="mt-8 flex items-center gap-4"
             >
               {step > 1 && (
                 <motion.button type="button" onClick={prevStep}
-                  whileHover={{ scale: 1.02, x: -2 }} whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale:1.02, x:-2 }} whileTap={{ scale:0.98 }}
                   className="group flex h-14 items-center gap-3 rounded-2xl border-2 border-gray-200/80 bg-white/80 px-6 text-sm font-bold text-gray-700 shadow-lg backdrop-blur-xl transition-all hover:border-gray-300"
                 >
                   <ArrowRight className="h-5 w-5 rotate-180 transition-transform group-hover:-translate-x-1" />
@@ -1692,7 +1775,7 @@ export default function UserFormScreen({
 
               {step < totalSteps ? (
                 <motion.button type="button" onClick={nextStep}
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
                   className="group relative flex h-14 flex-1 items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 text-base font-bold text-white shadow-2xl shadow-green-500/40"
                 >
                   <span className="relative z-10">Continue</span>
@@ -1704,15 +1787,21 @@ export default function UserFormScreen({
                   className="group relative flex h-14 flex-1 items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 text-base font-bold text-white shadow-2xl shadow-green-500/40 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? (
-                    <><Loader2 className="relative z-10 h-5 w-5 animate-spin" /><span className="relative z-10">Processing…</span></>
+                    <>
+                      <Loader2 className="relative z-10 h-5 w-5 animate-spin" />
+                      <span className="relative z-10">Processing…</span>
+                    </>
                   ) : (
-                    <><Sparkles className="relative z-10 h-5 w-5" /><span className="relative z-10">Complete Registration</span></>
+                    <>
+                      <Sparkles className="relative z-10 h-5 w-5" />
+                      <span className="relative z-10">Complete Registration</span>
+                    </>
                   )}
                 </motion.button>
               )}
             </motion.div>
 
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+            <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.5 }}
               className="mt-5 flex items-center justify-center gap-2 text-xs font-semibold text-gray-500"
             >
               <Shield className="h-3.5 w-3.5 text-green-600" />

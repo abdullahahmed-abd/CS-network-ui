@@ -46,9 +46,13 @@ export default function AuthCard({
     setFlow('otp');
   };
 
-  const handleVerified = async (data = {}) => {
-    const { phoneVerified, formFilled, roles = [], userId } = data;
-    console.log('✅ handleVerified →', { phoneVerified, formFilled, roles, otpMode });
+ const handleVerified = async (data = {}) => {
+    // 🛠️ Map backend keys to frontend variables gracefully
+    const { roles = [], userId } = data;
+    const isFormFilled = data.isFormFill ?? data.formFill ?? data.formFilled ?? false;
+    const isPhoneVerified = data.phoneVerified ?? true; // Default to true if missing on successful OTP verify
+
+    console.log('✅ handleVerified →', { phoneVerified: isPhoneVerified, formFilled: isFormFilled, roles, otpMode });
 
     // ── GLOBAL_ADMIN ──
     if (roles.includes('GLOBAL_ADMIN')) {
@@ -72,10 +76,8 @@ export default function AuthCard({
     }
 
     // ── Login / WhatsApp flow ──
-    if (phoneVerified === true && formFilled === false) {
+    if (isPhoneVerified === true && isFormFilled === false) {
       onFormRequired?.({ phone, countryCode });
-    } else if (phoneVerified === true && formFilled === true) {
-      setFlow('success');
     } else {
       setFlow('success');
     }

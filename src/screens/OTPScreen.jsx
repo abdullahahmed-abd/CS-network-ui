@@ -75,6 +75,7 @@ export default function OTPScreen({
   };
 
   // ── Verify OTP ──
+// ── Verify OTP ──
   const handleVerify = useCallback(async () => {
     if (loading) return;
 
@@ -102,6 +103,10 @@ export default function OTPScreen({
 
       console.log('✅ OTP response:', data);
 
+      // 🛠️ Map backend keys gracefully to handle naming mismatches
+      const isFormFilled = data.isFormFill ?? data.formFill ?? data.formFilled ?? false;
+      const isPhoneVerified = data.phoneVerified ?? true; // Default true on successful verify
+
       // ── Save tokens ──
       if (data.accessToken && data.refreshToken) {
         saveTokens(data.accessToken, data.refreshToken);
@@ -110,39 +115,54 @@ export default function OTPScreen({
       if (mode === 'signup') removeItem('userId');
 
       // ── Save flags ──
-      if (data.formFilled !== undefined)    setItem('formFilled',    String(data.formFilled));
-      if (data.phoneVerified !== undefined) setItem('phoneVerified', String(data.phoneVerified));
+      setItem('formFilled', String(isFormFilled));
+      setItem('phoneVerified', String(isPhoneVerified));
 
-      // ── Parse roles ──
+      // ── Parse roles & Operator info ──
       const rolesRaw   = data.roles || data.role || [];
       const rolesArray = Array.isArray(rolesRaw)
         ? rolesRaw
         : String(rolesRaw).split(',');
 
-      const roles = rolesArray
+      let roles = rolesArray
         .map((r) => String(r).trim().toUpperCase())
         .filter(Boolean);
 
-      console.log('🎯 Roles from response:', roles);
+      const isOperator = data.isOperator ?? (data.membershipType === 'OPERATOR' || false);
+      const membershipType = data.membershipType || (isOperator ? 'OPERATOR' : '');
+      const franchiseType = data.franchiseType || '';
+      const franchiseId = data.franchiseId || null;
 
-      // ── Persist roles ──
-      if (roles.length) {
-        const currentUser = getUserData() || {};
-        saveUserData({
-          ...currentUser,
-          roles,
-          phoneVerified : data.phoneVerified,
-          formFilled    : data.formFilled,
-          ...(data.userId && { userId: data.userId }),
-        });
+      if (isOperator && !roles.includes('OPERATOR') && !roles.includes('MASTER_OPERATOR') && !roles.includes('GENERAL_OPERATOR')) {
+        roles.push('OPERATOR');
       }
+
+      console.log('🎯 Roles from response:', roles, { isOperator, membershipType, franchiseType, franchiseId });
+
+      // ── Persist roles & operator details ──
+      const currentUser = getUserData() || {};
+      saveUserData({
+        ...currentUser,
+        roles,
+        phoneVerified : isPhoneVerified,
+        formFilled    : isFormFilled,
+        isOperator,
+        membershipType,
+        franchiseType,
+        franchiseId,
+        ...(data.userId && { userId: data.userId }),
+      });
 
       // ── Notify AuthCard ──
       onVerified({
-        phoneVerified : data.phoneVerified,
-        formFilled    : data.formFilled,
+        phoneVerified : isPhoneVerified,
+        formFilled    : isFormFilled,
         roles,
         userId        : data.userId,
+        isOperator,
+        membershipType,
+        franchiseType,
+        franchiseId,
       });
 
     } catch (err) {

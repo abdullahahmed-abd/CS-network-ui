@@ -16,6 +16,8 @@ const COUNTRY_CODES = [
   { code: '+44', flag: '🇬🇧', name: 'UK', short: 'GB', maxLen: 10 },
   { code: '+91', flag: '🇮🇳', name: 'India', short: 'IN', maxLen: 10 },
   { code: '+92', flag: '🇵🇰', name: 'Pakistan', short: 'PK', maxLen: 10 },
+  { code: '+90', flag: '🇹🇷', name: 'Turkey', short: 'TR', maxLen: 10 },
+
 ];
 
 const WhatsAppIcon = ({ size = 16, color = 'currentColor' }) => (

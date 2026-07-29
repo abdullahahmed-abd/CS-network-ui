@@ -1,7 +1,7 @@
 // api/auth.js
 
 const BASE_URL =
-  'https://b25e-2401-4900-8821-90cd-dc64-5caf-48da-fbb3.ngrok-free.app';
+  'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
 export const setItem = (key, value) => {
@@ -41,28 +41,56 @@ export const getCookie = (name) => {
   return null;
 };
 
+export const setCookie = (name, value, days = 7) => {
+  try {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    // SameSite=None; Secure is required for cross-origin requests (e.g. localhost -> ngrok)
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=None; Secure`;
+  } catch (e) {
+    console.warn('Cookie write failed:', e);
+  }
+};
+
 export const deleteCookie = (name) => {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure`;
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 };
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
 export const saveTokens = (accessToken, refreshToken) => {
-  if (accessToken)  setItem('accessToken', accessToken);
-  if (refreshToken) setItem('refreshToken', refreshToken);
+  if (accessToken) {
+    setItem('accessToken', accessToken);
+    setCookie('accessToken', accessToken, 7);
+    setCookie('token', accessToken, 7);
+    setCookie('jwt', accessToken, 7);
+    setCookie('access_token', accessToken, 7);
+    setCookie('Authorization', `Bearer ${accessToken}`, 7);
+  }
+  if (refreshToken) {
+    setItem('refreshToken', refreshToken);
+    setCookie('refreshToken', refreshToken, 7);
+  }
 };
 
 export const getAccessToken = () => {
-  const cookieToken = getCookie('accessToken');
-  if (cookieToken) return cookieToken;
+  const cookieToken = getCookie('accessToken') || getCookie('token') || getCookie('jwt');
+  if (cookieToken) return decodeURIComponent(cookieToken);
 
   const lsToken = getItem('accessToken');
-  if (lsToken) return lsToken;
+  if (lsToken) {
+    setCookie('accessToken', lsToken, 7);
+    setCookie('token', lsToken, 7);
+    setCookie('jwt', lsToken, 7);
+    setCookie('access_token', lsToken, 7);
+    setCookie('Authorization', `Bearer ${lsToken}`, 7);
+    return lsToken;
+  }
 
   return null;
 };
 
 export const getRefreshToken = () => {
-  return getCookie('refreshToken') || getItem('refreshToken');
+  return getCookie('refreshToken') || getCookie('token') || getItem('refreshToken');
 };
 
 export const clearTokens = () => {
@@ -79,7 +107,11 @@ export const clearTokens = () => {
   removeItem('pendingInviteToken');
 
   deleteCookie('accessToken');
+  deleteCookie('token');
+  deleteCookie('jwt');
+  deleteCookie('access_token');
   deleteCookie('refreshToken');
+  deleteCookie('Authorization');
   deleteCookie('JSESSIONID');
 };
 
@@ -300,11 +332,6 @@ export const authenticatedFetch = async (url, options = {}, retried = false) => 
     throw new Error('Session expired. Please login again.');
   }
 
-  // ── 403 ──
-  if (res.status === 403) {
-    throw new Error('Access denied. You do not have permission.');
-  }
-
   // ── Parse response ──
   let data = {};
   try {
@@ -313,8 +340,20 @@ export const authenticatedFetch = async (url, options = {}, retried = false) => 
     data = {};
   }
 
+  // ── 403 ──
+  if (res.status === 403) {
+    const errorMsg = data?.message || 'Access denied. You do not have permission.';
+    const err = new Error(errorMsg);
+    err.status = 403;
+    err.data = data;
+    throw err;
+  }
+
   if (!res.ok) {
-    throw new Error(data?.message || `Request failed (${res.status})`);
+    const err = new Error(data?.message || `Request failed (${res.status})`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
 
   return data;

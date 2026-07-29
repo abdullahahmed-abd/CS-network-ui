@@ -12,7 +12,7 @@ import {
   Menu, FileText, Send, Clock, CheckCheck,
   Users, ArrowRight, BadgeCheck,
   Calendar, DollarSign, MessageCircle, Paperclip,
-  Inbox, Ticket,
+  Inbox, Ticket, Video,
 } from 'lucide-react';
 import { Client } from '@stomp/stompjs';
 import {
@@ -23,8 +23,12 @@ import {
 } from '../api/auth';
 import { EventsTab } from './EventsComponents';
 import MyRegistrationsTab from './MyRegistrationsTab';
+import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
+import MeetingsTab from '../components/meetings/MeetingsTab';
+import ScheduleMeetingModal from '../components/meetings/ScheduleMeetingModal';
+import DirectoryTab from '../components/directory/DirectoryTab';
 
-const BASE_URL = 'https://b25e-2401-4900-8821-90cd-dc64-5caf-48da-fbb3.ngrok-free.app';
+const BASE_URL = 'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
 const WS_URL   = BASE_URL.replace(/^http/, 'ws') + '/cs-network/ws';
 
 // ─────────────────────────────────────────────
@@ -268,16 +272,17 @@ function AuthFileLink({ conversationId, messageId, fileName, children }) {
 // ══════════════════════════════════════════════
 // TradeChatScreen
 // ══════════════════════════════════════════════
-function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
-  const [messages,       setMessages]       = useState([]);
-  const [input,          setInput]          = useState('');
-  const [connected,      setConnected]      = useState(false);
-  const [connecting,     setConnecting]     = useState(true);
-  const [historyLoading, setHistoryLoading] = useState(true);
-  const [error,          setError]          = useState('');
-  const [sending,        setSending]        = useState(false);
-  const [uploading,      setUploading]      = useState(false);
-  const [imagePreview,   setImagePreview]   = useState(null);
+function TradeChatScreen({ conversationId, title, otherPartyName, otherPartyId, onClose }) {
+  const [messages,           setMessages]           = useState([]);
+  const [input,              setInput]              = useState('');
+  const [connected,          setConnected]          = useState(false);
+  const [connecting,         setConnecting]         = useState(true);
+  const [historyLoading,     setHistoryLoading]     = useState(true);
+  const [error,              setError]              = useState('');
+  const [sending,            setSending]            = useState(false);
+  const [uploading,          setUploading]          = useState(false);
+  const [imagePreview,       setImagePreview]       = useState(null);
+  const [showScheduleModal,  setShowScheduleModal]  = useState(false);
 
   const clientRef = useRef(null);
   const bottomRef = useRef(null);
@@ -309,26 +314,50 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
 
   useEffect(() => { fetchHistory(); }, [fetchHistory]);
 
+  // Real-time polling fallback when WebSocket is unavailable over ngrok
+  useEffect(() => {
+    if (connected || !conversationId) return;
+    const interval = setInterval(() => {
+      fetchHistory();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [connected, conversationId, fetchHistory]);
+
   useEffect(() => {
     if (!conversationId) return;
+
+    const token = getAccessToken();
+    if (!token) {
+      setConnecting(false);
+      return;
+    }
+
+    // Ensure all cookies are written with SameSite=None; Secure for cross-origin ngrok requests
+    document.cookie = `accessToken=${encodeURIComponent(token)}; path=/; SameSite=None; Secure`;
+    document.cookie = `token=${encodeURIComponent(token)}; path=/; SameSite=None; Secure`;
+    document.cookie = `Authorization=Bearer ${encodeURIComponent(token)}; path=/; SameSite=None; Secure`;
+
     setConnecting(true);
     setError('');
 
-    const token = getAccessToken();
+    // Append token & ngrok bypass parameters for HTTP 101 WebSocket Upgrade GET /cs-network/ws
+    const wsUrlWithParams = `${WS_URL}?token=${encodeURIComponent(token)}&ngrok-skip-browser-warning=true`;
 
     const client = new Client({
-      brokerURL: WS_URL,
-      reconnectDelay: 5000,
+      brokerURL: wsUrlWithParams,
+      reconnectDelay: 0, // Disable automatic STOMP reconnect loop on ngrok WSS failure
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
-      debug: () => {},
+      debug: (str) => {
+        if (str.includes('STOMP') || str.includes('Websocket')) console.log('📡 STOMP Debug:', str);
+      },
 
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
 
       onConnect: () => {
-        console.log('✅ WebSocket connected');
+        console.log('✅ WebSocket GET /cs-network/ws connected');
         setConnected(true);
         setConnecting(false);
         setError('');
@@ -336,6 +365,11 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
         client.subscribe(`/topic/chat/${conversationId}`, (frame) => {
           try {
             const msg = JSON.parse(frame.body);
+            const myIdStr = String(user.id || user.userId || user.memberId || '').trim().toLowerCase();
+            const senderIdStr = String(msg.senderId || msg.sender_id || msg.userId || msg.sender?.id || '').trim().toLowerCase();
+            if (myIdStr && senderIdStr && myIdStr === senderIdStr) {
+              msg.mine = true;
+            }
             setMessages(prev => {
               if (msg.messageId && prev.some(m => m.messageId === msg.messageId)) return prev;
               return [...prev, msg];
@@ -345,17 +379,17 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
       },
 
       onStompError: (f) => {
-        console.error('🔒 STOMP error:', f.headers?.message);
+        console.warn('⚠️ STOMP error:', f.headers?.message);
         setConnected(false);
         setConnecting(false);
-        setError(f.headers?.message || 'Connection error. Please refresh.');
+        try { client.deactivate(); } catch {}
       },
 
-      onWebSocketError: () => {
-        console.error('🔒 WebSocket error');
+      onWebSocketError: (e) => {
+        console.warn('⚠️ Ngrok WebSocket proxy restricted. Switching chat to real-time REST mode.');
         setConnected(false);
         setConnecting(false);
-        setError('WebSocket connection failed. Check your network.');
+        try { client.deactivate(); } catch {}
       },
 
       onDisconnect: () => {
@@ -372,24 +406,59 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
     };
   }, [conversationId]);
 
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback(async () => {
     const text = input.trim();
-    if (!text || !clientRef.current?.connected || sending) return;
+    if (!text || sending) return;
     setSending(true);
+    setError('');
+
+    // If WebSocket is connected, try sending over STOMP
+    if (clientRef.current?.connected) {
+      try {
+        clientRef.current.publish({
+          destination: '/app/chat.send',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            conversationId: Number(conversationId),
+            content: text,
+            messageType: 'TEXT',
+          }),
+        });
+        setInput('');
+        setSending(false);
+        return;
+      } catch (err) {
+        console.warn('⚠️ STOMP publish error, attempting REST fallback...', err);
+      }
+    }
+
+    // Fallback: Send via REST API (/cs-network/chat-operations)
     try {
-      clientRef.current.publish({
-        destination: '/app/chat.send',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          conversationId: Number(conversationId),
-          content: text,
-          messageType: 'TEXT',
-        }),
-      });
-      setInput('');
-    } catch { setError('Failed to send message.'); }
-    finally  { setSending(false); }
-  }, [input, sending, conversationId]);
+      const fd = new FormData();
+      fd.append('chatRequestType', 'SEND_MESSAGE');
+      fd.append('conversationId', String(conversationId));
+      fd.append('content', text);
+      fd.append('messageType', 'TEXT');
+      const res = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
+      if (res.ok) {
+        const data = await res.json();
+        const sent = data?.messageResponse || data?.messageResponses?.[0];
+        if (sent) {
+          sent.mine = true;
+          setMessages(prev => [...prev, sent]);
+        } else {
+          fetchHistory();
+        }
+        setInput('');
+      } else {
+        throw new Error('Failed to send message');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to send message.');
+    } finally {
+      setSending(false);
+    }
+  }, [input, sending, conversationId, fetchHistory]);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -406,6 +475,7 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
       const data = await res.json();
       const uploaded = data?.messageResponse || data?.messageResponses?.[0];
       if (uploaded) {
+        uploaded.mine = true;
         setMessages(prev => {
           if (uploaded.messageId && prev.some(m => m.messageId === uploaded.messageId)) return prev;
           return [...prev, uploaded];
@@ -423,10 +493,75 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
   };
 
   const isMine = (msg) => {
-    const sid   = String(msg.senderId || msg.createdById || msg.userId || msg.sender?.id || '');
-    const sname = msg.senderName || msg.createdByName || msg.sender?.fullName || '';
-    if (currentUserId && sid   && currentUserId === sid)   return true;
-    if (currentName   && sname && currentName   === sname) return true;
+    if (!msg) return false;
+
+    // 1. Explicit true flag set locally on sending
+    if (msg.mine === true || msg.isMine === true) return true;
+
+    // Extract current logged-in user identifiers
+    const myIdList = [
+      user.id,
+      user.userId,
+      user.memberId,
+      user.sub,
+      user.user_id,
+    ].filter(Boolean).map(v => String(v).trim().toLowerCase());
+
+    // Extract sender identifiers from message
+    const senderId = String(
+      msg.senderId ||
+      msg.sender_id ||
+      msg.createdById ||
+      msg.userId ||
+      msg.senderUserId ||
+      msg.authorId ||
+      msg.fromUserId ||
+      msg.fromId ||
+      msg.sender?.id ||
+      msg.senderUser?.id ||
+      msg.createdUser?.id ||
+      ''
+    ).trim().toLowerCase();
+
+    // 2. Direct ID match with current logged in user
+    if (senderId && myIdList.includes(senderId)) return true;
+
+    // 3. Email match with current logged in user
+    const myEmail = String(user.email || '').toLowerCase().trim();
+    const senderEmail = String(
+      msg.senderEmail ||
+      msg.email ||
+      msg.sender?.email ||
+      msg.senderUser?.email ||
+      ''
+    ).toLowerCase().trim();
+
+    if (myEmail && senderEmail && myEmail === senderEmail) return true;
+
+    // 4. Name match with current logged in user
+    const myName = String(user.fullName || user.name || user.username || '').toLowerCase().trim();
+    const senderName = String(
+      msg.senderName ||
+      msg.createdByName ||
+      msg.sender?.fullName ||
+      msg.sender?.name ||
+      msg.senderUser?.fullName ||
+      ''
+    ).toLowerCase().trim();
+
+    if (myName && senderName && (myName === senderName || (myName.length > 2 && senderName.length > 2 && (myName.includes(senderName) || senderName.includes(myName))))) return true;
+
+    // 5. Check against OTHER party (if message sender is explicitly the other party -> return false)
+    const otherName = String(otherPartyName || '').toLowerCase().trim();
+    const otherId = String(otherPartyId || '').toLowerCase().trim();
+
+    if (otherId && senderId && otherId === senderId) return false;
+    if (otherName && senderName && (otherName === senderName || (otherName.length > 2 && senderName.length > 2 && (otherName.includes(senderName) || senderName.includes(otherName))))) return false;
+
+    // 6. In a 1-to-1 chat: if sender is present and is NOT the other party, it MUST be mine!
+    if (otherName && senderName && !otherName.includes(senderName) && !senderName.includes(otherName)) return true;
+    if (otherId && senderId && otherId !== senderId) return true;
+
     return false;
   };
 
@@ -470,10 +605,14 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="text-right hidden sm:block">
-              <p className="text-[10px] text-white/70 font-semibold uppercase tracking-wide">Conversation</p>
-              <p className="text-xs text-white font-bold">#{conversationId}</p>
-            </div>
+            <button
+              onClick={() => setShowScheduleModal(true)}
+              className="flex items-center gap-1.5 rounded-xl bg-white/20 px-3 py-1.5 text-white hover:bg-white/30 transition text-xs font-semibold shadow-sm"
+              title="Schedule 1-on-1 Meeting"
+            >
+              <Calendar className="h-4 w-4 text-white" />
+              <span className="hidden sm:inline">1-on-1 Meeting</span>
+            </button>
             <button onClick={onClose} className="rounded-xl bg-white/20 p-2 text-white hover:bg-white/30 transition">
               <X className="h-5 w-5" />
             </button>
@@ -516,11 +655,11 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
               const showName = !mine && (idx === 0 || isMine(messages[idx - 1]));
               const isFile   = msg.messageType === 'FILE' || !!msg.fileUrl;
               return (
-                <motion.div key={msg.messageId || idx}
+                <motion.div key={msg.messageId ? `msg-${msg.messageId}-${idx}` : `msg-idx-${idx}`}
                   initial={{ opacity: 0, y: 10, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.2 }}
-                  className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[78%] ${mine ? '' : 'flex gap-2 items-end'}`}>
+                  className={`flex w-full ${mine ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[78%] ${mine ? 'flex flex-col items-end' : 'flex gap-2 items-end'}`}>
                     {!mine && (
                       <div className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 mb-1"
                            style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }}>
@@ -532,14 +671,14 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
                         <p className="text-[10px] font-bold text-gray-500 mb-1 ml-1">{getSenderName(msg)}</p>
                       )}
                       {isFile ? (
-                        <div className={`rounded-2xl overflow-hidden shadow-sm ${
-                          mine ? 'rounded-br-md' : 'rounded-bl-md bg-white border border-gray-100'
-                        }`} style={mine ? { background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` } : {}}>
+                        <div className={`rounded-2xl overflow-hidden shadow-md ${
+                          mine ? 'rounded-tr-none text-white' : 'rounded-tl-none bg-white border border-gray-200 text-gray-900'
+                        }`} style={mine ? { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' } : { background: '#ffffff' }}>
                           {isImageMsg(msg) ? (
                             <AuthImage
                               conversationId={msg.conversationId} messageId={msg.messageId}
                               alt={msg.fileName || 'image'}
-                              className="max-w-[280px] max-h-[280px] object-cover hover:opacity-90 transition"
+                              className="max-w-[280px] max-h-[280px] object-cover hover:opacity-90 transition rounded-2xl"
                               onClick={() => setImagePreview({
                                 conversationId: msg.conversationId,
                                 messageId:      msg.messageId,
@@ -549,7 +688,7 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
                             <AuthFileLink conversationId={msg.conversationId} messageId={msg.messageId} fileName={msg.fileName}>
                               <div className="flex items-center gap-3 px-4 py-3 hover:opacity-90 transition">
                                 <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${mine ? 'bg-white/25' : 'bg-gray-100'}`}>
-                                  <FileText className={`h-5 w-5 ${mine ? 'text-white' : 'text-gray-600'}`} />
+                                  <FileText className={`h-5 w-5 ${mine ? 'text-white' : 'text-emerald-700'}`} />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className={`text-sm font-bold truncate ${mine ? 'text-white' : 'text-gray-900'}`}>{msg.fileName || 'File'}</p>
@@ -567,15 +706,15 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
                           )}
                         </div>
                       ) : (
-                        <div className={`rounded-2xl px-4 py-2.5 shadow-sm ${
-                          mine ? 'rounded-br-md' : 'rounded-bl-md bg-white border border-gray-100'
-                        }`} style={mine ? { background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` } : {}}>
+                        <div className={`rounded-2xl px-4 py-2.5 shadow-md ${
+                          mine ? 'rounded-tr-none text-white' : 'rounded-tl-none bg-white border border-gray-200 text-gray-900'
+                        }`} style={mine ? { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' } : { background: '#ffffff' }}>
                           <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${mine ? 'text-white' : 'text-gray-900'}`}>
                             {msg.content}
                           </p>
                         </div>
                       )}
-                      <p className={`text-[10px] mt-0.5 font-medium ${mine ? 'text-right text-gray-400' : 'text-gray-400 ml-1'}`}>
+                      <p className={`text-[10px] mt-1 font-medium ${mine ? 'text-right text-gray-500' : 'text-left text-gray-400 ml-1'}`}>
                         {getMsgTime(msg)}
                       </p>
                     </div>
@@ -623,9 +762,19 @@ function TradeChatScreen({ conversationId, title, otherPartyName, onClose }) {
             </motion.button>
           </div>
           <p className="text-center text-[10px] text-gray-400 mt-2 font-medium">
-            Conversation #{conversationId} · Trade Chat · Max 10MB
+            Trade Chat · Max 10MB
           </p>
         </div>
+
+        <ScheduleMeetingModal
+          isOpen={showScheduleModal}
+          onClose={() => setShowScheduleModal(false)}
+          initialConversationId={conversationId}
+          initialScenario="DIRECT"
+          onMeetingScheduled={() => {
+            fetchHistory();
+          }}
+        />
       </motion.div>
 
       <AnimatePresence>
@@ -801,7 +950,7 @@ function InboxTab() {
                       </p>
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
                             style={{ background: `${BRAND}20`, color: BRAND_DARK }}>
-                        #{conv.conversationId}
+                        Chat
                       </span>
                     </div>
                     {conv.lastMessageAt && (
@@ -820,8 +969,9 @@ function InboxTab() {
         {activeChat && (
           <TradeChatScreen
             conversationId={activeChat.conversationId}
-            title={`Conversation #${activeChat.conversationId}`}
+            title={activeChat.participantName || 'Trade Chat'}
             otherPartyName={activeChat.participantName}
+            otherPartyId={activeChat.participantId || activeChat.otherUserId || activeChat.partnerId}
             onClose={() => setActiveChat(null)}
           />
         )}
@@ -1181,11 +1331,6 @@ const ProposalCard = forwardRef(function ProposalCard(
                  style={{ background: BRAND_LIGHT, color: BRAND_DARK }}>
               <CheckCheck className="h-4 w-4" /> Proposal Accepted
             </div>
-            {proposal.conversationId && (
-              <p className="text-center text-[10px] text-gray-400 font-medium">
-                Conversation #{proposal.conversationId}
-              </p>
-            )}
             {canChat && (
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 onClick={() => onOpenChat(proposal)}
@@ -1918,11 +2063,12 @@ function FilterChip({ label, onRemove }) {
   );
 }
 
-function ModalInput({ label, onChange, ...props }) {
+function ModalInput({ label, onChange, type, min, ...props }) {
+  const minVal = min || (type === 'date' ? getTodayDateString() : type === 'datetime-local' ? getNowDateTimeString() : undefined);
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 mb-1.5">{label}</label>
-      <input {...props} onChange={e => onChange(e.target.value)}
+      <input type={type} min={minVal} {...props} onChange={e => onChange(e.target.value)}
         className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition-all"
         onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.background = '#fff'; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; }}
         onBlur={e  => { e.target.style.borderColor = ''; e.target.style.background = ''; e.target.style.boxShadow = ''; }}
@@ -2232,13 +2378,15 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
         { icon: Store,        label: 'Sell Intents',        value: sellCount,               delay: 0.15, accent: SELLER_COLOR },
       ];
 
-  // ⭐ UPDATED NAV_ITEMS - Added Events & My Tickets
+  // ⭐ UPDATED NAV_ITEMS - Added Directory, Meetings & Events
   const NAV_ITEMS = [
     { id: 'market',           label: 'Market',       icon: BarChart3, badge: 0           },
     { id: 'my_intents',       label: 'My Intents',   icon: Package,   badge: 0           },
     { id: 'proposals',        label: 'Proposals',    icon: FileText,  badge: 0           },
+    { id: 'directory',        label: 'Directory',    icon: Users,     badge: 0           },
     { id: 'events',           label: 'Events',       icon: Calendar,  badge: 0           },
     { id: 'my_registrations', label: 'My Tickets',   icon: Ticket,    badge: 0           },
+    { id: 'meetings',         label: 'Meetings',     icon: Video,     badge: 0           },
     { id: 'inbox',            label: 'Inbox',        icon: Inbox,     badge: inboxUnread },
   ];
 
@@ -2482,11 +2630,17 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
           />
         )}
 
+        {/* ══ DIRECTORY TAB ══ */}
+        {activeTab === 'directory' && <DirectoryTab />}
+
         {/* ══ EVENTS TAB ══ */}
         {activeTab === 'events' && <EventsTab />}
 
         {/* ══ MY REGISTRATIONS TAB ══ */}
         {activeTab === 'my_registrations' && <MyRegistrationsTab />}
+
+        {/* ══ MEETINGS TAB ══ */}
+        {activeTab === 'meetings' && <MeetingsTab />}
 
         {/* ══ INBOX TAB ══ */}
         {activeTab === 'inbox' && <InboxTab />}

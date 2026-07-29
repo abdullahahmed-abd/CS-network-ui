@@ -46,16 +46,19 @@ export default function AcceptInvitationScreen({
     }
   };
 
-  // ✅ NO accept here — just route to correct form
   const handleContinueToForm = () => {
     const purpose = verifyData?.purpose?.toUpperCase();
 
+    const payload = {
+      ...verifyData,
+      inviteToken: token,
+      isInvited: true,
+    };
+
     if (purpose === 'OPERATOR') {
-      console.log('🏢 → Operator Form (accept will happen AFTER form)');
-      onOperatorForm?.(verifyData);
+      onOperatorForm?.(payload);
     } else {
-      console.log('👤 → Member Form (accept will happen AFTER form)');
-      onMemberForm?.(verifyData);
+      onMemberForm?.(payload);
     }
   };
 
@@ -85,7 +88,6 @@ export default function AcceptInvitationScreen({
           border: '1px solid #E8F0E0',
         }}
       >
-        {/* ── Banner ── */}
         <div style={{
           background: 'linear-gradient(135deg, #166534, #16A34A, #22C55E)',
           padding: '32px 28px',
@@ -120,11 +122,9 @@ export default function AcceptInvitationScreen({
           </div>
         </div>
 
-        {/* ── Content ── */}
         <div style={{ padding: '28px 28px 32px' }}>
           <AnimatePresence mode="wait">
 
-            {/* Verifying */}
             {step === 'verifying' && (
               <motion.div
                 key="verifying"
@@ -152,7 +152,6 @@ export default function AcceptInvitationScreen({
               </motion.div>
             )}
 
-            {/* Verified — Show Details */}
             {step === 'verified' && verifyData && (
               <motion.div
                 key="verified"
@@ -160,7 +159,6 @@ export default function AcceptInvitationScreen({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
               >
-                {/* Details Card */}
                 <div style={{
                   background: '#F0FDF4', borderRadius: 16,
                   padding: '20px 22px', border: '1px solid #BBF7D0',
@@ -205,7 +203,6 @@ export default function AcceptInvitationScreen({
                   )}
                 </div>
 
-                {/* What happens next */}
                 <div style={{
                   padding: '14px 18px', borderRadius: 14,
                   background: verifyData.purpose?.toUpperCase() === 'OPERATOR'
@@ -243,7 +240,6 @@ export default function AcceptInvitationScreen({
                   </div>
                 </div>
 
-                {/* Buttons */}
                 <div style={{ display: 'flex', gap: 12 }}>
                   <motion.button
                     onClick={handleDecline}
@@ -274,7 +270,6 @@ export default function AcceptInvitationScreen({
               </motion.div>
             )}
 
-            {/* Error */}
             {step === 'error' && (
               <motion.div
                 key="error"

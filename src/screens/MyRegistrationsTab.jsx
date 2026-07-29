@@ -13,7 +13,7 @@ import { authenticatedFetch } from '../api/auth';
 import { CountdownTimer, JoinNowButton, fetchMyRegistrations } from './EventsComponents';
 
 // ⚠️ Match with your dashboard
-const BASE_URL = 'https://b25e-2401-4900-8821-90cd-dc64-5caf-48da-fbb3.ngrok-free.app';
+const BASE_URL = 'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
 const BRAND       = '#A2CB8B';
 const BRAND_DARK  = '#7aab65';
 const BRAND_LIGHT = '#e8f5e2';

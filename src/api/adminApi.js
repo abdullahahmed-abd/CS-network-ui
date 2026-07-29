@@ -1,8 +1,17 @@
+// api/adminApi.js
 import { apiCall } from './auth';
 
 // ══════════════════════════════════════
 // GLOBAL ADMIN APIs
 // ══════════════════════════════════════
+
+export const fetchDashboard = () =>
+  apiCall('/global-admin', {
+    body: {
+      requestType: 'FETCH_DASHBOARD',
+    },
+  });
+
 export const createMasterFranchise = (franchiseName, country) =>
   apiCall('/global-admin', {
     body: {
@@ -23,6 +32,7 @@ export const inviteMasterOperator = (franchiseId) =>
 // ══════════════════════════════════════
 // EVENTS APIs (GLOBAL ADMIN)
 // ══════════════════════════════════════
+
 export const createEvent = (eventData) =>
   apiCall('/global-admin', {
     body: {
@@ -68,6 +78,14 @@ export const rejectRegistration = (registrationId, reviewNotes = '') =>
 // ══════════════════════════════════════
 // MASTER OPERATOR APIs
 // ══════════════════════════════════════
+
+export const fetchMasterDashboard = () =>
+  apiCall('/master-operator', {
+    body: {
+      requestType: 'FETCH_DASHBOARD',
+    },
+  });
+
 export const createGeneralFranchise = (franchiseName, state, city) =>
   apiCall('/master-operator', {
     body: {
@@ -95,6 +113,14 @@ export const inviteGeneralOperator = (franchiseId) =>
     },
   });
 
+export const inviteSectorOperator = (franchiseId) =>
+  apiCall('/master-operator', {
+    body: {
+      requestType: 'INVITE_SECTOR_OPERATOR',
+      franchiseId,
+    },
+  });
+
 export const submitMasterOperatorForm = (formData) =>
   apiCall('/master-operator', {
     body: {
@@ -104,8 +130,26 @@ export const submitMasterOperatorForm = (formData) =>
   });
 
 // ══════════════════════════════════════
-// FRANCHISE (GENERAL) OPERATOR APIs
+// FRANCHISE OPERATOR APIs
+// (Handles both GENERAL + SECTOR operators)
 // ══════════════════════════════════════
+
+// Fetch dashboard — works for both GENERAL and SECTOR franchise operators
+export const fetchFranchiseDashboard = () =>
+  apiCall('/franchise-operator', {
+    body: {
+      franchiseOperatorRequestType: 'FETCH_DASHBOARD',
+    },
+  });
+
+// Refresh member invite link — called when usesRemaining <= 0 or manually
+export const refreshMemberInvite = () =>
+  apiCall('/franchise-operator', {
+    body: {
+      franchiseOperatorRequestType: 'REFRESH_MEMBER_INVITE',
+    },
+  });
+
 export const submitGeneralOperatorForm = (formData) =>
   apiCall('/franchise-operator', {
     body: {
@@ -121,9 +165,24 @@ export const inviteMember = () =>
     },
   });
 
+// Backward compat alias
+export const fetchGeneralDashboard = fetchFranchiseDashboard;
+
+// ══════════════════════════════════════
+// SECTOR OPERATOR APIs
+// ══════════════════════════════════════
+
+export const fetchSectorDashboard = () =>
+  apiCall('/sector-operator', {
+    body: {
+      sectorOperatorRequestType: 'FETCH_DASHBOARD',
+    },
+  });
+
 // ══════════════════════════════════════
 // INVITATION APIs
 // ══════════════════════════════════════
+
 export const verifyInvitation = (token) =>
   apiCall('/invitations', {
     body: {
@@ -139,3 +198,15 @@ export const acceptInvitation = (token) =>
       token,
     },
   });
+
+// ══════════════════════════════════════
+// MEETINGS MODULE APIs
+// ══════════════════════════════════════
+export {
+  scheduleMeeting,
+  validateMeetingPayload,
+  buildMeetingPayload,
+  fetchEligibleFranchises,
+  fetchEligibleUsers,
+  fetchDownlinePreview,
+} from './meetingsApi';
