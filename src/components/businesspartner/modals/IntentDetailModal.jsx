@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { INTENT_STATUS } from '../../constants/BpConstants';
 import { fmtNumber, fmtCurrency, formatFullDate } from '../../../utils/BpHelpers';
 
-export function IntentDetailModal({ intent, onClose }) {
+export function IntentDetailModal({ intent, onClose, onRaiseProposal }) {
   if (!intent) return null;
 
   const isBuy  = intent.intentType === 'BUY';
@@ -106,6 +106,20 @@ export function IntentDetailModal({ intent, onClose }) {
               </div>
             )}
           </div>
+
+          {onRaiseProposal && (
+            <div style={{ marginTop: 20 }}>
+              <button
+                className="form-submit-btn"
+                onClick={() => {
+                  onClose();
+                  onRaiseProposal(intent);
+                }}
+              >
+                Raise Proposal on this Intent
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

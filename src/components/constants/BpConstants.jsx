@@ -84,12 +84,10 @@ export const INTENT_STATUS = {
 export const NAV_ITEMS = [
   { id: 'pipeline',      label: 'Pipeline',      },
   { id: 'trade_intents', label: 'Trade Intents', },
-  { id: 'my_intents',    label: 'My Intents',    },
-  { id: 'my_leads',      label: 'My Leads',      },
   { id: 'deals',         label: 'Deals',         },
   { id: 'commissions',   label: 'Commissions',   },
   { id: 'meetings',      label: 'Meetings',      },
 ];
 
 export const BASE_URL =
-  'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
+  'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';

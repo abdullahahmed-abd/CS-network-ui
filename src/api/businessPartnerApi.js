@@ -12,6 +12,7 @@ export const createExternalLead = async ({
   email,
   notes,
   followUpDate,
+  franchiseId,
   intentType,
   category,
   title,
@@ -30,6 +31,7 @@ export const createExternalLead = async ({
     email,
     notes,
     followUpDate,
+    ...(franchiseId && { franchiseId: Number(franchiseId) }),
     intentType,
     category,
     title,
@@ -71,6 +73,7 @@ export const createInternalLead = async ({
  */
 export const createTradeIntentForMember = async ({
   memberId,
+  franchiseId,
   intentType,
   category,
   title,
@@ -84,6 +87,7 @@ export const createTradeIntentForMember = async ({
   const body = {
     businessPartnerRequestType: 'CREATE_TRADE_INTENT_FOR_MEMBER',
     memberId: Number(memberId),
+    ...(franchiseId && { franchiseId: Number(franchiseId) }),
     intentType,
     category,
     title,
@@ -146,6 +150,21 @@ export const createProposalForLead = async (leadId, { quantityRequested, pricePe
   const body = {
     businessPartnerRequestType: 'CREATE_PROPOSAL_FOR_LEAD',
     leadId: Number(leadId),
+    quantityRequested: Number(quantityRequested),
+    pricePerUnit: Number(pricePerUnit),
+    timelineDays: Number(timelineDays),
+  };
+
+  return apiCall('/business-partner', { body });
+};
+
+/**
+ * Raises a Trade Proposal against a Trade Intent.
+ */
+export const createProposalForIntent = async (intentId, { quantityRequested, pricePerUnit, timelineDays }) => {
+  const body = {
+    businessPartnerRequestType: 'CREATE_PROPOSAL',
+    tradeIntentId: Number(intentId),
     quantityRequested: Number(quantityRequested),
     pricePerUnit: Number(pricePerUnit),
     timelineDays: Number(timelineDays),
@@ -239,3 +258,37 @@ export const fetchPipelineByStage = async (stage) => {
 
   return apiCall('/business-partner', { body });
 };
+
+/**
+ * Fetches/Searches members in the Business Partner's franchise.
+ * Searchable by name, whatsapp number, email, or user id.
+ */
+export const fetchFranchiseMembers = async ({ search = '', page = 0, size = 10 } = {}) => {
+  const body = {
+    businessPartnerRequestType: 'FETCH_FRANCHISE_MEMBERS',
+    search,
+    page,
+    size,
+  };
+
+  return apiCall('/business-partner', { body });
+};
+
+/**
+ * Fetches/Searches Business Partners in the network.
+ * Uses memberRequestType: 'FIND_BUSINESS_PARTNERS' on /member endpoint.
+ */
+export const findBusinessPartners = async ({ businessSector, country, state, city, search } = {}) => {
+  const body = {
+    memberRequestType: 'FIND_BUSINESS_PARTNERS',
+    ...(businessSector && { businessSector }),
+    ...(country && { country }),
+    ...(state && { state }),
+    ...(city && { city }),
+    ...(search && { search }),
+  };
+
+  return apiCall('/member', { body });
+};
+
+

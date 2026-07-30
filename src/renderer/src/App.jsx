@@ -24,7 +24,7 @@ import {
   authenticatedFetch,
 } from '../../api/auth';
 
-const BASE_URL = 'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
+const BASE_URL = 'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';
 
 // ── BP status localStorage key ──
 const BP_STATUS_KEY    = 'bpApplicationStatus';

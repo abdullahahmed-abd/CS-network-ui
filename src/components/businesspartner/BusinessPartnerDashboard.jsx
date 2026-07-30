@@ -31,8 +31,6 @@ import {
 const navItems = [
   { id: 'pipeline',      label: 'Pipeline',      icon: LayoutGrid    },
   { id: 'trade_intents', label: 'Trade Intents', icon: BarChart3     },
-  { id: 'my_intents',    label: 'My Intents',    icon: PackageIcon   },
-  { id: 'my_leads',      label: 'My Leads',      icon: UsersIcon     },
   { id: 'deals',         label: 'Deals',         icon: HandshakeIcon },
   { id: 'commissions',   label: 'Commissions',   icon: WalletIcon    },
   { id: 'meetings',      label: 'Meetings',      icon: CalIcon       },
@@ -417,6 +415,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               searchQuery={searchQuery}
               onRefresh={() => fetchIntents(intentPage)}
               onCreateIntent={() => setShowCreateIntent(true)}
+              showToast={showToast}
             />
           )}
 

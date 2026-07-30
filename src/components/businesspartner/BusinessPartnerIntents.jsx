@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import {
   Eye, ShoppingCart, Store, Package,
   RefreshCw, AlertCircle, Loader2,
-  Plus, ChevronLeft, ChevronRight,
+  Plus, ChevronLeft, ChevronRight, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { IntentDetailModal } from '../businesspartner/modals/IntentDetailModal';
+import { CreateProposalModal } from '../businesspartner/modals/CreateProposalModal';
 import { INTENT_STATUS }    from '../constants/BpConstants';
 import { fmtNumber, fmtCurrency, formatFullDate } from '../../utils/BpHelpers';
 
 /* ════════ IntentCard ════════ */
-function IntentCard({ intent, onView }) {
+function IntentCard({ intent, onView, onRaiseProposal }) {
   const isBuy  = intent.intentType === 'BUY';
   const status = INTENT_STATUS[intent.status] || INTENT_STATUS.OPEN;
 
@@ -77,16 +78,27 @@ function IntentCard({ intent, onView }) {
       </div>
 
       {/* Footer */}
-      <div className="intent-footer">
+      <div className="intent-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span className="intent-creator">
           By {intent.createdByName || '—'}
         </span>
-        <button
-          className="intent-view-btn"
-          onClick={e => { e.stopPropagation(); onView(intent); }}
-        >
-          <Eye size={11} /> View
-        </button>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {onRaiseProposal && (
+            <button
+              className="intent-view-btn"
+              style={{ background: '#2e7d32', color: '#fff', border: 'none', fontWeight: 'bold' }}
+              onClick={e => { e.stopPropagation(); onRaiseProposal(intent); }}
+            >
+              Raise Proposal
+            </button>
+          )}
+          <button
+            className="intent-view-btn"
+            onClick={e => { e.stopPropagation(); onView(intent); }}
+          >
+            <Eye size={11} /> View
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -106,8 +118,10 @@ export default function BusinessPartnerIntents({
   searchQuery,
   onRefresh,
   onCreateIntent,
+  showToast,
 }) {
   const [selectedIntent, setSelectedIntent] = useState(null);
+  const [proposalIntent, setProposalIntent] = useState(null);
 
   const isMarket = mode === 'market';
 
@@ -139,10 +153,12 @@ export default function BusinessPartnerIntents({
           {isMarket && (
             <div className="panel-actions">
               <div className="intents-toolbar" style={{ margin: 0 }}>
-                {['ALL','BUY','SELL'].map(type => (
+                {['ALL', 'BUY', 'SELL'].map(type => (
                   <button
                     key={type}
-                    className={`intents-filter-btn ${intentFilter === type ? 'active' : ''}`}
+                    className={`intents-filter-btn ${
+                      intentFilter === type ? 'active' : ''
+                    }`}
                     onClick={() => {
                       setIntentFilter(type);
                       setIntentPage(0);
@@ -156,7 +172,7 @@ export default function BusinessPartnerIntents({
           )}
         </div>
 
-        {/* Loading */}
+        {/* Loading state */}
         {loading ? (
           <div className="bp-loading">
             <motion.div
@@ -170,33 +186,35 @@ export default function BusinessPartnerIntents({
             </div>
           </div>
 
-        /* Error (market only) */
+        /* Error state */
         ) : error ? (
           <div className="bp-error">
             <AlertCircle size={28} style={{ color: 'var(--danger)' }} />
             <div className="bp-error-text">{error}</div>
-            <button className="retry-btn" onClick={onRefresh}>
-              <RefreshCw size={13} /> Try Again
-            </button>
+            {onRefresh && (
+              <button className="retry-btn" onClick={onRefresh}>
+                <RefreshCw size={13} /> Try Again
+              </button>
+            )}
           </div>
 
-        /* Empty */
+        /* Empty state */
         ) : filteredIntents.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon-box"><Package /></div>
+            <div className="empty-state-icon-box">
+              <Package />
+            </div>
             <div className="empty-state-title">
               {searchQuery
                 ? 'No matching intents'
                 : isMarket
                 ? 'No trade intents available'
-                : 'No intents yet'}
+                : 'No intents created yet'}
             </div>
             <div className="empty-state-desc">
               {searchQuery
                 ? 'Try a different search'
-                : isMarket
-                ? 'Be the first to post a trade intent!'
-                : 'Create your first trade intent to get started'}
+                : 'Be the first to post a trade intent!'}
             </div>
             <button className="add-btn" onClick={onCreateIntent}>
               <Plus size={15} /> Create Intent
@@ -213,6 +231,7 @@ export default function BusinessPartnerIntents({
                     key={intent.id}
                     intent={intent}
                     onView={setSelectedIntent}
+                    onRaiseProposal={setProposalIntent}
                   />
                 ))}
               </AnimatePresence>
@@ -252,6 +271,22 @@ export default function BusinessPartnerIntents({
           <IntentDetailModal
             intent={selectedIntent}
             onClose={() => setSelectedIntent(null)}
+            onRaiseProposal={setProposalIntent}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Proposal Modal */}
+      <AnimatePresence>
+        {proposalIntent && (
+          <CreateProposalModal
+            intent={proposalIntent}
+            onClose={() => setProposalIntent(null)}
+            onSuccess={() => {
+              showToast?.('Trade proposal submitted successfully!', 'success');
+              setProposalIntent(null);
+            }}
+            showToast={showToast}
           />
         )}
       </AnimatePresence>

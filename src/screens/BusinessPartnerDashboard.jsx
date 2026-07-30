@@ -15,10 +15,11 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { authenticatedFetch, getUserData } from '../api/auth';
 import BusinessPartnerSidebar from './BusinessPartnerSidebar';
+import { CreateProposalModal } from '../components/businesspartner/modals/CreateProposalModal';
 import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
 
 const BASE_URL =
-  'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
+  'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';
 
 /* ═══════════════════ 🎨 GREEN THEME SYSTEM (like BuyerSellerDashboard) ═══════════════════ */
 const THEME = {
@@ -119,8 +120,6 @@ const INTENT_STATUS = {
 const navItems = [
   { id: 'pipeline',      label: 'Pipeline',      icon: LayoutGrid   },
   { id: 'trade_intents', label: 'Trade Intents', icon: BarChart3    },
-  { id: 'my_intents',    label: 'My Intents',    icon: Package      },
-  { id: 'my_leads',      label: 'My Leads',      icon: Users        },
   { id: 'deals',         label: 'Deals',         icon: Handshake    },
   { id: 'commissions',   label: 'Commissions',   icon: Wallet       },
   { id: 'meetings',      label: 'Meetings',      icon: CalendarClock},
@@ -1928,14 +1927,25 @@ function IntentCard({ intent, onView }) {
         </div>
       </div>
 
-      <div className="intent-footer">
+      <div className="intent-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span className="intent-creator">By {intent.createdByName || '—'}</span>
-        <button
-          className="intent-view-btn"
-          onClick={(e) => { e.stopPropagation(); onView(intent); }}
-        >
-          <Eye size={11} /> View
-        </button>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {onRaiseProposal && (
+            <button
+              className="intent-view-btn"
+              style={{ background: '#2e7d32', color: '#fff', border: 'none' }}
+              onClick={(e) => { e.stopPropagation(); onRaiseProposal(intent); }}
+            >
+              Raise Proposal
+            </button>
+          )}
+          <button
+            className="intent-view-btn"
+            onClick={(e) => { e.stopPropagation(); onView(intent); }}
+          >
+            <Eye size={11} /> View
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -2161,7 +2171,7 @@ function CreateIntentModal({ onClose, onSuccess, showToast }) {
 
 /* ══════════════════════════════════════════════════════════════ */
 /* Intent Detail Modal */
-function IntentDetailModal({ intent, onClose }) {
+function IntentDetailModal({ intent, onClose, onRaiseProposal }) {
   if (!intent) return null;
   const isBuy = intent.intentType === 'BUY';
   const status = INTENT_STATUS[intent.status] || INTENT_STATUS.OPEN;
@@ -2249,6 +2259,20 @@ function IntentDetailModal({ intent, onClose }) {
               </div>
             )}
           </div>
+
+          {onRaiseProposal && (
+            <div style={{ marginTop: 20 }}>
+              <button
+                className="form-submit-btn"
+                onClick={() => {
+                  onClose();
+                  onRaiseProposal(intent);
+                }}
+              >
+                Raise Proposal on this Intent
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
@@ -2412,18 +2436,150 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
   const [loading, setLoading]  = useState(false);
   const [error, setError]      = useState('');
 
-  const [externalForm, setExternalForm]         = useState({ companyName:'', contactPerson:'', phone:'', email:'', tradeIntentTitle:'', tradeIntentDescription:'', notes:'', followUpDate:'' });
-  const [memberIntentForm, setMemberIntentForm] = useState({ memberId:'', tradeIntentTitle:'', tradeIntentDescription:'', notes:'', followUpDate:'' });
+  const [externalForm, setExternalForm]         = useState({ companyName:'', contactPerson:'', phone:'', email:'', title:'', description:'', quantity:'', unit:'KG', pricePerUnit:'', currency:'INR', intentType:'BUY', category:'AGRICULTURE', expiresAt:'', notes:'', followUpDate:'' });
+  const [memberIntentForm, setMemberIntentForm] = useState({ memberId:'', title:'', description:'', quantity:'', unit:'KG', pricePerUnit:'', currency:'INR', intentType:'SELL', category:'AGRICULTURE', expiresAt:'', notes:'', followUpDate:'' });
   const [internalForm, setInternalForm]         = useState({ memberId:'', tradeIntentId:'', notes:'', followUpDate:'' });
+
+  // Franchise Member Search State
+  const [memberSearchQuery, setMemberSearchQuery]             = useState('');
+  const [memberSearchResults, setMemberSearchResults]         = useState([]);
+  const [searchingMembers, setSearchingMembers]               = useState(false);
+  const [selectedMember, setSelectedMember]                   = useState(null);
+  const [memberSearchPage, setMemberSearchPage]               = useState(0);
+  const [memberSearchTotalPages, setMemberSearchTotalPages]   = useState(1);
+  const [memberSearchMessage, setMemberSearchMessage]         = useState('');
+
+  // Member Trade Intents State
+  const [memberIntents, setMemberIntents]   = useState([]);
+  const [loadingIntents, setLoadingIntents] = useState(false);
+
+  const loadMemberIntents = async (mId) => {
+    if (!mId) { setMemberIntents([]); return; }
+    setLoadingIntents(true);
+    try {
+      const data = await authenticatedFetch(`${BASE_URL}/cs-network/business-partner`, {
+        method: 'POST',
+        body: JSON.stringify({ businessPartnerRequestType: 'FETCH_MEMBER_INTENTS', memberId: Number(mId) }),
+      });
+      const intents = data?.tradeIntents || data?.memberIntents || data?.intents || data?.content || (Array.isArray(data) ? data : []);
+      setMemberIntents(intents);
+    } catch (err) {
+      console.error('FETCH_MEMBER_INTENTS error:', err);
+      setMemberIntents([]);
+    } finally { setLoadingIntents(false); }
+  };
+
+  const handleSearchMembers = async (query = memberSearchQuery, pageNum = 0) => {
+    if (!query || !query.trim()) {
+      setMemberSearchResults([]);
+      setMemberSearchMessage('');
+      return;
+    }
+    setSearchingMembers(true);
+    setError('');
+    try {
+      const data = await authenticatedFetch(`${BASE_URL}/cs-network/business-partner`, {
+        method: 'POST',
+        body: JSON.stringify({
+          businessPartnerRequestType: 'FETCH_FRANCHISE_MEMBERS',
+          search: query.trim(),
+          page: pageNum,
+          size: 10,
+        }),
+      });
+      setMemberSearchResults(data?.franchiseMembers || []);
+      setMemberSearchPage(data?.currentPage || 0);
+      setMemberSearchTotalPages(data?.totalPages || 1);
+      setMemberSearchMessage(data?.message || `${(data?.franchiseMembers || []).length} member(s) found.`);
+    } catch (err) {
+      console.error('FETCH_FRANCHISE_MEMBERS error:', err);
+      setError(err.message || 'Failed to fetch franchise members');
+    } finally {
+      setSearchingMembers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!memberSearchQuery || !memberSearchQuery.trim()) {
+      setMemberSearchResults([]);
+      setMemberSearchMessage('');
+      return;
+    }
+    const timer = setTimeout(() => {
+      handleSearchMembers(memberSearchQuery, 0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [memberSearchQuery]);
+
+  const handleSelectMember = (member) => {
+    setSelectedMember(member);
+    setInternalForm(prev => ({ ...prev, memberId: String(member.id), tradeIntentId: '' }));
+    setMemberIntentForm(prev => ({ ...prev, memberId: String(member.id) }));
+    loadMemberIntents(member.id);
+  };
+
+  const handleClearSelectedMember = () => {
+    setSelectedMember(null);
+    setInternalForm(prev => ({ ...prev, memberId: '', tradeIntentId: '' }));
+    setMemberIntentForm(prev => ({ ...prev, memberId: '' }));
+    setMemberIntents([]);
+  };
 
   const handleSelectType = (type) => { setSelected(type); setStep('form'); setError(''); };
   const handleBack = () => { setStep('choose'); setSelected(null); setError(''); };
 
+  const formatExpiresAt = (d) => {
+    if (!d) return undefined;
+    if (d.includes('T')) return d;
+    return `${d}T23:59:59Z`;
+  };
+
   const buildPayload = () => {
     const rt = selectedType.id;
-    if (rt === 'CREATE_EXTERNAL_LEAD')          return { businessPartnerRequestType: rt, ...externalForm, followUpDate: externalForm.followUpDate || null };
-    if (rt === 'CREATE_TRADE_INTENT_FOR_MEMBER') return { businessPartnerRequestType: rt, memberId: Number(memberIntentForm.memberId), tradeIntentTitle: memberIntentForm.tradeIntentTitle, tradeIntentDescription: memberIntentForm.tradeIntentDescription, notes: memberIntentForm.notes, followUpDate: memberIntentForm.followUpDate || null };
-    if (rt === 'CREATE_INTERNAL_LEAD')           return { businessPartnerRequestType: rt, memberId: Number(internalForm.memberId), tradeIntentId: Number(internalForm.tradeIntentId), notes: internalForm.notes, followUpDate: internalForm.followUpDate || null };
+    if (rt === 'CREATE_EXTERNAL_LEAD') {
+      return {
+        businessPartnerRequestType: rt,
+        companyName: externalForm.companyName,
+        contactPerson: externalForm.contactPerson || undefined,
+        phone: externalForm.phone,
+        email: externalForm.email,
+        notes: externalForm.notes || undefined,
+        followUpDate: externalForm.followUpDate || undefined,
+        intentType: externalForm.intentType,
+        category: externalForm.category,
+        title: externalForm.title,
+        description: externalForm.description || undefined,
+        quantity: Number(externalForm.quantity),
+        unit: externalForm.unit || 'KG',
+        pricePerUnit: Number(externalForm.pricePerUnit),
+        currency: externalForm.currency || 'INR',
+        expiresAt: formatExpiresAt(externalForm.expiresAt),
+      };
+    }
+    if (rt === 'CREATE_TRADE_INTENT_FOR_MEMBER') {
+      return {
+        businessPartnerRequestType: rt,
+        memberId: Number(memberIntentForm.memberId),
+        intentType: memberIntentForm.intentType,
+        category: memberIntentForm.category,
+        title: memberIntentForm.title,
+        description: memberIntentForm.description || undefined,
+        quantity: Number(memberIntentForm.quantity),
+        unit: memberIntentForm.unit || 'KG',
+        pricePerUnit: Number(memberIntentForm.pricePerUnit),
+        currency: memberIntentForm.currency || 'INR',
+        expiresAt: formatExpiresAt(memberIntentForm.expiresAt),
+      };
+    }
+    if (rt === 'CREATE_INTERNAL_LEAD') {
+      return {
+        businessPartnerRequestType: rt,
+        memberId: Number(internalForm.memberId),
+        tradeIntentId: internalForm.tradeIntentId ? Number(internalForm.tradeIntentId) : null,
+        notes: internalForm.notes || undefined,
+        followUpDate: internalForm.followUpDate || undefined,
+      };
+    }
     return null;
   };
 
@@ -2431,18 +2587,19 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
     const rt = selectedType.id;
     if (rt === 'CREATE_EXTERNAL_LEAD') {
       if (!externalForm.companyName.trim())     return 'Company Name is required';
-      if (!externalForm.contactPerson.trim())   return 'Contact Person is required';
-      if (!externalForm.phone.trim())           return 'Phone is required';
-      if (!externalForm.email.trim())           return 'Email is required';
-      if (!externalForm.tradeIntentTitle.trim()) return 'Trade Intent Title is required';
+      if (!externalForm.phone.trim() && !externalForm.email.trim()) return 'Phone or Email is required';
+      if (!externalForm.title.trim())           return 'Title is required';
+      if (!externalForm.quantity || Number(externalForm.quantity) <= 0) return 'Valid Quantity is required';
+      if (!externalForm.pricePerUnit || Number(externalForm.pricePerUnit) <= 0) return 'Valid Price Per Unit is required';
     }
     if (rt === 'CREATE_TRADE_INTENT_FOR_MEMBER') {
       if (!memberIntentForm.memberId)           return 'Member ID is required';
-      if (!memberIntentForm.tradeIntentTitle.trim()) return 'Trade Intent Title is required';
+      if (!memberIntentForm.title.trim())       return 'Title is required';
+      if (!memberIntentForm.quantity || Number(memberIntentForm.quantity) <= 0) return 'Valid Quantity is required';
+      if (!memberIntentForm.pricePerUnit || Number(memberIntentForm.pricePerUnit) <= 0) return 'Valid Price Per Unit is required';
     }
     if (rt === 'CREATE_INTERNAL_LEAD') {
       if (!internalForm.memberId)    return 'Member ID is required';
-      if (!internalForm.tradeIntentId) return 'Trade Intent ID is required';
     }
     return null;
   };
@@ -2514,34 +2671,71 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label form-label-required">Company Name</label>
-                    <input className="form-input" placeholder="ABC Trading Pvt Ltd" value={externalForm.companyName} onChange={e => setExternalForm({...externalForm, companyName:e.target.value})} />
+                    <input className="form-input" placeholder="Noor Enterprises" value={externalForm.companyName} onChange={e => setExternalForm({...externalForm, companyName:e.target.value})} />
                   </div>
                   <div className="form-group">
-                    <label className="form-label form-label-required">Contact Person</label>
+                    <label className="form-label">Contact Person</label>
                     <input className="form-input" placeholder="John Smith" value={externalForm.contactPerson} onChange={e => setExternalForm({...externalForm, contactPerson:e.target.value})} />
                   </div>
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label form-label-required">Phone</label>
+                    <label className="form-label">Phone</label>
                     <input className="form-input" placeholder="+919876543210" value={externalForm.phone} onChange={e => setExternalForm({...externalForm, phone:e.target.value})} />
                   </div>
                   <div className="form-group">
-                    <label className="form-label form-label-required">Email</label>
-                    <input className="form-input" type="email" placeholder="john@example.com" value={externalForm.email} onChange={e => setExternalForm({...externalForm, email:e.target.value})} />
+                    <label className="form-label">Email</label>
+                    <input className="form-input" type="email" placeholder="john@abctrading.com" value={externalForm.email} onChange={e => setExternalForm({...externalForm, email:e.target.value})} />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label form-label-required">Intent Type</label>
+                    <select className="form-input" value={externalForm.intentType} onChange={e => setExternalForm({...externalForm, intentType:e.target.value})}>
+                      <option value="BUY">BUY</option>
+                      <option value="SELL">SELL</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Category</label>
+                    <select className="form-input" value={externalForm.category} onChange={e => setExternalForm({...externalForm, category:e.target.value})}>
+                      {CATEGORIES.map(c => <option key={c} value={c.toUpperCase()}>{c}</option>)}
+                    </select>
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label form-label-required">Trade Intent Title</label>
-                  <input className="form-input" placeholder="Buy Premium Basmati Rice" value={externalForm.tradeIntentTitle} onChange={e => setExternalForm({...externalForm, tradeIntentTitle:e.target.value})} />
+                  <label className="form-label form-label-required">Title</label>
+                  <input className="form-input" placeholder="Buy Premium Basmati Rice" value={externalForm.title} onChange={e => setExternalForm({...externalForm, title:e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>
-                  <textarea className="form-textarea" placeholder="Brief description..." value={externalForm.tradeIntentDescription} onChange={e => setExternalForm({...externalForm, tradeIntentDescription:e.target.value})} />
+                  <textarea className="form-textarea" placeholder="Looking to purchase 1000 kg of premium basmati rice..." value={externalForm.description} onChange={e => setExternalForm({...externalForm, description:e.target.value})} />
+                </div>
+                <div className="form-row" style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'8px' }}>
+                  <div className="form-group">
+                    <label className="form-label form-label-required">Quantity</label>
+                    <input className="form-input" type="number" placeholder="1000" value={externalForm.quantity} onChange={e => setExternalForm({...externalForm, quantity:e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label form-label-required">Price/Unit</label>
+                    <input className="form-input" type="number" step="0.01" placeholder="85.50" value={externalForm.pricePerUnit} onChange={e => setExternalForm({...externalForm, pricePerUnit:e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Unit</label>
+                    <input className="form-input" placeholder="KG" value={externalForm.unit} onChange={e => setExternalForm({...externalForm, unit:e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Currency</label>
+                    <input className="form-input" placeholder="INR" value={externalForm.currency} onChange={e => setExternalForm({...externalForm, currency:e.target.value})} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Expiry Date (expiresAt)</label>
+                  <input className="form-input" type="date" min={getTodayDateString()} value={externalForm.expiresAt} onChange={e => setExternalForm({...externalForm, expiresAt:e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Notes</label>
-                  <textarea className="form-textarea" placeholder="Additional notes..." value={externalForm.notes} onChange={e => setExternalForm({...externalForm, notes:e.target.value})} />
+                  <textarea className="form-textarea" placeholder="Interested in purchasing rice in bulk." value={externalForm.notes} onChange={e => setExternalForm({...externalForm, notes:e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Follow-up Date</label>
@@ -2551,37 +2745,215 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
 
               {selectedType.id === 'CREATE_TRADE_INTENT_FOR_MEMBER' && (<>
                 <div className="form-group">
-                  <label className="form-label form-label-required">Member ID</label>
-                  <input className="form-input" type="number" placeholder="e.g. 102" value={memberIntentForm.memberId} onChange={e => setMemberIntentForm({...memberIntentForm, memberId:e.target.value})} />
+                  <label className="form-label form-label-required">Franchise Member</label>
+                  {selectedMember ? (
+                    <div style={{ padding: '10px 12px', background: '#e8f5e2', border: '1px solid #a2cb8b', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#1a3a1a' }}>
+                          {selectedMember.fullName} <span style={{ color: '#4a7a4a', fontWeight: 'normal' }}>(ID: #{selectedMember.id})</span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#2d5a2d' }}>
+                          {selectedMember.companyName || selectedMember.whatsappNumber || selectedMember.email}
+                        </div>
+                      </div>
+                      <button type="button" onClick={handleClearSelectedMember} style={{ background: 'none', border: 'none', color: '#e53935', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>Change</button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <input
+                          className="form-input"
+                          name="memberSearchInputNoAutofill1"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck="false"
+                          placeholder="Search member by Name, Phone, Company..."
+                          value={memberSearchQuery}
+                          onChange={e => setMemberSearchQuery(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearchMembers(memberSearchQuery, 0); } }}
+                        />
+                        <button type="button" className="btn btn-secondary" onClick={() => handleSearchMembers(memberSearchQuery, 0)} disabled={searchingMembers}>
+                          {searchingMembers ? 'Searching...' : 'Search'}
+                        </button>
+                      </div>
+                      {memberSearchResults.length > 0 && (
+                        <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '6px', background: '#fafafa', marginBottom: '8px' }}>
+                          {memberSearchResults.map(m => (
+                            <div key={m.id} onClick={() => handleSelectMember(m)} style={{ padding: '8px', background: '#fff', border: '1px solid #eee', borderRadius: '6px', cursor: 'pointer', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <div style={{ fontWeight: 'bold', fontSize: '12px' }}>{m.fullName}</div>
+                                <div style={{ fontSize: '11px', color: '#555' }}>{m.companyName ? `${m.companyName} • ` : ''}{m.whatsappNumber || m.email}</div>
+                              </div>
+                              <span style={{ fontSize: '11px', color: '#7aab65', fontWeight: 'bold' }}>Select</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label form-label-required">Intent Type</label>
+                    <select className="form-input" value={memberIntentForm.intentType} onChange={e => setMemberIntentForm({...memberIntentForm, intentType:e.target.value})}>
+                      <option value="SELL">SELL</option>
+                      <option value="BUY">BUY</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Category</label>
+                    <select className="form-input" value={memberIntentForm.category} onChange={e => setMemberIntentForm({...memberIntentForm, category:e.target.value})}>
+                      {CATEGORIES.map(c => <option key={c} value={c.toUpperCase()}>{c}</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label form-label-required">Trade Intent Title</label>
-                  <input className="form-input" placeholder="Premium Basmati Rice" value={memberIntentForm.tradeIntentTitle} onChange={e => setMemberIntentForm({...memberIntentForm, tradeIntentTitle:e.target.value})} />
+                  <label className="form-label form-label-required">Title</label>
+                  <input className="form-input" placeholder="Premium Basmati Rice" value={memberIntentForm.title} onChange={e => setMemberIntentForm({...memberIntentForm, title:e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>
-                  <textarea className="form-textarea" placeholder="Description..." value={memberIntentForm.tradeIntentDescription} onChange={e => setMemberIntentForm({...memberIntentForm, tradeIntentDescription:e.target.value})} />
+                  <textarea className="form-textarea" placeholder="High-quality basmati rice available for bulk orders." value={memberIntentForm.description} onChange={e => setMemberIntentForm({...memberIntentForm, description:e.target.value})} />
+                </div>
+                <div className="form-row" style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'8px' }}>
+                  <div className="form-group">
+                    <label className="form-label form-label-required">Quantity</label>
+                    <input className="form-input" type="number" placeholder="1000" value={memberIntentForm.quantity} onChange={e => setMemberIntentForm({...memberIntentForm, quantity:e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label form-label-required">Price/Unit</label>
+                    <input className="form-input" type="number" step="0.01" placeholder="75.50" value={memberIntentForm.pricePerUnit} onChange={e => setMemberIntentForm({...memberIntentForm, pricePerUnit:e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Unit</label>
+                    <input className="form-input" placeholder="KG" value={memberIntentForm.unit} onChange={e => setMemberIntentForm({...memberIntentForm, unit:e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Currency</label>
+                    <input className="form-input" placeholder="INR" value={memberIntentForm.currency} onChange={e => setMemberIntentForm({...memberIntentForm, currency:e.target.value})} />
+                  </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Notes</label>
-                  <textarea className="form-textarea" placeholder="Notes..." value={memberIntentForm.notes} onChange={e => setMemberIntentForm({...memberIntentForm, notes:e.target.value})} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Follow-up Date</label>
-                  <input className="form-input" type="date" min={getTodayDateString()} value={memberIntentForm.followUpDate} onChange={e => setMemberIntentForm({...memberIntentForm, followUpDate:e.target.value})} />
+                  <label className="form-label">Expiry Date (expiresAt)</label>
+                  <input className="form-input" type="date" min={getTodayDateString()} value={memberIntentForm.expiresAt} onChange={e => setMemberIntentForm({...memberIntentForm, expiresAt:e.target.value})} />
                 </div>
               </>)}
 
               {selectedType.id === 'CREATE_INTERNAL_LEAD' && (<>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label form-label-required">Member ID</label>
-                    <input className="form-input" type="number" placeholder="e.g. 102" value={internalForm.memberId} onChange={e => setInternalForm({...internalForm, memberId:e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label form-label-required">Trade Intent ID</label>
-                    <input className="form-input" type="number" placeholder="e.g. 201" value={internalForm.tradeIntentId} onChange={e => setInternalForm({...internalForm, tradeIntentId:e.target.value})} />
-                  </div>
+                <div className="form-group">
+                  <label className="form-label form-label-required">Franchise Member</label>
+                  {selectedMember ? (
+                    <div style={{ padding: '10px 12px', background: '#e8f5e2', border: '1px solid #a2cb8b', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#1a3a1a' }}>
+                          {selectedMember.fullName}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#2d5a2d' }}>
+                          {selectedMember.companyName ? `${selectedMember.companyName} • ` : ''}
+                          {selectedMember.whatsappNumber || selectedMember.email}
+                        </div>
+                        {(selectedMember.city || selectedMember.state || selectedMember.country) && (
+                          <div style={{ fontSize: '10px', color: '#7aab65' }}>
+                            📍 {[selectedMember.city, selectedMember.state, selectedMember.country].filter(Boolean).join(', ')}
+                          </div>
+                        )}
+                      </div>
+                      <button type="button" onClick={handleClearSelectedMember} style={{ background: 'none', border: 'none', color: '#e53935', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>Change</button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <input
+                          className="form-input"
+                          name="memberSearchInputNoAutofill2"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck="false"
+                          placeholder="Search member by Name, Phone, Company..."
+                          value={memberSearchQuery}
+                          onChange={e => setMemberSearchQuery(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSearchMembers(memberSearchQuery, 0); } }}
+                        />
+                        <button type="button" className="btn btn-secondary" onClick={() => handleSearchMembers(memberSearchQuery, 0)} disabled={searchingMembers}>
+                          {searchingMembers ? 'Searching...' : 'Search'}
+                        </button>
+                      </div>
+                      {memberSearchMessage && (
+                        <div style={{ fontSize: '11px', color: '#666', marginBottom: '6px' }}>{memberSearchMessage}</div>
+                      )}
+                      {memberSearchResults.length > 0 && (
+                        <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '6px', background: '#fafafa', marginBottom: '8px' }}>
+                          {memberSearchResults.map(m => (
+                            <div key={m.id} onClick={() => handleSelectMember(m)} style={{ padding: '8px', background: '#fff', border: '1px solid #eee', borderRadius: '6px', cursor: 'pointer', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <div style={{ fontWeight: 'bold', fontSize: '12px' }}>{m.fullName}</div>
+                                <div style={{ fontSize: '11px', color: '#555' }}>{m.companyName ? `${m.companyName} • ` : ''}{m.whatsappNumber || m.email}</div>
+                                {(m.city || m.state || m.country) && (
+                                  <div style={{ fontSize: '10px', color: '#888' }}>{[m.city, m.state, m.country].filter(Boolean).join(', ')}</div>
+                                )}
+                              </div>
+                              <span style={{ fontSize: '11px', color: '#7aab65', fontWeight: 'bold' }}>Select</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    Member's Trade Intent (Optional) {loadingIntents && <span style={{ color: '#7aab65', fontSize: '11px', fontWeight: 'normal' }}>Loading intents...</span>}
+                  </label>
+                  {loadingIntents ? (
+                    <div style={{ padding: '10px', fontSize: '12px', color: '#666', background: '#f5f5f5', borderRadius: '8px', textAlign: 'center' }}>
+                      Fetching trade intents for member...
+                    </div>
+                  ) : memberIntents.length > 0 ? (
+                    <div style={{ maxHeight: '160px', overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: '10px', padding: '6px', background: '#fafafa', marginBottom: '8px' }}>
+                      <div style={{ fontSize: '11px', color: '#666', marginBottom: '6px', fontWeight: 'bold' }}>Select an intent created by this member:</div>
+                      {memberIntents.map(intent => {
+                        const isSelected = String(internalForm.tradeIntentId) === String(intent.id);
+                        return (
+                          <div
+                            key={intent.id}
+                            onClick={() => setInternalForm(prev => ({ ...prev, tradeIntentId: isSelected ? '' : String(intent.id) }))}
+                            style={{
+                              padding: '8px 10px',
+                              background: isSelected ? '#e8f5e2' : '#fff',
+                              border: isSelected ? '2px solid #7aab65' : '1px solid #eee',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              marginBottom: '6px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#1a3a1a' }}>
+                                <span style={{ padding: '2px 6px', background: intent.intentType === 'SELL' ? '#e3f2fd' : '#fff3e0', color: intent.intentType === 'SELL' ? '#1565c0' : '#e65100', borderRadius: '4px', fontSize: '10px', marginRight: '6px' }}>
+                                  {intent.intentType || 'INTENT'}
+                                </span>
+                                {intent.title || intent.tradeIntentTitle || `Trade Intent`}
+                                <span style={{ marginLeft: '4px', color: '#777', fontWeight: 'normal', fontSize: '11px' }}>#{intent.id}</span>
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>
+                                {intent.category && <span>{intent.category} </span>}
+                                {intent.quantity && <span>• {intent.quantity} {intent.unit || 'units'} {intent.pricePerUnit ? `@ ${intent.currency || 'INR'} ${intent.pricePerUnit}` : ''}</span>}
+                              </div>
+                            </div>
+                            <span style={{ fontSize: '11px', color: isSelected ? '#2e7d32' : '#999', fontWeight: 'bold' }}>
+                              {isSelected ? '✓ Selected' : 'Select'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : internalForm.memberId ? (
+                    <div style={{ padding: '8px', fontSize: '11px', color: '#777', background: '#fafafa', borderRadius: '8px', border: '1px dashed #ccc', marginBottom: '6px' }}>
+                      No active trade intents found for this member.
+                    </div>
+                  ) : null}
                 </div>
                 <div className="form-group">
                   <label className="form-label">Notes</label>
@@ -2658,6 +3030,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
   const [selectedStage, setSelectedStage] = useState(null);
   const [searchQuery, setSearchQuery]   = useState('');
   const [showAddLead, setShowAddLead]   = useState(false);
+  const [proposalIntent, setProposalIntent] = useState(null);
   const [toast, setToast]               = useState(null);
 
   const scrollBtnRef  = useRef(null);
@@ -3203,6 +3576,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                           key={intent.id}
                           intent={intent}
                           onView={setSelectedIntent}
+                          onRaiseProposal={setProposalIntent}
                         />
                       ))}
                     </AnimatePresence>
@@ -3313,6 +3687,21 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           <IntentDetailModal
             intent={selectedIntent}
             onClose={() => setSelectedIntent(null)}
+            onRaiseProposal={setProposalIntent}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {proposalIntent && (
+          <CreateProposalModal
+            intent={proposalIntent}
+            onClose={() => setProposalIntent(null)}
+            onSuccess={() => {
+              showToast?.('Proposal submitted successfully!', 'success');
+              setProposalIntent(null);
+            }}
+            showToast={showToast}
           />
         )}
       </AnimatePresence>

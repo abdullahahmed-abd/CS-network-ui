@@ -160,13 +160,7 @@ export function LeadModal({ lead, currentStageId, stages, onClose, onRefresh, sh
               <span>Intent Details</span>
             </button>
 
-            <button
-              onClick={() => setShowProposal(true)}
-              className="inline-flex items-center justify-center gap-1.5 p-2 rounded-xl bg-white hover:bg-amber-50 text-amber-900 font-semibold border border-slate-200 hover:border-amber-300 shadow-2xs transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Raise Proposal</span>
-            </button>
+
 
             <button
               onClick={() => setShowRefer(true)}
@@ -177,20 +171,7 @@ export function LeadModal({ lead, currentStageId, stages, onClose, onRefresh, sh
             </button>
           </div>
 
-          {/* Proposals Drawer Link */}
-          <div className="flex items-center justify-between p-3 rounded-2xl bg-indigo-50/70 border border-indigo-200/70">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-indigo-600" />
-              <span className="font-semibold text-indigo-950">View Submitted Proposals</span>
-            </div>
-            <button
-              onClick={() => setShowViewProposals(true)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all"
-            >
-              <span>Inspect Proposals</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+
 
           {/* Trade Intent Overview */}
           {(currentLead.tradeIntentTitle || currentLead.tradeIntent) && (

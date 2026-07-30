@@ -126,7 +126,6 @@ export default function PhoneScreen({ onBack, onSendOTP, mode = 'signup' }) {
       setLoading(false);
     }
   };
-
   // ── Select country ──
   const handleSelectCountry = (c) => {
     setSelectedCountry(c);

@@ -1,13 +1,14 @@
-// components/businesspartner/modals/CreateProposalModal.jsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, FileText, DollarSign, Package, Clock, Loader2, AlertCircle, Sparkles } from 'lucide-react';
-import { createProposalForLead } from '../../../api/businessPartnerApi';
+import { createProposalForLead, createProposalForIntent } from '../../../api/businessPartnerApi';
 
-export function CreateProposalModal({ lead, onClose, onSuccess, showToast }) {
+export function CreateProposalModal({ intent, lead, onClose, onSuccess, showToast }) {
+  const targetIntent = intent || lead?.tradeIntent;
+
   const [formData, setFormData] = useState({
-    quantityRequested: '',
-    pricePerUnit: '',
+    quantityRequested: targetIntent?.quantity ? String(targetIntent.quantity) : '',
+    pricePerUnit: targetIntent?.pricePerUnit ? String(targetIntent.pricePerUnit) : '',
     timelineDays: '30',
   });
 
@@ -16,7 +17,9 @@ export function CreateProposalModal({ lead, onClose, onSuccess, showToast }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!lead?.id) return;
+    const targetId = intent?.id || lead?.id;
+    if (!targetId) return;
+
     if (!formData.quantityRequested || Number(formData.quantityRequested) <= 0) {
       setError('Quantity requested must be greater than 0');
       return;
@@ -34,18 +37,27 @@ export function CreateProposalModal({ lead, onClose, onSuccess, showToast }) {
     setError('');
 
     try {
-      const res = await createProposalForLead(lead.id, {
-        quantityRequested: formData.quantityRequested,
-        pricePerUnit: formData.pricePerUnit,
-        timelineDays: formData.timelineDays,
-      });
+      let res;
+      if (intent?.id) {
+        res = await createProposalForIntent(intent.id, {
+          quantityRequested: formData.quantityRequested,
+          pricePerUnit: formData.pricePerUnit,
+          timelineDays: formData.timelineDays,
+        });
+      } else if (lead?.id) {
+        res = await createProposalForLead(lead.id, {
+          quantityRequested: formData.quantityRequested,
+          pricePerUnit: formData.pricePerUnit,
+          timelineDays: formData.timelineDays,
+        });
+      }
 
-      showToast?.(res?.message || 'Trade proposal created successfully!', 'success');
+      showToast?.(res?.message || 'Trade proposal submitted successfully!', 'success');
       onSuccess?.(res?.proposalId, res?.lead);
       onClose();
     } catch (err) {
-      console.error('createProposalForLead error:', err);
-      setError(err.message || 'Failed to create proposal for lead');
+      console.error('createProposal error:', err);
+      setError(err.message || 'Failed to submit proposal');
     } finally {
       setLoading(false);
     }
@@ -66,7 +78,9 @@ export function CreateProposalModal({ lead, onClose, onSuccess, showToast }) {
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-base">Raise Trade Proposal</h3>
-              <p className="text-xs text-slate-500">For lead: {lead?.companyName || lead?.contactPerson}</p>
+              <p className="text-xs text-slate-500">
+                {intent ? `For Intent: ${intent.title || 'Trade Intent'}` : `For Lead: ${lead?.companyName || lead?.contactPerson}`}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-full text-slate-400 hover:text-slate-700">
@@ -74,13 +88,14 @@ export function CreateProposalModal({ lead, onClose, onSuccess, showToast }) {
           </button>
         </div>
 
-        {/* Auto Negotiation Note */}
-        <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
-          <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <span>
-            Raising a proposal will automatically advance this lead to the <strong>NEGOTIATION</strong> stage.
-          </span>
-        </div>
+        {lead?.id && (
+          <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
+            <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <span>
+              Raising a proposal will automatically advance this lead to the <strong>NEGOTIATION</strong> stage.
+            </span>
+          </div>
+        )}
 
         {error && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">

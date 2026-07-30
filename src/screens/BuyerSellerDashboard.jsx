@@ -28,7 +28,7 @@ import MeetingsTab from '../components/meetings/MeetingsTab';
 import ScheduleMeetingModal from '../components/meetings/ScheduleMeetingModal';
 import DirectoryTab from '../components/directory/DirectoryTab';
 
-const BASE_URL = 'https://7545-2401-4900-8823-9cd3-35b9-880-b014-2367.ngrok-free.app';
+const BASE_URL = 'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';
 const WS_URL   = BASE_URL.replace(/^http/, 'ws') + '/cs-network/ws';
 
 // ─────────────────────────────────────────────
