@@ -5,7 +5,7 @@ import {
   User, Link2, Globe, RefreshCw,
   AlertCircle, Loader2, ChevronRight,
   Sprout, PhoneCall, BadgeCheck,
-  UserPlus, Scale, Trophy, XCircle,
+  UserPlus, Scale, Trophy, XCircle, Search,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,6 +45,7 @@ export default function BusinessPartnerPipeline({
   onFetchPipeline,
   onAddLead,
   showToast,
+  onBrowseLeadIntents,
 }) {
   const [selectedLead,  setSelectedLead]  = useState(null);
   const [selectedStage, setSelectedStage] = useState(null);
@@ -170,6 +171,7 @@ export default function BusinessPartnerPipeline({
                           setSelectedLead(lead);
                           setSelectedStage(stage.id);
                         }}
+                        onBrowseLeadIntents={onBrowseLeadIntents}
                       />
                     ))}
                   </AnimatePresence>
@@ -207,6 +209,7 @@ export default function BusinessPartnerPipeline({
             }}
             onRefresh={() => onFetchPipeline && onFetchPipeline(true)}
             showToast={showToast}
+            onBrowseLeadIntents={onBrowseLeadIntents}
           />
         )}
       </AnimatePresence>
@@ -215,7 +218,7 @@ export default function BusinessPartnerPipeline({
 }
 
 /* ════════ LeadCard (internal to Pipeline) ════════ */
-function LeadCard({ lead, stage, index, onClick }) {
+function LeadCard({ lead, stage, index, onClick, onBrowseLeadIntents }) {
   const isInternal = lead.leadType === 'INTERNAL';
   const followUp   = formatFollowUp(lead.followUpDate);
   const initials   = getInitials(lead.companyName || lead.contactPerson);
@@ -316,6 +319,31 @@ function LeadCard({ lead, stage, index, onClick }) {
           <Clock /> {formatDate(lead.updatedAt)}
         </div>
         <div className="lead-card-actions">
+          <button
+            className="lead-action-btn browse"
+            title="Browse Trade Intents for this lead"
+            onClick={e => {
+              e.stopPropagation();
+              onBrowseLeadIntents?.(lead);
+            }}
+            style={{
+              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '4px 10px',
+              fontSize: '11px',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+              marginRight: 'auto',
+            }}
+          >
+            <Search size={11} /> Browse
+          </button>
           {lead.phone && (
             <button
               className="lead-action-btn call"

@@ -15,7 +15,7 @@ import { authenticatedFetch } from '../api/auth';
 // ─────────────────────────────────────────────
 // ⚠️ IMPORTANT: Match these with your dashboard
 // ─────────────────────────────────────────────
-const BASE_URL = 'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';
+const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 const BRAND       = '#A2CB8B';
 const BRAND_DARK  = '#7aab65';
 const BRAND_LIGHT = '#e8f5e2';

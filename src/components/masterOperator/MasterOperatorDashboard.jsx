@@ -75,12 +75,14 @@ const getFranchiseConfig = (type) => {
           { id: 'settings',    label: 'Settings',            icon: '⚙️' },
         ]
       : [
-          { id: 'overview',    label: 'Overview',       icon: '📊' },
-          { id: 'members',     label: 'Members',        icon: '👥' },
-          { id: 'invite',      label: 'Invite Link',    icon: '🔗' },
-          { id: 'marketplace', label: 'Marketplace',    icon: '🛒' },
-          { id: 'meetings',    label: 'Meetings',       icon: '📅' },
-          { id: 'settings',    label: 'Settings',       icon: '⚙️' },
+          { id: 'overview',     label: 'Overview',       icon: '📊' },
+          { id: 'bp_approvals', label: 'BP Approvals',   icon: '🛡️' },
+          { id: 'commissions',  label: 'Commissions',    icon: '💰' },
+          { id: 'members',      label: 'Members',        icon: '👥' },
+          { id: 'invite',       label: 'Invite Link',    icon: '🔗' },
+          { id: 'marketplace',  label: 'Marketplace',    icon: '🛒' },
+          { id: 'meetings',     label: 'Meetings',       icon: '📅' },
+          { id: 'settings',     label: 'Settings',       icon: '⚙️' },
         ],
   };
 };
@@ -95,7 +97,13 @@ export default function FranchiseOperatorDashboard({ onLogout }) {
   const cfg = getFranchiseConfig(rawType);
 
   const [activeNav, setActiveNav] = useState('overview');
+  const [appFilter, setAppFilter] = useState('PENDING');
   const [sidebarOpen, setSidebar] = useState(true);
+
+  const handleNavigate = (nav, filter = 'PENDING') => {
+    setActiveNav(nav);
+    if (filter) setAppFilter(filter);
+  };
 
   const handleLogout = () => { clearTokens(); onLogout?.(); };
 
@@ -425,8 +433,9 @@ export default function FranchiseOperatorDashboard({ onLogout }) {
             >
               <FranchiseOperatorContent
                 activeNav={activeNav}
-                onNavigate={setActiveNav}
+                onNavigate={handleNavigate}
                 franchiseConfig={cfg}
+                initialFilter={appFilter}
               />
             </motion.div>
           </AnimatePresence>

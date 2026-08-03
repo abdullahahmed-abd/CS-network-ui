@@ -165,6 +165,57 @@ export const inviteMember = () =>
     },
   });
 
+// ══════════════════════════════════════
+// FRANCHISE OPERATOR APIs (Applications & Commissions)
+// ══════════════════════════════════════
+
+export const fetchPendingApplications = () =>
+  apiCall('/franchise-operator', {
+    body: {
+      franchiseOperatorRequestType: 'FETCH_PENDING_APPLICATIONS',
+    },
+  });
+
+export const approveApplication = (applicationId, reviewNotes = '') =>
+  apiCall('/franchise-operator', {
+    body: {
+      franchiseOperatorRequestType: 'APPROVE_APPLICATION',
+      applicationId: Number(applicationId),
+      ...(reviewNotes && { reviewNotes }),
+    },
+  });
+
+export const rejectApplication = (applicationId, reviewNotes) => {
+  if (!reviewNotes || !reviewNotes.trim()) {
+    throw new Error('reviewNotes (rejection reason) is required.');
+  }
+  return apiCall('/franchise-operator', {
+    body: {
+      franchiseOperatorRequestType: 'REJECT_APPLICATION',
+      applicationId: Number(applicationId),
+      reviewNotes: reviewNotes.trim(),
+    },
+  });
+};
+
+export const approveCommissionEntry = (commissionLedgerEntryId, reviewNotes = '') =>
+  apiCall('/franchise-operator', {
+    body: {
+      franchiseOperatorRequestType: 'APPROVE_COMMISSION_ENTRY',
+      commissionLedgerEntryId: Number(commissionLedgerEntryId),
+      ...(reviewNotes && { reviewNotes }),
+    },
+  });
+
+export const markCommissionEntryPaid = (commissionLedgerEntryId, reviewNotes = '') =>
+  apiCall('/franchise-operator', {
+    body: {
+      franchiseOperatorRequestType: 'MARK_COMMISSION_ENTRY_PAID',
+      commissionLedgerEntryId: Number(commissionLedgerEntryId),
+      ...(reviewNotes && { reviewNotes }),
+    },
+  });
+
 // Backward compat alias
 export const fetchGeneralDashboard = fetchFranchiseDashboard;
 
@@ -202,11 +253,96 @@ export const acceptInvitation = (token) =>
 // ══════════════════════════════════════
 // MEETINGS MODULE APIs
 // ══════════════════════════════════════
-export {
-  scheduleMeeting,
-  validateMeetingPayload,
-  buildMeetingPayload,
-  fetchEligibleFranchises,
-  fetchEligibleUsers,
-  fetchDownlinePreview,
-} from './meetingsApi';
+// ══════════════════════════════════════
+// GLOBAL ADMIN MEDIA HUB APIs
+// ══════════════════════════════════════
+
+export const fetchMediaSections = ({ mediaCategory } = {}) =>
+  apiCall('/global-admin', {
+    body: {
+      requestType: 'FETCH_MEDIA_SECTIONS',
+      ...(mediaCategory && { mediaCategory }),
+    },
+  });
+
+export const createMediaSection = ({ mediaCategory, sectionName, displayOrder = 0 }) =>
+  apiCall('/global-admin', {
+    body: {
+      requestType: 'CREATE_MEDIA_SECTION',
+      mediaCategory,
+      sectionName,
+      displayOrder: Number(displayOrder),
+    },
+  });
+
+export const updateMediaSection = ({ sectionId, sectionName, displayOrder }) =>
+  apiCall('/global-admin', {
+    body: {
+      requestType: 'UPDATE_MEDIA_SECTION',
+      sectionId: Number(sectionId),
+      ...(sectionName !== undefined && { sectionName }),
+      ...(displayOrder !== undefined && { displayOrder: Number(displayOrder) }),
+    },
+  });
+
+export const deleteMediaSection = (sectionId) =>
+  apiCall('/global-admin', {
+    body: {
+      requestType: 'DELETE_MEDIA_SECTION',
+      sectionId: Number(sectionId),
+    },
+  });
+
+export const createMediaVideo = ({
+  mediaCategory,
+  videoTitle,
+  youtubeUrl,
+  videoDescription,
+  sectionId,
+  displayOrder = 0,
+  published = true,
+}) =>
+  apiCall('/global-admin', {
+    body: {
+      requestType: 'CREATE_MEDIA_VIDEO',
+      mediaCategory,
+      videoTitle,
+      youtubeUrl,
+      ...(videoDescription && { videoDescription }),
+      ...(sectionId !== undefined && sectionId !== null && { sectionId: Number(sectionId) }),
+      displayOrder: Number(displayOrder),
+      published: Boolean(published),
+    },
+  });
+
+export const updateMediaVideo = ({
+  videoId,
+  videoTitle,
+  videoDescription,
+  youtubeUrl,
+  mediaCategory,
+  sectionId,
+  displayOrder,
+  published,
+}) =>
+  apiCall('/global-admin', {
+    body: {
+      requestType: 'UPDATE_MEDIA_VIDEO',
+      videoId: Number(videoId),
+      ...(videoTitle !== undefined && { videoTitle }),
+      ...(videoDescription !== undefined && { videoDescription }),
+      ...(youtubeUrl !== undefined && { youtubeUrl }),
+      ...(mediaCategory !== undefined && { mediaCategory }),
+      ...(sectionId !== undefined && { sectionId: Number(sectionId) }),
+      ...(displayOrder !== undefined && { displayOrder: Number(displayOrder) }),
+      ...(published !== undefined && { published: Boolean(published) }),
+    },
+  });
+
+export const deleteMediaVideo = (videoId) =>
+  apiCall('/global-admin', {
+    body: {
+      requestType: 'DELETE_MEDIA_VIDEO',
+      videoId: Number(videoId),
+    },
+  });

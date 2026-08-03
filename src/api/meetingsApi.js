@@ -6,7 +6,7 @@
 
 import { apiCall, authenticatedFetch, getUserData, getItem } from './auth';
 
-const BASE_URL = 'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';
+const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 
 // ─────────────────────────────────────────────
 // Enums & Reference Constants

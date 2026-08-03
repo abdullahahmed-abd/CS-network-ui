@@ -119,6 +119,9 @@ export default function BusinessPartnerIntents({
   onRefresh,
   onCreateIntent,
   showToast,
+  activeProposalLead,
+  onClearProposalLead,
+  onSuccessProposal,
 }) {
   const [selectedIntent, setSelectedIntent] = useState(null);
   const [proposalIntent, setProposalIntent] = useState(null);
@@ -136,6 +139,48 @@ export default function BusinessPartnerIntents({
 
   return (
     <>
+      {activeProposalLead && (
+        <div style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+          border: '1px solid #bfdbfe',
+          borderRadius: '16px',
+          padding: '14px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '10px',
+              background: '#2563eb', color: '#fff', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold'
+            }}>
+              🎯
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e3a8a' }}>
+                Raising Proposal for Lead: {activeProposalLead.companyName || activeProposalLead.contactPerson} (ID: #{activeProposalLead.id})
+              </div>
+              <div style={{ fontSize: '11px', color: '#1d4ed8', fontWeight: '500', marginTop: '2px' }}>
+                Select any trade intent below and click "Raise Proposal" to send a formal proposal for Lead #{activeProposalLead.id}.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClearProposalLead}
+            style={{
+              background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px',
+              padding: '5px 12px', fontSize: '11px', fontWeight: '700', color: '#475569',
+              cursor: 'pointer'
+            }}
+          >
+            Clear Lead Filter
+          </button>
+        </div>
+      )}
+
       <div className="panel">
         <div className="panel-head">
           <div>
@@ -231,7 +276,7 @@ export default function BusinessPartnerIntents({
                     key={intent.id}
                     intent={intent}
                     onView={setSelectedIntent}
-                    onRaiseProposal={setProposalIntent}
+                    onRaiseProposal={activeProposalLead ? setProposalIntent : null}
                   />
                 ))}
               </AnimatePresence>
@@ -271,7 +316,7 @@ export default function BusinessPartnerIntents({
           <IntentDetailModal
             intent={selectedIntent}
             onClose={() => setSelectedIntent(null)}
-            onRaiseProposal={setProposalIntent}
+            onRaiseProposal={activeProposalLead ? setProposalIntent : null}
           />
         )}
       </AnimatePresence>
@@ -281,10 +326,12 @@ export default function BusinessPartnerIntents({
         {proposalIntent && (
           <CreateProposalModal
             intent={proposalIntent}
+            lead={activeProposalLead}
             onClose={() => setProposalIntent(null)}
-            onSuccess={() => {
+            onSuccess={(propId, updatedLead) => {
               showToast?.('Trade proposal submitted successfully!', 'success');
               setProposalIntent(null);
+              onSuccessProposal?.();
             }}
             showToast={showToast}
           />

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
   { id: 'overview',    label: 'Overview',    icon: '🏠' },
+  { id: 'media_hub',   label: 'Media Hub',   icon: '🎬' },
   { id: 'franchises',  label: 'Franchises',  icon: '🏢' },
   { id: 'invitations', label: 'Invitations', icon: '📨' },
   { id: 'directory',   label: 'Directory',   icon: '📖' },

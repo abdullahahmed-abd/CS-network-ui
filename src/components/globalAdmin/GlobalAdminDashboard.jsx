@@ -6,6 +6,7 @@ import { clearTokens, getUserData } from '../../api/auth';
 import Sidebar        from './Sidebar';
 import Header         from './Header';
 import OverviewTab    from './tabs/OverviewTab';
+import MediaHubTab    from './tabs/MediaHubTab';
 import FranchisesTab  from './tabs/FranchisesTab';
 import InvitationsTab from './tabs/InvitationsTab';
 import EventsTab      from './tabs/EventsTab';
@@ -95,6 +96,7 @@ export default function GlobalAdminDashboard({ onLogout }) {
               transition={{ duration: 0.22 }}
             >
               {activeNav === 'overview'    && <OverviewTab onNavigate={setActiveNav} />}
+              {activeNav === 'media_hub'   && <MediaHubTab />}
               {activeNav === 'franchises'  && <FranchisesTab />}
               {activeNav === 'invitations' && <InvitationsTab />}
               {activeNav === 'directory'   && <DirectoryTab />}

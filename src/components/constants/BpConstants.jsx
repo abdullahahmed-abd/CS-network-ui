@@ -82,12 +82,14 @@ export const INTENT_STATUS = {
 };
 
 export const NAV_ITEMS = [
-  { id: 'pipeline',      label: 'Pipeline',      },
-  { id: 'trade_intents', label: 'Trade Intents', },
-  { id: 'deals',         label: 'Deals',         },
-  { id: 'commissions',   label: 'Commissions',   },
-  { id: 'meetings',      label: 'Meetings',      },
+  { id: 'pipeline',         label: 'Pipeline',      },
+  { id: 'trade_intents',    label: 'Trade Intents', },
+  { id: 'deals',            label: 'Deals',         },
+  { id: 'commissions',      label: 'Commissions',   },
+  { id: 'meetings',         label: 'Meetings',      },
+  { id: 'events',           label: 'Events',        },
+  { id: 'my_registrations', label: 'My Tickets',    },
 ];
 
 export const BASE_URL =
-  'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';
+  'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';

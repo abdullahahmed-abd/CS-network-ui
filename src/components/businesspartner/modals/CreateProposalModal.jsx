@@ -17,7 +17,7 @@ export function CreateProposalModal({ intent, lead, onClose, onSuccess, showToas
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const targetId = intent?.id || lead?.id;
+    const targetId = lead?.id || intent?.id;
     if (!targetId) return;
 
     if (!formData.quantityRequested || Number(formData.quantityRequested) <= 0) {
@@ -38,14 +38,16 @@ export function CreateProposalModal({ intent, lead, onClose, onSuccess, showToas
 
     try {
       let res;
-      if (intent?.id) {
-        res = await createProposalForIntent(intent.id, {
+      if (lead?.id) {
+        const tradeIntentId = intent?.id || lead?.tradeIntentId || lead?.tradeIntent?.id;
+        res = await createProposalForLead(lead.id, {
+          tradeIntentId,
           quantityRequested: formData.quantityRequested,
           pricePerUnit: formData.pricePerUnit,
           timelineDays: formData.timelineDays,
         });
-      } else if (lead?.id) {
-        res = await createProposalForLead(lead.id, {
+      } else if (intent?.id) {
+        res = await createProposalForIntent(intent.id, {
           quantityRequested: formData.quantityRequested,
           pricePerUnit: formData.pricePerUnit,
           timelineDays: formData.timelineDays,

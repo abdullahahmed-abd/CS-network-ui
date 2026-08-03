@@ -1,5 +1,5 @@
 // components/globalAdmin/tabs/FranchisesTab.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createMasterFranchise, inviteMasterOperator } from '../../../api/adminApi';
 import Toast from '../ui/Toast';
@@ -8,6 +8,7 @@ import { InputField, GreenButton } from '../FormFields';
 
 export default function FranchisesTab() {
   const [showCreate, setShowCreate]           = useState(false);
+  const [createResult, setCreateResult]       = useState(null);
   const [showInvite, setShowInvite]           = useState(false);
   const [name, setName]                       = useState('');
   const [country, setCountry]                 = useState('');
@@ -18,48 +19,77 @@ export default function FranchisesTab() {
   const [inviteLoading, setInviteLoading]     = useState(false);
   const [inviteResult, setInviteResult]       = useState(null);
 
+  const getLinkFromRes = (res) => {
+    if (!res) return '';
+    if (res.inviteLink) return res.inviteLink;
+    if (res.token) return `${window.location.origin}/invite/${res.token}`;
+    if (res.inviteUrl) return res.inviteUrl;
+    if (typeof res === 'string') return res;
+    return '';
+  };
+
   const handleCreate = async () => {
     if (!name.trim() || !country.trim()) {
       setToast({ message: 'Please fill franchise name and country', type: 'error' });
       return;
     }
     setLoading(true);
+    setCreateResult(null);
     try {
       const res = await createMasterFranchise(name.trim(), country.trim());
+      let link = getLinkFromRes(res);
+      const franchiseId = res?.franchiseId || res?.id || Date.now();
+
+      // Auto-generate invite link if creation response didn't contain direct link
+      if (!link && franchiseId) {
+        try {
+          const invRes = await inviteMasterOperator(Number(franchiseId));
+          link = getLinkFromRes(invRes);
+        } catch (e) {
+          console.error('Failed to auto-generate invite link:', e);
+        }
+      }
+
       setFranchises((prev) => [...prev, {
-        id: res.franchiseId,
-        name: res.franchiseName || name,
-        country: res.country || country,
-        inviteLink: res.inviteLink,
+        id: franchiseId,
+        name: res.franchiseName || name.trim(),
+        country: res.country || country.trim(),
+        inviteLink: link,
       }]);
+      setCreateResult({ ...res, id: franchiseId, inviteLink: link });
       setToast({ message: res.message || 'Master Franchise created successfully!', type: 'success' });
-      setName(''); setCountry(''); setShowCreate(false);
+      setName(''); setCountry('');
     } catch (err) {
-      setToast({ message: err.message, type: 'error' });
+      setToast({ message: err.message || 'Failed to create franchise', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInvite = async () => {
-    if (!inviteFranchiseId) {
-      setToast({ message: 'Please enter franchise ID', type: 'error' });
-      return;
-    }
+  const handleInvite = async (overrideId) => {
+    const targetId = overrideId || inviteFranchiseId || franchises[0]?.id || 1;
     setInviteLoading(true);
     setInviteResult(null);
     try {
-      const res = await inviteMasterOperator(Number(inviteFranchiseId));
-      setInviteResult(res);
+      const res = await inviteMasterOperator(Number(targetId));
+      const link = getLinkFromRes(res);
+      setInviteResult({ ...res, inviteLink: link });
       setToast({ message: res.message || 'Invitation created!', type: 'success' });
     } catch (err) {
-      setToast({ message: err.message, type: 'error' });
+      setToast({ message: err.message || 'Failed to generate invite link', type: 'error' });
     } finally {
       setInviteLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (showInvite && !inviteResult && !inviteLoading) {
+      handleInvite(inviteFranchiseId);
+    }
+  }, [showInvite]);
+
   const copyToClipboard = (text) => {
+    if (!text) return;
     navigator.clipboard.writeText(text).then(() =>
       setToast({ message: 'Link copied to clipboard!', type: 'success' })
     );
@@ -86,16 +116,16 @@ export default function FranchisesTab() {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <GreenButton variant="outline"
-            onClick={() => { setShowInvite(true); setInviteResult(null); }}>
+            onClick={() => { setInviteFranchiseId(''); setInviteResult(null); setShowInvite(true); }}>
             📨 Invite Operator
           </GreenButton>
-          <GreenButton onClick={() => setShowCreate(true)}>
+          <GreenButton onClick={() => { setShowCreate(true); setCreateResult(null); }}>
             ➕ Create Franchise
           </GreenButton>
         </div>
       </div>
 
-      {/* Empty State */}
+      {/* Empty State / Franchise Cards */}
       {franchises.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -115,7 +145,7 @@ export default function FranchisesTab() {
           <p style={{ color: '#6B8F71', fontSize: 14, marginBottom: 20 }}>
             Create your first master franchise to get started
           </p>
-          <GreenButton onClick={() => setShowCreate(true)}>
+          <GreenButton onClick={() => { setShowCreate(true); setCreateResult(null); }}>
             ➕ Create First Franchise
           </GreenButton>
         </motion.div>
@@ -157,6 +187,14 @@ export default function FranchisesTab() {
                   ID: {f.id}
                 </div>
               </div>
+              {f.inviteLink && (
+                <div style={{ marginBottom: 12, background: '#F8FAFC', padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#334155', wordBreak: 'break-all' }}>{f.inviteLink}</div>
+                  <motion.button onClick={() => copyToClipboard(f.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                    style={{ padding: '4px 10px', borderRadius: 6, background: '#16A34A', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}
+                  >📋 Copy</motion.button>
+                </div>
+              )}
               <GreenButton
                 variant="outline"
                 onClick={() => {
@@ -175,16 +213,54 @@ export default function FranchisesTab() {
       {/* Create Modal */}
       <AnimatePresence>
         {showCreate && (
-          <Modal title="Create Master Franchise" onClose={() => setShowCreate(false)}>
-            <InputField label="Franchise Name" value={name} onChange={setName}
-              placeholder="e.g. India Master" />
-            <InputField label="Country" value={country} onChange={setCountry}
-              placeholder="e.g. India" />
-            <div style={{ marginTop: 8 }}>
-              <GreenButton fullWidth onClick={handleCreate} loading={loading}>
-                {loading ? 'Creating...' : '🏢 Create Master Franchise'}
-              </GreenButton>
-            </div>
+          <Modal title="Create Master Franchise" onClose={() => { setShowCreate(false); setCreateResult(null); }}>
+            {!createResult ? (
+              <>
+                <InputField label="Franchise Name" value={name} onChange={setName}
+                  placeholder="e.g. India Master" />
+                <InputField label="Country" value={country} onChange={setCountry}
+                  placeholder="e.g. India" />
+                <div style={{ marginTop: 8 }}>
+                  <GreenButton fullWidth onClick={handleCreate} loading={loading}>
+                    {loading ? 'Creating...' : '🏢 Create Master Franchise'}
+                  </GreenButton>
+                </div>
+              </>
+            ) : (
+              <div style={{ background: '#F0FDF4', padding: 20, borderRadius: 14, border: '1px solid #BBF7D0' }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#166534', marginBottom: 6 }}>
+                  ✅ Master Franchise Created!
+                </div>
+                <div style={{ fontSize: 12, color: '#15803D', marginBottom: 14 }}>
+                  Franchise ID: <strong>#{createResult.id}</strong>
+                </div>
+
+                {createResult.inviteLink && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 6 }}>
+                      Master Operator Invite Link:
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '10px 12px', borderRadius: 10, border: '1px solid #BBF7D0' }}>
+                      <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#166534', wordBreak: 'break-all' }}>
+                        {createResult.inviteLink}
+                      </div>
+                      <motion.button onClick={() => copyToClipboard(createResult.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        style={{ padding: '6px 12px', borderRadius: 8, background: '#16A34A', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}
+                      >📋 Copy</motion.button>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                  <GreenButton variant="outline" fullWidth onClick={() => setCreateResult(null)}>
+                    ➕ Create Another
+                  </GreenButton>
+                  <GreenButton fullWidth onClick={() => { setShowCreate(false); setCreateResult(null); }}>
+                    Done
+                  </GreenButton>
+                </div>
+              </div>
+            )}
           </Modal>
         )}
       </AnimatePresence>
@@ -192,64 +268,49 @@ export default function FranchisesTab() {
       {/* Invite Modal */}
       <AnimatePresence>
         {showInvite && (
-          <Modal title="Invite Master Operator" onClose={() => setShowInvite(false)}>
-            <InputField label="Franchise ID" value={inviteFranchiseId}
-              onChange={setInviteFranchiseId} placeholder="e.g. 1" />
-            {!inviteResult && (
-              <GreenButton fullWidth onClick={handleInvite} loading={inviteLoading}>
-                {inviteLoading ? 'Generating...' : '🔗 Generate Invite Link'}
-              </GreenButton>
+          <Modal title="Invite Master Operator" onClose={() => { setShowInvite(false); setInviteResult(null); setInviteFranchiseId(''); }}>
+            {inviteLoading && (
+              <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  style={{ width: 40, height: 40, border: '3px solid #BBF7D0', borderTopColor: '#16A34A', borderRadius: '50%', margin: '0 auto 16px' }}
+                />
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#1A3A1A', margin: 0 }}>
+                  Generating Master Operator Invite Link...
+                </p>
+              </div>
             )}
-            <AnimatePresence>
-              {inviteResult && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  style={{
-                    marginTop: 20, padding: '20px', background: '#F0FDF4',
-                    borderRadius: 14, border: '1px solid #BBF7D0',
-                  }}
-                >
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#166534', marginBottom: 12 }}>
-                    ✅ Invitation Created!
-                  </div>
-                  {inviteResult.inviteLink && (
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#6B8F71', marginBottom: 6 }}>
-                        Invite Link:
-                      </div>
+            {!inviteLoading && inviteResult && (
+              <div style={{ marginTop: 8, background: '#F0FDF4', padding: 20, borderRadius: 14, border: '1px solid #BBF7D0' }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#166534', marginBottom: 12 }}>
+                  ✅ Master Operator Invite Link Ready!
+                </div>
+                {inviteResult.inviteLink && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      background: '#fff', padding: '10px 14px',
+                      borderRadius: 10, border: '1px solid #E8F0E0',
+                      marginBottom: 12,
+                    }}>
                       <div style={{
-                        display: 'flex', alignItems: 'center', gap: 8,
-                        background: '#fff', padding: '10px 14px',
-                        borderRadius: 10, border: '1px solid #E8F0E0',
+                        flex: 1, fontSize: 12, color: '#1A3A1A',
+                        wordBreak: 'break-all', fontFamily: 'monospace',
                       }}>
-                        <div style={{
-                          flex: 1, fontSize: 12, color: '#1A3A1A',
-                          wordBreak: 'break-all', fontFamily: 'monospace',
-                        }}>
-                          {inviteResult.inviteLink}
-                        </div>
-                        <motion.button
-                          onClick={() => copyToClipboard(inviteResult.inviteLink)}
-                          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                          style={{
-                            padding: '6px 12px', borderRadius: 8,
-                            background: '#16A34A', color: '#fff',
-                            border: 'none', cursor: 'pointer',
-                            fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap',
-                          }}
-                        >📋 Copy</motion.button>
+                        {inviteResult.inviteLink}
                       </div>
                     </div>
-                  )}
-                  {inviteResult.expiresAt && (
-                    <div style={{ fontSize: 11, color: '#6B8F71' }}>
-                      ⏰ Expires: {new Date(inviteResult.expiresAt).toLocaleString()}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <GreenButton fullWidth onClick={() => copyToClipboard(inviteResult.inviteLink)}>
+                      📋 Copy Invite Link
+                    </GreenButton>
+                  </div>
+                )}
+                {inviteResult.expiresAt && (
+                  <div style={{ fontSize: 11, color: '#6B8F71', textAlign: 'center', marginTop: 10 }}>
+                    ⏰ Expires: {new Date(inviteResult.expiresAt).toLocaleString()}
+                  </div>
+                )}
+              </div>
+            )}
           </Modal>
         )}
       </AnimatePresence>

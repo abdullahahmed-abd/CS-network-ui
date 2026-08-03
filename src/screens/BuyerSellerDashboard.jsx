@@ -27,8 +27,9 @@ import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
 import MeetingsTab from '../components/meetings/MeetingsTab';
 import ScheduleMeetingModal from '../components/meetings/ScheduleMeetingModal';
 import DirectoryTab from '../components/directory/DirectoryTab';
+import { BusinessPartnerDeals as DealsTab } from '../components/businesspartner/BusinessPartnerDeals';
 
-const BASE_URL = 'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';
+const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 const WS_URL   = BASE_URL.replace(/^http/, 'ws') + '/cs-network/ws';
 
 // ─────────────────────────────────────────────
@@ -272,7 +273,7 @@ function AuthFileLink({ conversationId, messageId, fileName, children }) {
 // ══════════════════════════════════════════════
 // TradeChatScreen
 // ══════════════════════════════════════════════
-function TradeChatScreen({ conversationId, title, otherPartyName, otherPartyId, onClose }) {
+export function TradeChatScreen({ conversationId, title, otherPartyName, otherPartyId, dealId, isOwner = true, onClose, onDealCompleted }) {
   const [messages,           setMessages]           = useState([]);
   const [input,              setInput]              = useState('');
   const [connected,          setConnected]          = useState(false);
@@ -283,6 +284,8 @@ function TradeChatScreen({ conversationId, title, otherPartyName, otherPartyId, 
   const [uploading,          setUploading]          = useState(false);
   const [imagePreview,       setImagePreview]       = useState(null);
   const [showScheduleModal,  setShowScheduleModal]  = useState(false);
+  const [completingDeal,     setCompletingDeal]     = useState(false);
+  const [dealSuccessMsg,     setDealSuccessMsg]     = useState('');
 
   const clientRef = useRef(null);
   const bottomRef = useRef(null);
@@ -492,6 +495,30 @@ function TradeChatScreen({ conversationId, title, otherPartyName, otherPartyId, 
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
+  const handleMarkDealCompleted = async () => {
+    const targetDealId = dealId || conversationId;
+    if (!targetDealId || completingDeal) return;
+    setCompletingDeal(true);
+    setError('');
+    try {
+      const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+        method: 'POST',
+        body: JSON.stringify({
+          memberRequestType: 'MARK_DEAL_COMPLETED',
+          dealId: Number(targetDealId),
+        }),
+      });
+
+      const msg = data?.message || '✓ Deal marked as completed! Commission ledger generated.';
+      setDealSuccessMsg(msg);
+      onDealCompleted?.(targetDealId);
+    } catch (err) {
+      setError(err.message || 'Failed to mark deal completed');
+    } finally {
+      setCompletingDeal(false);
+    }
+  };
+
   const isMine = (msg) => {
     if (!msg) return false;
 
@@ -605,6 +632,17 @@ function TradeChatScreen({ conversationId, title, otherPartyName, otherPartyId, 
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {isOwner && (
+              <button
+                onClick={handleMarkDealCompleted}
+                disabled={completingDeal}
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-3 py-1.5 transition shadow-sm disabled:opacity-50"
+                title="Mark this deal as completed"
+              >
+                {completingDeal ? <Loader2 className="h-4 w-4 animate-spin text-white" /> : <CheckCircle2 className="h-4 w-4 text-white" />}
+                <span className="hidden sm:inline">{dealSuccessMsg ? 'Completed ✓' : 'Mark Complete'}</span>
+              </button>
+            )}
             <button
               onClick={() => setShowScheduleModal(true)}
               className="flex items-center gap-1.5 rounded-xl bg-white/20 px-3 py-1.5 text-white hover:bg-white/30 transition text-xs font-semibold shadow-sm"
@@ -620,6 +658,14 @@ function TradeChatScreen({ conversationId, title, otherPartyName, otherPartyId, 
         </div>
 
         <AnimatePresence>
+          {dealSuccessMsg && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              className="flex-shrink-0 flex items-center gap-2 bg-emerald-50 border-b border-emerald-200 px-4 py-2.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+              <p className="text-xs font-semibold text-emerald-800 flex-1">{dealSuccessMsg}</p>
+              <button onClick={() => setDealSuccessMsg('')}><X className="h-3.5 w-3.5 text-emerald-500" /></button>
+            </motion.div>
+          )}
           {error && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
               className="flex-shrink-0 flex items-center gap-2 bg-red-50 border-b border-red-200 px-4 py-2.5">
@@ -808,7 +854,7 @@ function TradeChatScreen({ conversationId, title, otherPartyName, otherPartyId, 
 // ══════════════════════════════════════════════
 // InboxTab
 // ══════════════════════════════════════════════
-function InboxTab() {
+export function InboxTab() {
   const [conversations, setConversations] = useState([]);
   const [loading,       setLoading]       = useState(false);
   const [error,         setError]         = useState('');
@@ -972,6 +1018,8 @@ function InboxTab() {
             title={activeChat.participantName || 'Trade Chat'}
             otherPartyName={activeChat.participantName}
             otherPartyId={activeChat.participantId || activeChat.otherUserId || activeChat.partnerId}
+            dealId={activeChat.dealId || activeChat.tradeIntentId || activeChat.tradeProposalId || activeChat.conversationId}
+            isOwner={activeChat.isOwner !== false}
             onClose={() => setActiveChat(null)}
           />
         )}
@@ -1241,7 +1289,7 @@ const IntentCard = forwardRef(function IntentCard({ intent, onView, onSendPropos
 });
 
 // ── ProposalCard ──
-const ProposalCard = forwardRef(function ProposalCard(
+export const ProposalCard = forwardRef(function ProposalCard(
   { proposal, onAccept, isOwner, accepting, onOpenChat }, ref
 ) {
   const st         = PROPOSAL_STATUS_CONFIG[proposal.status] || PROPOSAL_STATUS_CONFIG.PENDING;
@@ -1578,7 +1626,7 @@ function IntentDetailModal({ intent, onClose, onSendProposal, onViewProposals, i
 }
 
 // ── ReceivedProposalsContent ──
-function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefreshMyIntents }) {
+export function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefreshMyIntents }) {
   const [selectedIntent,   setSelectedIntent]   = useState(null);
   const [proposals,        setProposals]        = useState([]);
   const [proposalsLoading, setProposalsLoading] = useState(false);
@@ -1778,7 +1826,11 @@ function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefreshMyInte
       <AnimatePresence>
         {chatProposal?.conversationId && (
           <TradeChatScreen conversationId={chatProposal.conversationId}
-            title={`Trade #${chatProposal.tradeIntentId}`} otherPartyName={chatProposal.proposerName}
+            title={`Trade #${chatProposal.tradeIntentId}`}
+            otherPartyName={chatProposal.proposerName || 'Trader'}
+            otherPartyId={chatProposal.proposerId || chatProposal.proposerMemberId || chatProposal.memberId}
+            dealId={chatProposal.dealId || chatProposal.tradeProposalId || chatProposal.proposalId || selectedIntent?.id}
+            isOwner={true}
             onClose={() => setChatProposal(null)} />
         )}
       </AnimatePresence>
@@ -1787,7 +1839,7 @@ function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefreshMyInte
 }
 
 // ── SentProposalsContent ──
-function SentProposalsContent() {
+export function SentProposalsContent() {
   const [proposals,    setProposals]    = useState([]);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState('');
@@ -1903,7 +1955,10 @@ function SentProposalsContent() {
         {chatProposal?.conversationId && (
           <TradeChatScreen conversationId={chatProposal.conversationId}
             title={`Trade #${chatProposal.tradeIntentId}`}
-            otherPartyName={`Intent #${chatProposal.tradeIntentId}`}
+            otherPartyName={chatProposal.intentOwnerName || chatProposal.createdByName || chatProposal.receiverName || chatProposal.proposerName || `Intent #${chatProposal.tradeIntentId}`}
+            otherPartyId={chatProposal.intentOwnerId || chatProposal.createdById || chatProposal.receiverId}
+            dealId={chatProposal.dealId || chatProposal.tradeProposalId || chatProposal.proposalId}
+            isOwner={false}
             onClose={() => setChatProposal(null)} />
         )}
       </AnimatePresence>
@@ -1912,7 +1967,7 @@ function SentProposalsContent() {
 }
 
 // ── ProposalsTab ──
-function ProposalsTab({ myIntents, myIntentsLoading, onRefreshMyIntents }) {
+export function ProposalsTab({ myIntents, myIntentsLoading, onRefreshMyIntents }) {
   const [subTab, setSubTab] = useState('received');
 
   return (
@@ -2383,6 +2438,7 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
     { id: 'market',           label: 'Market',       icon: BarChart3, badge: 0           },
     { id: 'my_intents',       label: 'My Intents',   icon: Package,   badge: 0           },
     { id: 'proposals',        label: 'Proposals',    icon: FileText,  badge: 0           },
+    { id: 'deals',            label: 'Deals',        icon: CheckCheck,badge: 0           },
     { id: 'directory',        label: 'Directory',    icon: Users,     badge: 0           },
     { id: 'events',           label: 'Events',       icon: Calendar,  badge: 0           },
     { id: 'my_registrations', label: 'My Tickets',   icon: Ticket,    badge: 0           },
@@ -2629,6 +2685,9 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
             onRefreshMyIntents={fetchMyIntents}
           />
         )}
+
+        {/* ══ DEALS TAB ══ */}
+        {activeTab === 'deals' && <DealsTab />}
 
         {/* ══ DIRECTORY TAB ══ */}
         {activeTab === 'directory' && <DirectoryTab />}

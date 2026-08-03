@@ -5,7 +5,7 @@ import {
   Users, Calendar, MessageSquare,
   Link2, Globe, Briefcase, Edit,
   Send, Trash2, FileText, Sparkles,
-  Loader2, AlertCircle, ArrowUpRight,
+  Loader2, AlertCircle, ArrowUpRight, Search,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatFollowUp } from '../../../utils/BpHelpers';
@@ -17,7 +17,7 @@ import { ViewProposalsModal } from './ViewProposalsModal';
 import { ReferLeadModal } from './ReferLeadModal';
 import { AttachIntentModal } from './AttachIntentModal';
 
-export function LeadModal({ lead, currentStageId, stages, onClose, onRefresh, showToast }) {
+export function LeadModal({ lead, currentStageId, stages, onClose, onRefresh, showToast, onBrowseLeadIntents }) {
   if (!lead) return null;
 
   const [currentLead, setCurrentLead] = useState(lead);
@@ -145,6 +145,17 @@ export function LeadModal({ lead, currentStageId, stages, onClose, onRefresh, sh
           {/* Quick Action Toolbar */}
           <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
+              onClick={() => {
+                onClose();
+                onBrowseLeadIntents?.(currentLead);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 p-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xs transition-all"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Browse Intents</span>
+            </button>
+
+            <button
               onClick={() => setShowEdit(true)}
               className="inline-flex items-center justify-center gap-1.5 p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-semibold border border-slate-200 shadow-2xs transition-all"
             >
@@ -159,8 +170,6 @@ export function LeadModal({ lead, currentStageId, stages, onClose, onRefresh, sh
               <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
               <span>Intent Details</span>
             </button>
-
-
 
             <button
               onClick={() => setShowRefer(true)}

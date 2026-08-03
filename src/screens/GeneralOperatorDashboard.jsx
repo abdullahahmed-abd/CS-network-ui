@@ -3,21 +3,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { clearTokens, getUserData, authenticatedFetch } from '../api/auth';
 import { inviteMember } from '../api/adminApi';
 
-const BASE_URL = 'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';
+const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 
 const navItems = [
-  { id: 'overview',      label: 'Overview',      icon: '🏠' },
-  { id: 'applications',  label: 'Applications',  icon: '📋' },
-  { id: 'invitations',   label: 'Invite Members', icon: '📨' },
-  { id: 'members',       label: 'Members',       icon: '👥' },
-  { id: 'settings',      label: 'Settings',      icon: '⚙️' },
+  { id: 'overview',      label: 'Overview',           icon: '🏠' },
+  { id: 'bp_approvals',  label: 'BP Approvals',       icon: '🛡️' },
+  { id: 'applications',  label: 'Applications',       icon: '📋' },
+  { id: 'commissions',   label: 'Commissions',        icon: '💰' },
+  { id: 'invitations',   label: 'Invite Members',     icon: '📨' },
+  { id: 'members',       label: 'Members',            icon: '👥' },
+  { id: 'settings',      label: 'Settings',           icon: '⚙️' },
 ];
 
 export default function GeneralOperatorDashboard({ onLogout }) {
   const [activeNav, setActiveNav] = useState('overview');
+  const [appFilter, setAppFilter] = useState('PENDING');
   const [sidebarOpen, setSidebar] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
   const user = getUserData() || {};
+
+  const handleNavigate = (nav, filter = 'PENDING') => {
+    setActiveNav(nav);
+    if (filter) setAppFilter(filter);
+  };
 
   const handleLogout = () => {
     clearTokens();
@@ -88,7 +96,7 @@ export default function GeneralOperatorDashboard({ onLogout }) {
 
               {navItems.map((item) => {
                 const isActive = activeNav === item.id;
-                const showBadge = item.id === 'applications' && pendingCount > 0;
+                const showBadge = (item.id === 'bp_approvals' || item.id === 'applications') && pendingCount > 0;
                 return (
                   <motion.button
                     key={item.id}
@@ -289,8 +297,10 @@ export default function GeneralOperatorDashboard({ onLogout }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.22 }}
             >
-              {activeNav === 'overview'     && <OverviewTab onNavigate={setActiveNav} pendingCount={pendingCount} />}
-              {activeNav === 'applications' && <ApplicationsTab onCountChange={setPendingCount} />}
+              {activeNav === 'overview'     && <OverviewTab onNavigate={handleNavigate} pendingCount={pendingCount} />}
+              {activeNav === 'bp_approvals' && <ApplicationsTab onCountChange={setPendingCount} initialFilter={appFilter} key={appFilter} />}
+              {activeNav === 'applications' && <ApplicationsTab onCountChange={setPendingCount} initialFilter={appFilter} key={appFilter} />}
+              {activeNav === 'commissions'  && <OperatorCommissionsTab />}
               {activeNav === 'invitations'  && <InviteMembersTab />}
               {activeNav === 'members'      && <PlaceholderTab name="members" />}
               {activeNav === 'settings'     && <PlaceholderTab name="settings" />}
@@ -392,7 +402,7 @@ function OverviewTab({ onNavigate, pendingCount }) {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          onClick={() => onNavigate('applications')}
+          onClick={() => onNavigate('bp_approvals')}
           style={{
             background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
             border: '1px solid #F59E0B',
@@ -420,6 +430,76 @@ function OverviewTab({ onNavigate, pendingCount }) {
         </motion.div>
       )}
 
+      {/* 💰 Commission Payout Banner */}
+      <motion.div
+        whileHover={{ scale: 1.01 }}
+        onClick={() => onNavigate('commissions')}
+        style={{
+          background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)',
+          border: '1px solid #93C5FD',
+          borderRadius: 16, padding: '18px 24px', marginBottom: 24,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14,
+        }}
+      >
+        <div style={{
+          width: 48, height: 48, borderRadius: 14,
+          background: '#2563EB', color: '#fff', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          fontSize: 24, flexShrink: 0,
+        }}>💰</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#1E40AF' }}>
+            Commission Ledger Approvals & Payout Settlement
+          </div>
+          <div style={{ fontSize: 12, color: '#1D4ED8', marginTop: 2 }}>
+            Approve pending commissions (PENDING → APPROVED) and record payment settlements (APPROVED → PAID)
+          </div>
+        </div>
+        <div style={{ fontSize: 20, color: '#1E40AF' }}>→</div>
+      </motion.div>
+
+      {/* 📈 Growth & Analytics — Business Partners */}
+      <div style={{
+        background: '#fff', borderRadius: 20, padding: '24px',
+        border: '1px solid #E8F0E0', marginBottom: 24, boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+      }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1A3A1A', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span>📈 Growth & Analytics</span>
+          <span style={{ color: '#6B8F71', fontSize: 12, fontWeight: 600 }}>🤝 Business Partners</span>
+        </div>
+
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12,
+        }}>
+          {[
+            { label: 'Pending', count: pendingCount, filter: 'PENDING', bg: '#FEF3C7', border: '#FDE68A', text: '#92400E', icon: '⏳' },
+            { label: 'Approved', count: 0, filter: 'APPROVED', bg: '#DCFCE7', border: '#BBF7D0', text: '#166534', icon: '✅' },
+            { label: 'Rejected', count: 0, filter: 'REJECTED', bg: '#FEE2E2', border: '#FECACA', text: '#991B1B', icon: '❌' },
+            { label: 'Today', count: 0, filter: 'ALL', bg: '#F0F9FF', border: '#BAE6FD', text: '#0369A1', icon: '📅' },
+          ].map((s) => (
+            <motion.div
+              key={s.label}
+              whileHover={{ scale: 1.04, y: -2 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onNavigate('bp_approvals', s.filter)}
+              style={{
+                background: s.bg, border: `1px solid ${s.border}`,
+                borderRadius: 14, padding: '16px 18px', cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: s.text }}>
+                <span>{s.icon} {s.label}</span>
+                <span style={{ fontSize: 12 }}>→</span>
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: s.text, marginTop: 6 }}>
+                {s.count}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div style={{
         display: 'grid',
@@ -428,10 +508,10 @@ function OverviewTab({ onNavigate, pendingCount }) {
       }}>
         {[
           {
-            label: 'Applications',
-            icon: '📋',
+            label: 'BP Approvals',
+            icon: '🛡️',
             desc: 'Review pending BP applications',
-            nav: 'applications',
+            nav: 'bp_approvals',
             badge: pendingCount > 0 ? pendingCount : null,
           },
           {
@@ -543,20 +623,26 @@ function ApplicationsTab({ onCountChange }) {
 
   // ── Approve / Reject ──
   const handleAction = async (applicationId, action) => {
+    const rawNotes = reviewNotes[applicationId]?.trim() || '';
+
+    if (action === 'REJECT' && !rawNotes) {
+      setToast({
+        message: 'Rejection reason (reviewNotes) is required when rejecting an application.',
+        type: 'error',
+      });
+      return;
+    }
+
     setActionLoading(applicationId);
     try {
-      const notes = reviewNotes[applicationId]?.trim() || (
-        action === 'APPROVE'
-          ? 'Application verified and approved.'
-          : 'Application rejected.'
-      );
+      const notes = rawNotes || (action === 'APPROVE' ? 'Application verified and approved.' : '');
 
       const payload = {
         franchiseOperatorRequestType: action === 'APPROVE'
           ? 'APPROVE_APPLICATION'
           : 'REJECT_APPLICATION',
-        applicationId: applicationId,
-        reviewNotes: notes,
+        applicationId: Number(applicationId),
+        ...(notes && { reviewNotes: notes }),
       };
 
       console.log(`📤 ${action} application:`, payload);
@@ -568,7 +654,7 @@ function ApplicationsTab({ onCountChange }) {
 
       setToast({
         message: action === 'APPROVE'
-          ? `Application #${applicationId} approved successfully!`
+          ? `Application #${applicationId} approved! BUSINESS_PARTNER role granted.`
           : `Application #${applicationId} rejected.`,
         type: 'success',
       });
@@ -597,7 +683,13 @@ function ApplicationsTab({ onCountChange }) {
   // ── Filtered list ──
   const filteredApps = filter === 'ALL'
     ? applications
-    : applications.filter((a) => (a.status || 'PENDING') === 'PENDING');
+    : filter === 'PENDING'
+    ? applications.filter((a) => (a.status || 'PENDING') === 'PENDING')
+    : filter === 'APPROVED'
+    ? applications.filter((a) => a.status === 'APPROVED')
+    : filter === 'REJECTED'
+    ? applications.filter((a) => a.status === 'REJECTED')
+    : applications;
 
   return (
     <div>
@@ -621,16 +713,16 @@ function ApplicationsTab({ onCountChange }) {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {/* Filter */}
-          {['PENDING', 'ALL'].map((f) => (
+          {['PENDING', 'APPROVED', 'REJECTED', 'ALL'].map((f) => (
             <motion.button
               key={f}
               onClick={() => setFilter(f)}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               style={{
-                padding: '8px 18px', borderRadius: 10,
+                padding: '8px 16px', borderRadius: 10,
                 background: filter === f
                   ? 'linear-gradient(135deg, #16A34A, #15803D)'
                   : '#fff',
@@ -640,7 +732,10 @@ function ApplicationsTab({ onCountChange }) {
                 fontFamily: 'Manrope, sans-serif',
               }}
             >
-              {f === 'PENDING' ? `⏳ Pending (${applications.filter((a) => (a.status || 'PENDING') === 'PENDING').length})` : '📋 All'}
+              {f === 'PENDING' ? `⏳ Pending (${applications.filter((a) => (a.status || 'PENDING') === 'PENDING').length})`
+                : f === 'APPROVED' ? `✅ Approved (${applications.filter((a) => a.status === 'APPROVED').length})`
+                : f === 'REJECTED' ? `❌ Rejected (${applications.filter((a) => a.status === 'REJECTED').length})`
+                : '📋 All'}
             </motion.button>
           ))}
 
@@ -833,8 +928,8 @@ function ApplicationsTab({ onCountChange }) {
                   </div>
                 </div>
 
-                {/* Status + Expand */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                {/* Status + Quick Actions + Expand */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
                   <span style={{
                     padding: '5px 14px', borderRadius: 20,
                     fontSize: 11, fontWeight: 700,
@@ -844,10 +939,70 @@ function ApplicationsTab({ onCountChange }) {
                   }}>
                     {status === 'PENDING' ? '⏳' : status === 'APPROVED' ? '✅' : '❌'} {status}
                   </span>
-                  <motion.div
-                    animate={{ rotate: isExpanded ? 180 : 0 }}
-                    style={{ color: '#6B8F71', fontSize: 18 }}
-                  >▼</motion.div>
+
+                  {status === 'PENDING' && (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <motion.button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAction(appId, 'APPROVE');
+                        }}
+                        disabled={isActing}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        style={{
+                          padding: '6px 14px', borderRadius: 10,
+                          background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                          color: '#fff', border: 'none', fontSize: 12, fontWeight: 700,
+                          cursor: isActing ? 'not-allowed' : 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 4,
+                          boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
+                        }}
+                      >
+                        ✅ Approve
+                      </motion.button>
+
+                      <motion.button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!reviewNotes[appId]?.trim()) {
+                            setExpandedId(appId);
+                            setToast({ message: 'Please enter a rejection reason in the notes field below.', type: 'error' });
+                          } else {
+                            handleAction(appId, 'REJECT');
+                          }
+                        }}
+                        disabled={isActing}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        style={{
+                          padding: '6px 14px', borderRadius: 10,
+                          background: '#fff', border: '1px solid #FCA5A5',
+                          color: '#DC2626', fontSize: 12, fontWeight: 700,
+                          cursor: isActing ? 'not-allowed' : 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 4,
+                        }}
+                      >
+                        ❌ Reject
+                      </motion.button>
+                    </div>
+                  )}
+
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedId(isExpanded ? null : appId);
+                    }}
+                    style={{
+                      background: '#F0FDF4', border: '1px solid #BBF7D0',
+                      borderRadius: 10, padding: '6px 10px', color: '#16A34A',
+                      fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}
+                  >
+                    <span>{isExpanded ? 'Hide' : 'Details'}</span>
+                    <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>▼</motion.div>
+                  </motion.button>
                 </div>
               </div>
 
@@ -861,26 +1016,30 @@ function ApplicationsTab({ onCountChange }) {
                     transition={{ duration: 0.25 }}
                     style={{ overflow: 'hidden' }}
                   >
-                    <div style={{
-                      padding: '0 24px 24px',
-                      borderTop: '1px solid #F0F5EC',
-                    }}>
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        padding: '0 24px 24px',
+                        borderTop: '1px solid #F0F5EC',
+                      }}
+                    >
                       {/* Details grid */}
                       <div style={{
                         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                         gap: 12, padding: '20px 0',
                       }}>
                         {[
-                          { label: 'Full Name', value: app.fullName || app.applicantName, icon: '👤' },
+                          { label: 'Application ID', value: `#${app.applicationId || app.id}`, icon: '🆔' },
+                          { label: 'Applicant Name', value: app.applicantName || app.fullName, icon: '👤' },
+                          { label: 'Applicant Email', value: app.applicantEmail || app.email, icon: '✉️' },
+                          { label: 'Business Sector', value: app.businessSector === 'OTHER' ? `OTHER (${app.otherBusinessSector || 'N/A'})` : app.businessSector?.replace(/_/g, ' '), icon: '🏭' },
+                          { label: 'Submitted Date', value: (app.submittedAt || app.createdAt) ? new Date(app.submittedAt || app.createdAt).toLocaleString() : '—', icon: '📆' },
                           { label: 'Company', value: app.companyName, icon: '🏢' },
-                          { label: 'Position', value: app.position, icon: '💼' },
                           { label: 'Phone', value: app.alternatePhoneNumber || app.phone, icon: '📱' },
-                          { label: 'Business Age', value: app.businessAge?.replace(/_/g, ' '), icon: '📅' },
-                          { label: 'Sector', value: app.businessSector?.replace(/_/g, ' '), icon: '🏭' },
-                          { label: 'Contact Method', value: app.preferredContactMethod, icon: '💬' },
-                          { label: 'Language', value: app.languagePreference, icon: '🌐' },
-                          { label: 'Location', value: [app.city, app.state, app.country].filter(Boolean).join(', '), icon: '📍' },
-                          { label: 'Applied', value: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : '-', icon: '📆' },
+                          { label: 'Status', value: app.status || 'PENDING', icon: '📋' },
+                          { label: 'Reviewed By', value: app.reviewedBy, icon: '🛡️' },
+                          { label: 'Reviewed Date', value: app.reviewedAt ? new Date(app.reviewedAt).toLocaleString() : null, icon: '⏰' },
+                          { label: 'Review Notes', value: app.reviewNotes, icon: '📝' },
                         ].filter((d) => d.value).map((detail, di) => (
                           <div key={di} style={{
                             background: '#F7FAF4', padding: '12px 16px',
@@ -909,10 +1068,10 @@ function ApplicationsTab({ onCountChange }) {
                             fontSize: 13, fontWeight: 700, color: '#1A3A1A',
                             marginBottom: 12,
                           }}>
-                            📝 Review Notes (optional)
+                            📝 Review Notes (Optional for Approve, <span style={{ color: '#DC2626' }}>Mandatory for Reject *</span>)
                           </div>
                           <textarea
-                            placeholder="Add notes about this application..."
+                            placeholder="Add notes or mandatory rejection reason..."
                             value={reviewNotes[appId] || ''}
                             onChange={(e) =>
                               setReviewNotes((prev) => ({
@@ -1303,5 +1462,192 @@ function PlaceholderTab({ name }) {
         display: 'inline-block', fontSize: 12, fontWeight: 600, color: '#16A34A',
       }}>Coming Soon</div>
     </motion.div>
+  );
+}
+
+/* ══════════════════════════════════════ */
+/* ══ OperatorCommissionsTab          ══ */
+/* ══════════════════════════════════════ */
+function OperatorCommissionsTab() {
+  const [entryId, setEntryId]         = useState('');
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [actionLoading, setActionLoading] = useState(null);
+  const [toast, setToast]             = useState(null);
+
+  const handleApprove = async () => {
+    if (!entryId) {
+      setToast({ message: 'commissionLedgerEntryId is required.', type: 'error' });
+      return;
+    }
+    setActionLoading('APPROVE');
+    try {
+      const res = await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
+        method: 'POST',
+        body: JSON.stringify({
+          franchiseOperatorRequestType: 'APPROVE_COMMISSION_ENTRY',
+          commissionLedgerEntryId: Number(entryId),
+          ...(reviewNotes.trim() && { reviewNotes: reviewNotes.trim() }),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || data?.error || 'Failed to approve commission');
+      setToast({ message: data?.message || `Commission Entry #${entryId} approved (PENDING → APPROVED)!`, type: 'success' });
+      setEntryId('');
+      setReviewNotes('');
+    } catch (err) {
+      setToast({ message: err.message || 'Failed to approve commission entry', type: 'error' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!entryId) {
+      setToast({ message: 'commissionLedgerEntryId is required.', type: 'error' });
+      return;
+    }
+    setActionLoading('PAID');
+    try {
+      const res = await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
+        method: 'POST',
+        body: JSON.stringify({
+          franchiseOperatorRequestType: 'MARK_COMMISSION_ENTRY_PAID',
+          commissionLedgerEntryId: Number(entryId),
+          ...(reviewNotes.trim() && { reviewNotes: reviewNotes.trim() }),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || data?.error || 'Failed to mark commission paid');
+      setToast({ message: data?.message || `Commission Entry #${entryId} marked as PAID (APPROVED → PAID)!`, type: 'success' });
+      setEntryId('');
+      setReviewNotes('');
+    } catch (err) {
+      setToast({ message: err.message || 'Failed to mark commission entry paid', type: 'error' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  return (
+    <div>
+      <AnimatePresence>
+        {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+      </AnimatePresence>
+
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: '#1A3A1A', margin: '0 0 4px' }}>
+          Franchise Commission Payouts & Approvals
+        </h2>
+        <p style={{ fontSize: 12, color: '#6B8F71', margin: 0 }}>
+          Approve pending Business Partner commission entries and record external payout settlements.
+        </p>
+      </div>
+
+      {/* Lifecycle Helper Card */}
+      <div style={{
+        background: '#fff', borderRadius: 20, padding: 24,
+        border: '1px solid #E8F0E0', marginBottom: 24, boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+      }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#1A3A1A', marginBottom: 12 }}>
+          🔄 Commission Entry Lifecycle
+        </div>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12,
+        }}>
+          <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#92400E' }}>1. PENDING 🟡</div>
+            <div style={{ fontSize: 11, color: '#B45309', marginTop: 4 }}>Auto-generated on brokered deal closure.</div>
+          </div>
+          <div style={{ background: '#DBEAFE', border: '1px solid #BFDBFE', borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#1E40AF' }}>2. APPROVED 🟢</div>
+            <div style={{ fontSize: 11, color: '#1D4ED8', marginTop: 4 }}>Franchise Operator runs APPROVE_COMMISSION_ENTRY.</div>
+          </div>
+          <div style={{ background: '#DCFCE7', border: '1px solid #BBF7D0', borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#166534' }}>3. PAID ✅</div>
+            <div style={{ fontSize: 11, color: '#15803D', marginTop: 4 }}>Franchise Operator runs MARK_COMMISSION_ENTRY_PAID.</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Form */}
+      <div style={{
+        background: '#fff', borderRadius: 20, padding: 28,
+        border: '1px solid #E8F0E0', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', maxW: 600,
+      }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: '#1A3A1A', marginBottom: 16 }}>
+          Review & Update Commission Entry Status
+        </h3>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6 }}>
+            Commission Ledger Entry ID *
+          </label>
+          <input
+            type="number"
+            placeholder="e.g. 25"
+            value={entryId}
+            onChange={(e) => setEntryId(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 14px', borderRadius: 10,
+              border: '1px solid #D1D5DB', fontSize: 14, fontWeight: 600,
+              outline: 'none', fontFamily: 'Manrope, sans-serif',
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6 }}>
+            Review Notes / Payout Audit Traceability (Optional)
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. Verified against deal records / Bank transfer ref #TXN-8821"
+            value={reviewNotes}
+            onChange={(e) => setReviewNotes(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 14px', borderRadius: 10,
+              border: '1px solid #D1D5DB', fontSize: 13, fontWeight: 600,
+              outline: 'none', fontFamily: 'Manrope, sans-serif',
+            }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <motion.button
+            onClick={handleApprove}
+            disabled={!entryId || loadingAction !== null}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            style={{
+              flex: 1, padding: '12px 20px', borderRadius: 12,
+              background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+              color: '#fff', border: 'none', fontSize: 13, fontWeight: 700,
+              cursor: !entryId || loadingAction !== null ? 'not-allowed' : 'pointer',
+              opacity: !entryId || loadingAction !== null ? 0.6 : 1,
+              fontFamily: 'Manrope, sans-serif',
+            }}
+          >
+            {loadingAction === 'APPROVE' ? 'Approving...' : '🟢 Approve (PENDING → APPROVED)'}
+          </motion.button>
+
+          <motion.button
+            onClick={handleMarkPaid}
+            disabled={!entryId || loadingAction !== null}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            style={{
+              flex: 1, padding: '12px 20px', borderRadius: 12,
+              background: 'linear-gradient(135deg, #16A34A, #15803D)',
+              color: '#fff', border: 'none', fontSize: 13, fontWeight: 700,
+              cursor: !entryId || loadingAction !== null ? 'not-allowed' : 'pointer',
+              opacity: !entryId || loadingAction !== null ? 0.6 : 1,
+              fontFamily: 'Manrope, sans-serif',
+            }}
+          >
+            {loadingAction === 'PAID' ? 'Processing...' : '✅ Mark Paid (APPROVED → PAID)'}
+          </motion.button>
+        </div>
+      </div>
+    </div>
   );
 }

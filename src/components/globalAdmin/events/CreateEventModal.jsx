@@ -62,7 +62,9 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
       title: title.trim(), description: description.trim(),
       eventType, startDateTime: toISO(startDateTime),
       endDateTime: toISO(endDateTime), timezone,
-      isPaid, capacity: Number(capacity),
+      paid: Boolean(isPaid),
+      isPaid: Boolean(isPaid),
+      capacity: Number(capacity),
       speakers: speakers.filter(s => s.name.trim()).map((s, i) => ({ ...s, displayOrder: i + 1 })),
       agenda: agenda.filter(a => a.title.trim()).map((a, i) => ({
         ...a, startTime: toISO(a.startTime), endTime: toISO(a.endTime), displayOrder: i + 1,
@@ -83,6 +85,8 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
     if (isPaid) {
       payload.price    = Number(price);
       payload.currency = currency;
+    } else {
+      payload.price    = 0;
     }
 
     setLoading(true);

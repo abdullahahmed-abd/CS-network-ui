@@ -10,16 +10,19 @@ import {
   Send, User, ChevronDown, Sprout, PhoneCall, BadgeCheck,
   UserPlus, Scale, Trophy, XCircle, ClipboardList, Globe,
   FileEdit, Link2, List, Rocket, ShoppingCart, Store, Package,
-  ChevronLeft, DollarSign, Wheat,
+  ChevronLeft, DollarSign, Wheat, Ticket,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authenticatedFetch, getUserData } from '../api/auth';
 import BusinessPartnerSidebar from './BusinessPartnerSidebar';
 import { CreateProposalModal } from '../components/businesspartner/modals/CreateProposalModal';
+import { EventsTab } from './EventsComponents';
+import MyRegistrationsTab from './MyRegistrationsTab';
+import MeetingsTab from '../components/meetings/MeetingsTab';
 import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
 
 const BASE_URL =
-  'https://73eb-2401-4900-8823-9cd3-11f9-f07e-e-41f0.ngrok-free.app';
+  'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 
 /* ═══════════════════ 🎨 GREEN THEME SYSTEM (like BuyerSellerDashboard) ═══════════════════ */
 const THEME = {
@@ -118,11 +121,13 @@ const INTENT_STATUS = {
 };
 
 const navItems = [
-  { id: 'pipeline',      label: 'Pipeline',      icon: LayoutGrid   },
-  { id: 'trade_intents', label: 'Trade Intents', icon: BarChart3    },
-  { id: 'deals',         label: 'Deals',         icon: Handshake    },
-  { id: 'commissions',   label: 'Commissions',   icon: Wallet       },
-  { id: 'meetings',      label: 'Meetings',      icon: CalendarClock},
+  { id: 'pipeline',         label: 'Pipeline',      icon: LayoutGrid   },
+  { id: 'trade_intents',    label: 'Trade Intents', icon: BarChart3    },
+  { id: 'deals',            label: 'Deals',         icon: Handshake    },
+  { id: 'commissions',      label: 'Commissions',   icon: Wallet       },
+  { id: 'meetings',         label: 'Meetings',      icon: CalendarClock},
+  { id: 'events',           label: 'Events',        icon: Calendar     },
+  { id: 'my_registrations', label: 'My Tickets',    icon: Ticket       },
 ];
 
 /* ═══════════════════ GREEN-THEMED CSS (Updated) ═══════════════════ */
@@ -3652,14 +3657,22 @@ export default function BusinessPartnerDashboard({ onLogout }) {
             </div>
           )}
 
+          {/* Meetings Tab */}
+          {activeNav === 'meetings' && <MeetingsTab />}
+
+          {/* Events Tab */}
+          {activeNav === 'events' && <EventsTab />}
+
+          {/* My Registrations / Tickets Tab */}
+          {activeNav === 'my_registrations' && <MyRegistrationsTab />}
+
           {/* Other Tabs (Coming Soon) */}
-          {['my_leads', 'deals', 'commissions', 'meetings'].includes(activeNav) && (
+          {['my_leads', 'deals', 'commissions'].includes(activeNav) && (
             <div className="coming-soon">
               <div className="coming-soon-icon">
                 {activeNav === 'my_leads'    && <Users />}
                 {activeNav === 'deals'       && <Handshake />}
                 {activeNav === 'commissions' && <Wallet />}
-                {activeNav === 'meetings'    && <CalendarClock />}
               </div>
               <div className="coming-soon-title">{getPageTitle()} — Coming Soon</div>
               <div className="coming-soon-desc">

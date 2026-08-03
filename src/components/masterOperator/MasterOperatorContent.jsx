@@ -4,8 +4,9 @@
 // Backend API Integration: POST /cs-network/master-operator (FETCH_DASHBOARD)
 // ══════════════════════════════════════════════════════════════════════════════
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { authenticatedFetch } from '../../api/auth';
 import {
   fetchMasterDashboard,
   fetchFranchiseDashboard,
@@ -18,6 +19,8 @@ import {
 import { T } from '../masterOperator/MasterOperatorDashboard';
 import MeetingsTab from '../meetings/MeetingsTab';
 import DirectoryTab from '../directory/DirectoryTab';
+
+const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 
 // ══════════════════════════════════════════════════
 // ── DESIGN HELPERS
@@ -202,23 +205,36 @@ function StatCard({ label, value, icon, gradient, delay = 0 }) {
 // ══════════════════════════════════════════════════
 // ── INFO TABLE
 // ══════════════════════════════════════════════════
-function InfoTable({ title, icon, items }) {
+function InfoTable({ title, icon, items, onItemClick }) {
   return (
     <div style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'22px 24px' }}>
       <div style={{ fontSize:14, fontWeight:800, color:T.text.primary, marginBottom:16, fontFamily:T.font, display:'flex', alignItems:'center', gap:8 }}>
         <span style={{ fontSize:18 }}>{icon}</span>{title}
       </div>
-      {items.map((item, i) => (
-        <div key={item.label} style={{
-          display:'flex', alignItems:'center', justifyContent:'space-between',
-          padding:'9px 0',
-          borderBottom:i<items.length-1?`1px solid ${T.border.light}`:'none',
-          fontSize:13, color:T.text.muted, fontWeight:500, fontFamily:T.font,
-        }}>
-          <span>{item.label}</span>
-          <span style={{ fontWeight:800, color:T.text.primary, fontSize:14 }}>{item.value ?? 0}</span>
-        </div>
-      ))}
+      {items.map((item, i) => {
+        const isClickable = Boolean(item.onClick || onItemClick);
+        return (
+          <div key={item.label}
+            onClick={() => {
+              if (item.onClick) item.onClick(item);
+              else if (onItemClick) onItemClick(item);
+            }}
+            style={{
+              display:'flex', alignItems:'center', justifyContent:'space-between',
+              padding:'9px 10px', borderRadius: 8,
+              borderBottom:i<items.length-1?`1px solid ${T.border.light}`:'none',
+              fontSize:13, color:T.text.muted, fontWeight:500, fontFamily:T.font,
+              cursor: isClickable ? 'pointer' : 'default',
+              transition: 'background 0.2s ease',
+            }}
+            onMouseEnter={(e) => { if (isClickable) e.currentTarget.style.background = 'rgba(22, 163, 74, 0.08)'; }}
+            onMouseLeave={(e) => { if (isClickable) e.currentTarget.style.background = 'transparent'; }}
+          >
+            <span style={{ textDecoration: isClickable ? 'underline' : 'none' }}>{item.label}</span>
+            <span style={{ fontWeight:800, color:T.text.primary, fontSize:14 }}>{item.value ?? 0}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -557,12 +573,17 @@ function OverviewTab({ onNavigate, cfg }) {
               ]} />
             )}
             {businessPartners && !franchiseGrowth && (
-              <InfoTable title="Business Partners" icon="🤝" items={[
-                { label:'Pending',    value:businessPartners.pendingApplications },
-                { label:'Approved',   value:businessPartners.approvedApplications },
-                { label:'Rejected',   value:businessPartners.rejectedApplications },
-                { label:'Today',      value:businessPartners.applicationsToday },
-              ]} />
+              <InfoTable
+                title="Business Partners"
+                icon="🤝"
+                items={[
+                  { label:'Pending',  value:businessPartners.pendingApplications,  filter: 'PENDING' },
+                  { label:'Approved', value:businessPartners.approvedApplications, filter: 'APPROVED' },
+                  { label:'Rejected', value:businessPartners.rejectedApplications, filter: 'REJECTED' },
+                  { label:'Today',    value:businessPartners.applicationsToday,     filter: 'ALL' },
+                ]}
+                onItemClick={(item) => onNavigate && onNavigate('bp_approvals', item.filter)}
+              />
             )}
           </div>
         </>
@@ -645,17 +666,28 @@ function OverviewTab({ onNavigate, cfg }) {
 // ── GENERAL FRANCHISE TAB (MASTER OPERATOR)
 // ══════════════════════════════════════════════════
 function GeneralFranchiseTab({ cfg }) {
-  const [showCreate, setShowCreate] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
-  const [name, setName]       = useState('');
-  const [state, setState]     = useState('');
-  const [city, setCity]       = useState('');
-  const [loading, setLoading] = useState(false);
-  const [toast, setToast]     = useState(null);
+  const [franchises, setFranchises]   = useState([]);
+  const [showCreate, setShowCreate]   = useState(false);
+  const [createResult, setCreateResult] = useState(null);
+  const [showInvite, setShowInvite]   = useState(false);
+  const [name, setName]               = useState('');
+  const [state, setState]             = useState('');
+  const [city, setCity]               = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [toast, setToast]             = useState(null);
 
-  const [inviteId, setInviteId]         = useState('');
-  const [inviteLoading, setInviteLoading] = useState(false);
-  const [inviteResult, setInviteResult]   = useState(null);
+  const [inviteId, setInviteId]             = useState('');
+  const [inviteLoading, setInviteLoading]   = useState(false);
+  const [inviteResult, setInviteResult]     = useState(null);
+
+  const getLinkFromRes = (res) => {
+    if (!res) return '';
+    if (res.inviteLink) return res.inviteLink;
+    if (res.token) return `${window.location.origin}/invite/${res.token}`;
+    if (res.inviteUrl) return res.inviteUrl;
+    if (typeof res === 'string') return res;
+    return '';
+  };
 
   const handleCreate = async () => {
     if (!name.trim() || !state.trim() || !city.trim()) {
@@ -663,29 +695,58 @@ function GeneralFranchiseTab({ cfg }) {
       return;
     }
     setLoading(true);
+    setCreateResult(null);
     try {
       const res = await createGeneralFranchise(name.trim(), state.trim(), city.trim());
+      let link = getLinkFromRes(res);
+      const franchiseId = res?.franchiseId || res?.id || Date.now();
+
+      if (!link && franchiseId) {
+        try {
+          const invRes = await inviteGeneralOperator(Number(franchiseId));
+          link = getLinkFromRes(invRes);
+        } catch (e) {
+          console.error('Failed to auto-generate invite link:', e);
+        }
+      }
+
+      const newFranchise = {
+        id: franchiseId,
+        name: res.franchiseName || name.trim(),
+        state: res.state || state.trim(),
+        city: res.city || city.trim(),
+        inviteLink: link,
+      };
+      setFranchises((prev) => [newFranchise, ...prev]);
+      setCreateResult({ ...res, inviteLink: link, franchiseId });
       setToast({ message: res.message || 'General Franchise created successfully!', type: 'success' });
       setName(''); setState(''); setCity('');
-      setShowCreate(false);
     } catch (err) {
       setToast({ message: err.message || 'Failed to create General Franchise', type: 'error' });
     } finally { setLoading(false); }
   };
 
-  const handleInvite = async () => {
-    if (!inviteId) { setToast({ message: 'Enter Franchise ID', type: 'error' }); return; }
+  const handleInvite = async (overrideId) => {
+    const targetId = overrideId || inviteId || franchises[0]?.id || 1;
     setInviteLoading(true); setInviteResult(null);
     try {
-      const res = await inviteGeneralOperator(Number(inviteId));
-      setInviteResult(res);
+      const res = await inviteGeneralOperator(Number(targetId));
+      const link = getLinkFromRes(res);
+      setInviteResult({ ...res, inviteLink: link });
       setToast({ message: res.message || 'Invite link generated!', type: 'success' });
     } catch (err) {
       setToast({ message: err.message || 'Failed to generate invite link', type: 'error' });
     } finally { setInviteLoading(false); }
   };
 
+  useEffect(() => {
+    if (showInvite && !inviteResult && !inviteLoading) {
+      handleInvite(inviteId);
+    }
+  }, [showInvite]);
+
   const copyLink = (text) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     setToast({ message: 'Invite link copied to clipboard!', type: 'success' });
   };
@@ -700,39 +761,114 @@ function GeneralFranchiseTab({ cfg }) {
           <p style={{ fontSize: 12, color: T.text.muted, margin: '4px 0 0', fontFamily: T.font }}>Create and manage state & city level franchises</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Btn variant="secondary" onClick={() => { setShowInvite(true); setInviteResult(null); }} accent="#3B82F6">
+          <Btn variant="secondary" onClick={() => { setInviteId(''); setInviteResult(null); setShowInvite(true); }} accent="#3B82F6">
             📨 Invite Operator
           </Btn>
-          <Btn onClick={() => setShowCreate(true)} accent="#3B82F6">➕ Create General Franchise</Btn>
+          <Btn onClick={() => { setShowCreate(true); setCreateResult(null); }} accent="#3B82F6">➕ Create General Franchise</Btn>
         </div>
       </div>
 
-      <div style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'36px', textAlign:'center', borderRadius: T.radius.xxl }}>
-        <div style={{ fontSize: 42, marginBottom: 16 }}>🏢</div>
-        <h3 style={{ fontSize: 18, fontWeight: 800, color: T.text.primary, fontFamily: T.font, margin: '0 0 8px' }}>
-          General Franchises Management
-        </h3>
-        <p style={{ fontSize: 13, color: T.text.muted, fontFamily: T.font, maxWidth: 460, margin: '0 auto 24px' }}>
-          Create General Franchises for states and cities, or generate invite links for General Franchise Operators.
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-          <Btn onClick={() => setShowCreate(true)} accent="#3B82F6">➕ Create General Franchise</Btn>
-          <Btn variant="secondary" onClick={() => setShowInvite(true)} accent="#3B82F6">🔗 Invite General Operator</Btn>
+      {/* Franchises Cards List / Empty State */}
+      {franchises.length === 0 ? (
+        <div style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'36px', textAlign:'center', borderRadius: T.radius.xxl }}>
+          <div style={{ fontSize: 42, marginBottom: 16 }}>🏢</div>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: T.text.primary, fontFamily: T.font, margin: '0 0 8px' }}>
+            General Franchises Management
+          </h3>
+          <p style={{ fontSize: 13, color: T.text.muted, fontFamily: T.font, maxWidth: 460, margin: '0 auto 24px' }}>
+            Create General Franchises for states and cities, or generate invite links for General Franchise Operators.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+            <Btn onClick={() => { setShowCreate(true); setCreateResult(null); }} accent="#3B82F6">➕ Create General Franchise</Btn>
+            <Btn variant="secondary" onClick={() => { setInviteId(''); setInviteResult(null); setShowInvite(true); }} accent="#3B82F6">🔗 Invite General Operator</Btn>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+          {franchises.map((f, i) => (
+            <motion.div key={f.id || i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              style={{ ...glass({ bg: '#fff' }), padding: '22px 24px', borderRadius: 16 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, border: '1px solid #BFDBFE' }}>🏢</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: T.text.primary }}>{f.name}</div>
+                  <div style={{ fontSize: 12, color: T.text.muted, fontWeight: 500 }}>📍 {f.city}, {f.state}</div>
+                </div>
+                <div style={{ padding: '4px 10px', borderRadius: 8, background: '#EFF6FF', border: '1px solid #BFDBFE', fontSize: 11, fontWeight: 700, color: '#1E40AF' }}>
+                  ID: {f.id}
+                </div>
+              </div>
+              {f.inviteLink && (
+                <div style={{ marginBottom: 12, background: '#F8FAFC', padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#334155', wordBreak: 'break-all' }}>{f.inviteLink}</div>
+                  <motion.button onClick={() => copyLink(f.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                    style={{ padding: '4px 10px', borderRadius: 6, background: '#2563EB', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}
+                  >📋 Copy</motion.button>
+                </div>
+              )}
+              <Btn variant="secondary" fullWidth onClick={() => { setInviteId(String(f.id)); setInviteResult(null); setShowInvite(true); }} accent="#3B82F6">
+                📨 Invite Operator
+              </Btn>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       {/* Create Modal */}
       <AnimatePresence>
         {showCreate && (
-          <Modal title="Create General Franchise" onClose={() => setShowCreate(false)}>
-            <InputField label="Franchise Name" value={name} onChange={setName} placeholder="e.g. Bhopal General Franchise" />
-            <InputField label="State" value={state} onChange={setState} placeholder="e.g. Madhya Pradesh" />
-            <InputField label="City" value={city} onChange={setCity} placeholder="e.g. Bhopal" />
-            <div style={{ marginTop: 12 }}>
-              <Btn fullWidth onClick={handleCreate} loading={loading} accent="#3B82F6">
-                {loading ? 'Creating...' : '🏢 Create General Franchise'}
-              </Btn>
-            </div>
+          <Modal title="Create General Franchise" onClose={() => { setShowCreate(false); setCreateResult(null); }}>
+            {!createResult ? (
+              <>
+                <InputField label="Franchise Name" value={name} onChange={setName} placeholder="e.g. Bhopal General Franchise" />
+                <InputField label="State" value={state} onChange={setState} placeholder="e.g. Madhya Pradesh" />
+                <InputField label="City" value={city} onChange={setCity} placeholder="e.g. Bhopal" />
+                <div style={{ marginTop: 12 }}>
+                  <Btn fullWidth onClick={handleCreate} loading={loading} accent="#3B82F6">
+                    {loading ? 'Creating...' : '🏢 Create General Franchise'}
+                  </Btn>
+                </div>
+              </>
+            ) : (
+              <div style={{ background: '#F0FDF4', padding: 20, borderRadius: 14, border: '1px solid #BBF7D0' }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#166534', marginBottom: 6 }}>
+                  ✅ General Franchise Created!
+                </div>
+                <div style={{ fontSize: 12, color: '#15803D', marginBottom: 14 }}>
+                  Franchise ID: <strong>#{createResult.franchiseId}</strong>
+                </div>
+
+                {createResult.inviteLink ? (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 6 }}>
+                      General Operator Invite Link:
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '10px 12px', borderRadius: 10, border: '1px solid #BBF7D0' }}>
+                      <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#166534', wordBreak: 'break-all' }}>
+                        {createResult.inviteLink}
+                      </div>
+                      <motion.button onClick={() => copyLink(createResult.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        style={{ padding: '6px 12px', borderRadius: 8, background: '#16A34A', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}
+                      >📋 Copy</motion.button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#6B8F71', marginBottom: 16 }}>
+                    Franchise created. Click "Invite Operator" anytime to generate a fresh invite link.
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                  <Btn variant="secondary" fullWidth onClick={() => setCreateResult(null)} accent="#3B82F6">
+                    ➕ Create Another
+                  </Btn>
+                  <Btn fullWidth onClick={() => { setShowCreate(false); setCreateResult(null); }} accent="#10B981">
+                    Done
+                  </Btn>
+                </div>
+              </div>
+            )}
           </Modal>
         )}
       </AnimatePresence>
@@ -740,22 +876,37 @@ function GeneralFranchiseTab({ cfg }) {
       {/* Invite Modal */}
       <AnimatePresence>
         {showInvite && (
-          <Modal title="Invite General Operator" onClose={() => setShowInvite(false)}>
-            <InputField label="Target Franchise ID" value={inviteId} onChange={setInviteId} placeholder="e.g. 6" type="number" />
-            {!inviteResult && (
-              <Btn fullWidth onClick={handleInvite} loading={inviteLoading} accent="#3B82F6">
-                {inviteLoading ? 'Generating...' : '🔗 Generate Operator Invite Link'}
-              </Btn>
+          <Modal title="Invite General Operator" onClose={() => { setShowInvite(false); setInviteResult(null); setInviteId(''); }}>
+            {inviteLoading && (
+              <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  style={{ width: 40, height: 40, border: '3px solid #BFDBFE', borderTopColor: '#2563EB', borderRadius: '50%', margin: '0 auto 16px' }}
+                />
+                <p style={{ fontSize: 13, fontWeight: 700, color: T.text.primary, margin: 0, fontFamily: T.font }}>
+                  Generating Operator Invite Link...
+                </p>
+              </div>
             )}
-            {inviteResult && (
-              <div style={{ marginTop: 16, background: '#F0FDF4', padding: 16, borderRadius: 12, border: '1px solid #BBF7D0' }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: '#166534', margin: '0 0 8px' }}>Invite Link Generated!</p>
-                <div style={{ fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all', background: '#fff', padding: 10, borderRadius: 8, border: '1px solid #E5E7EB', marginBottom: 12 }}>
-                  {inviteResult.inviteLink || inviteResult.token || JSON.stringify(inviteResult)}
-                </div>
-                <Btn fullWidth onClick={() => copyLink(inviteResult.inviteLink || inviteResult.token)} accent="#10B981">
-                  📋 Copy Invite Link
-                </Btn>
+            {!inviteLoading && inviteResult && (
+              <div style={{ marginTop: 8, background: '#F0FDF4', padding: 20, borderRadius: 14, border: '1px solid #BBF7D0' }}>
+                <p style={{ fontSize: 14, fontWeight: 800, color: '#166534', margin: '0 0 12px' }}>✅ General Operator Invite Link Ready!</p>
+                {inviteResult.inviteLink ? (
+                  <>
+                    <div style={{ fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all', background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #BBF7D0', color: '#1A3A1A', marginBottom: 14 }}>
+                      {inviteResult.inviteLink}
+                    </div>
+                    <Btn fullWidth onClick={() => copyLink(inviteResult.inviteLink)} accent="#10B981">
+                      📋 Copy Invite Link
+                    </Btn>
+                  </>
+                ) : (
+                  <p style={{ fontSize: 12, color: '#166534' }}>{inviteResult.message || 'Invitation created.'}</p>
+                )}
+                {inviteResult.expiresAt && (
+                  <div style={{ fontSize: 11, color: '#6B8F71', marginTop: 12, textAlign: 'center' }}>
+                    ⏰ Expires: {new Date(inviteResult.expiresAt).toLocaleString()}
+                  </div>
+                )}
               </div>
             )}
           </Modal>
@@ -769,25 +920,86 @@ function GeneralFranchiseTab({ cfg }) {
 // ── SECTOR FRANCHISE TAB (MASTER OPERATOR)
 // ══════════════════════════════════════════════════
 function SectorFranchiseTab({ cfg }) {
-  const [showCreate, setShowCreate] = useState(false);
-  const [name, setName]         = useState('');
-  const [sector, setSector]     = useState('');
-  const [loading, setLoading]   = useState(false);
-  const [toast, setToast]       = useState(null);
+  const [franchises, setFranchises]   = useState([]);
+  const [showCreate, setShowCreate]   = useState(false);
+  const [createResult, setCreateResult] = useState(null);
+  const [showInvite, setShowInvite]   = useState(false);
+  const [name, setName]               = useState('');
+  const [sector, setSector]           = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [toast, setToast]             = useState(null);
+
+  const [inviteId, setInviteId]             = useState('');
+  const [inviteLoading, setInviteLoading]   = useState(false);
+  const [inviteResult, setInviteResult]     = useState(null);
+
+  const getLinkFromRes = (res) => {
+    if (!res) return '';
+    if (res.inviteLink) return res.inviteLink;
+    if (res.token) return `${window.location.origin}/invite/${res.token}`;
+    if (res.inviteUrl) return res.inviteUrl;
+    if (typeof res === 'string') return res;
+    return '';
+  };
 
   const handleCreate = async () => {
     if (!name.trim() || !sector.trim()) {
       setToast({ message: 'All fields required', type: 'error' }); return;
     }
     setLoading(true);
+    setCreateResult(null);
     try {
       const res = await createSectorFranchise(name.trim(), sector.trim());
+      let link = getLinkFromRes(res);
+      const franchiseId = res?.franchiseId || res?.id || Date.now();
+
+      if (!link && franchiseId) {
+        try {
+          const invRes = await inviteSectorOperator(Number(franchiseId));
+          link = getLinkFromRes(invRes);
+        } catch (e) {
+          console.error('Failed to auto-generate invite link:', e);
+        }
+      }
+
+      const newFranchise = {
+        id: franchiseId,
+        name: res.franchiseName || name.trim(),
+        sector: res.sectorName || sector.trim(),
+        inviteLink: link,
+      };
+      setFranchises((prev) => [newFranchise, ...prev]);
+      setCreateResult({ ...res, inviteLink: link, franchiseId });
       setToast({ message: res.message || 'Sector Franchise created successfully!', type: 'success' });
       setName(''); setSector('');
-      setShowCreate(false);
     } catch (err) {
       setToast({ message: err.message || 'Failed to create Sector Franchise', type: 'error' });
     } finally { setLoading(false); }
+  };
+
+  const handleInvite = async (overrideId) => {
+    const targetId = overrideId || inviteId || franchises[0]?.id || 1;
+    setInviteLoading(true); setInviteResult(null);
+    try {
+      const res = await inviteSectorOperator(Number(targetId));
+      const link = getLinkFromRes(res);
+      setInviteResult({ ...res, inviteLink: link });
+      setToast({ message: res.message || 'Invite link generated!', type: 'success' });
+    } catch (err) {
+      setToast({ message: err.message || 'Failed to generate invite link', type: 'error' });
+    } finally { setInviteLoading(false); }
+  };
+
+  useEffect(() => {
+    if (showInvite && !inviteResult && !inviteLoading) {
+      handleInvite(inviteId);
+    }
+  }, [showInvite]);
+
+  const copyLink = (text) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setToast({ message: 'Invite link copied to clipboard!', type: 'success' });
   };
 
   return (
@@ -799,30 +1011,153 @@ function SectorFranchiseTab({ cfg }) {
           <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text.primary, margin: 0, fontFamily: T.font }}>Sector Franchises</h2>
           <p style={{ fontSize: 12, color: T.text.muted, margin: '4px 0 0', fontFamily: T.font }}>Create and manage industry sector franchises</p>
         </div>
-        <Btn onClick={() => setShowCreate(true)} accent="#10B981">➕ Create Sector Franchise</Btn>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Btn variant="secondary" onClick={() => { setInviteId(''); setInviteResult(null); setShowInvite(true); }} accent="#10B981">
+            📨 Invite Operator
+          </Btn>
+          <Btn onClick={() => { setShowCreate(true); setCreateResult(null); }} accent="#10B981">➕ Create Sector Franchise</Btn>
+        </div>
       </div>
 
-      <div style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'36px', textAlign:'center', borderRadius: T.radius.xxl }}>
-        <div style={{ fontSize: 42, marginBottom: 16 }}>🏭</div>
-        <h3 style={{ fontSize: 18, fontWeight: 800, color: T.text.primary, fontFamily: T.font, margin: '0 0 8px' }}>
-          Sector Franchises Management
-        </h3>
-        <p style={{ fontSize: 13, color: T.text.muted, fontFamily: T.font, maxWidth: 460, margin: '0 auto 24px' }}>
-          Create industry-specific Sector Franchises (e.g. Textile, IT, Agriculture) under your Master network.
-        </p>
-        <Btn onClick={() => setShowCreate(true)} accent="#10B981">➕ Create Sector Franchise</Btn>
-      </div>
+      {franchises.length === 0 ? (
+        <div style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'36px', textAlign:'center', borderRadius: T.radius.xxl }}>
+          <div style={{ fontSize: 42, marginBottom: 16 }}>🏭</div>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: T.text.primary, fontFamily: T.font, margin: '0 0 8px' }}>
+            Sector Franchises Management
+          </h3>
+          <p style={{ fontSize: 13, color: T.text.muted, fontFamily: T.font, maxWidth: 460, margin: '0 auto 24px' }}>
+            Create industry-specific Sector Franchises (e.g. Textile, IT, Agriculture) under your Master network.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+            <Btn onClick={() => { setShowCreate(true); setCreateResult(null); }} accent="#10B981">➕ Create Sector Franchise</Btn>
+            <Btn variant="secondary" onClick={() => { setInviteId(''); setInviteResult(null); setShowInvite(true); }} accent="#10B981">🔗 Invite Sector Operator</Btn>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+          {franchises.map((f, i) => (
+            <motion.div key={f.id || i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              style={{ ...glass({ bg: '#fff' }), padding: '22px 24px', borderRadius: 16 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, border: '1px solid #A7F3D0' }}>🏭</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: T.text.primary }}>{f.name}</div>
+                  <div style={{ fontSize: 12, color: T.text.muted, fontWeight: 500 }}>Sector: {f.sector}</div>
+                </div>
+                <div style={{ padding: '4px 10px', borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', fontSize: 11, fontWeight: 700, color: '#047857' }}>
+                  ID: {f.id}
+                </div>
+              </div>
+              {f.inviteLink && (
+                <div style={{ marginBottom: 12, background: '#F8FAFC', padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#334155', wordBreak: 'break-all' }}>{f.inviteLink}</div>
+                  <motion.button onClick={() => copyLink(f.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                    style={{ padding: '4px 10px', borderRadius: 6, background: '#059669', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}
+                  >📋 Copy</motion.button>
+                </div>
+              )}
+              <Btn variant="secondary" fullWidth onClick={() => { setInviteId(String(f.id)); setInviteResult(null); setShowInvite(true); }} accent="#10B981">
+                📨 Invite Operator
+              </Btn>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
+      {/* Create Modal */}
       <AnimatePresence>
         {showCreate && (
-          <Modal title="Create Sector Franchise" onClose={() => setShowCreate(false)}>
-            <InputField label="Franchise Name" value={name} onChange={setName} placeholder="e.g. Textile Sector Franchise" />
-            <InputField label="Sector Name" value={sector} onChange={setSector} placeholder="e.g. Textile" />
-            <div style={{ marginTop: 12 }}>
-              <Btn fullWidth onClick={handleCreate} loading={loading} accent="#10B981">
-                {loading ? 'Creating...' : '🏭 Create Sector Franchise'}
-              </Btn>
-            </div>
+          <Modal title="Create Sector Franchise" onClose={() => { setShowCreate(false); setCreateResult(null); }}>
+            {!createResult ? (
+              <>
+                <InputField label="Franchise Name" value={name} onChange={setName} placeholder="e.g. Textile Sector Franchise" />
+                <InputField label="Sector Name" value={sector} onChange={setSector} placeholder="e.g. Textile" />
+                <div style={{ marginTop: 12 }}>
+                  <Btn fullWidth onClick={handleCreate} loading={loading} accent="#10B981">
+                    {loading ? 'Creating...' : '🏭 Create Sector Franchise'}
+                  </Btn>
+                </div>
+              </>
+            ) : (
+              <div style={{ background: '#F0FDF4', padding: 20, borderRadius: 14, border: '1px solid #BBF7D0' }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#166534', marginBottom: 6 }}>
+                  ✅ Sector Franchise Created!
+                </div>
+                <div style={{ fontSize: 12, color: '#15803D', marginBottom: 14 }}>
+                  Franchise ID: <strong>#{createResult.franchiseId}</strong>
+                </div>
+
+                {createResult.inviteLink ? (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 6 }}>
+                      Sector Operator Invite Link:
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '10px 12px', borderRadius: 10, border: '1px solid #BBF7D0' }}>
+                      <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#166534', wordBreak: 'break-all' }}>
+                        {createResult.inviteLink}
+                      </div>
+                      <motion.button onClick={() => copyLink(createResult.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        style={{ padding: '6px 12px', borderRadius: 8, background: '#16A34A', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}
+                      >📋 Copy</motion.button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#6B8F71', marginBottom: 16 }}>
+                    Franchise created. Click "Invite Operator" anytime to generate a fresh invite link.
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                  <Btn variant="secondary" fullWidth onClick={() => setCreateResult(null)} accent="#10B981">
+                    ➕ Create Another
+                  </Btn>
+                  <Btn fullWidth onClick={() => { setShowCreate(false); setCreateResult(null); }} accent="#10B981">
+                    Done
+                  </Btn>
+                </div>
+              </div>
+            )}
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* Invite Modal */}
+      <AnimatePresence>
+        {showInvite && (
+          <Modal title="Invite Sector Operator" onClose={() => { setShowInvite(false); setInviteResult(null); setInviteId(''); }}>
+            {inviteLoading && (
+              <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  style={{ width: 40, height: 40, border: '3px solid #A7F3D0', borderTopColor: '#059669', borderRadius: '50%', margin: '0 auto 16px' }}
+                />
+                <p style={{ fontSize: 13, fontWeight: 700, color: T.text.primary, margin: 0, fontFamily: T.font }}>
+                  Generating Operator Invite Link...
+                </p>
+              </div>
+            )}
+            {!inviteLoading && inviteResult && (
+              <div style={{ marginTop: 8, background: '#F0FDF4', padding: 20, borderRadius: 14, border: '1px solid #BBF7D0' }}>
+                <p style={{ fontSize: 14, fontWeight: 800, color: '#166534', margin: '0 0 12px' }}>✅ Sector Operator Invite Link Ready!</p>
+                {inviteResult.inviteLink ? (
+                  <>
+                    <div style={{ fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all', background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #BBF7D0', color: '#1A3A1A', marginBottom: 14 }}>
+                      {inviteResult.inviteLink}
+                    </div>
+                    <Btn fullWidth onClick={() => copyLink(inviteResult.inviteLink)} accent="#10B981">
+                      📋 Copy Invite Link
+                    </Btn>
+                  </>
+                ) : (
+                  <p style={{ fontSize: 12, color: '#166534' }}>{inviteResult.message || 'Invitation created.'}</p>
+                )}
+                {inviteResult.expiresAt && (
+                  <div style={{ fontSize: 11, color: '#6B8F71', marginTop: 12, textAlign: 'center' }}>
+                    ⏰ Expires: {new Date(inviteResult.expiresAt).toLocaleString()}
+                  </div>
+                )}
+              </div>
+            )}
           </Modal>
         )}
       </AnimatePresence>
@@ -903,6 +1238,446 @@ function InviteTab({ cfg }) {
 // ══════════════════════════════════════════════════
 // ── PLACEHOLDER TABS
 // ══════════════════════════════════════════════════
+// ── APPLICATIONS TAB (Approve / Reject BP Applications)
+// ══════════════════════════════════════════════════
+function ApplicationsTab({ onCountChange, initialFilter = 'PENDING' }) {
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
+  const [toast, setToast]               = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [reviewNotes, setReviewNotes]   = useState({});
+  const [expandedId, setExpandedId]     = useState(null);
+  const [filter, setFilter]             = useState(initialFilter);
+
+  const fetchApplications = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
+        method: 'POST',
+        body: JSON.stringify({
+          franchiseOperatorRequestType: 'FETCH_PENDING_APPLICATIONS',
+        }),
+      });
+
+      console.log('📋 Applications response:', data);
+      const apps = data?.applications || data?.pendingApplications || data?.content || [];
+      const list = Array.isArray(apps) ? apps : [];
+      setApplications(list);
+
+      const pendingCount = list.filter((a) => a.status === 'PENDING').length;
+      onCountChange?.(pendingCount || list.length);
+    } catch (err) {
+      console.error('❌ Fetch applications error:', err);
+      setError(err.message || 'Failed to load applications');
+    } finally {
+      setLoading(false);
+    }
+  }, [onCountChange]);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  const handleAction = async (applicationId, action) => {
+    const rawNotes = reviewNotes[applicationId]?.trim() || '';
+
+    if (action === 'REJECT' && !rawNotes) {
+      setToast({
+        message: 'Rejection reason (reviewNotes) is required when rejecting an application.',
+        type: 'error',
+      });
+      return;
+    }
+
+    setActionLoading(applicationId);
+    try {
+      const notes = rawNotes || (action === 'APPROVE' ? 'Application verified and approved.' : '');
+
+      const payload = {
+        franchiseOperatorRequestType: action === 'APPROVE'
+          ? 'APPROVE_APPLICATION'
+          : 'REJECT_APPLICATION',
+        applicationId: Number(applicationId),
+        ...(notes && { reviewNotes: notes }),
+      };
+
+      await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      setToast({
+        message: action === 'APPROVE'
+          ? `Application #${applicationId} approved! BUSINESS_PARTNER role granted.`
+          : `Application #${applicationId} rejected.`,
+        type: 'success',
+      });
+
+      setApplications((prev) =>
+        prev.filter((a) => a.id !== applicationId && a.applicationId !== applicationId)
+      );
+
+      onCountChange?.((prev) => Math.max(0, (prev || 1) - 1));
+      setExpandedId(null);
+    } catch (err) {
+      console.error(`❌ ${action} error:`, err);
+      setToast({
+        message: err.message || `Failed to ${action.toLowerCase()} application`,
+        type: 'error',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const filteredApps = filter === 'ALL'
+    ? applications
+    : filter === 'PENDING'
+    ? applications.filter((a) => (a.status || 'PENDING') === 'PENDING')
+    : filter === 'APPROVED'
+    ? applications.filter((a) => a.status === 'APPROVED')
+    : filter === 'REJECTED'
+    ? applications.filter((a) => a.status === 'REJECTED')
+    : applications;
+
+  return (
+    <div>
+      <AnimatePresence>
+        {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+      </AnimatePresence>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text.primary, margin: '0 0 4px', fontFamily: T.font }}>
+            Business Partner Approvals
+          </h2>
+          <p style={{ fontSize: 12, color: T.text.muted, margin: 0, fontFamily: T.font }}>
+            Review pending applications and grant Business Partner status
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {['PENDING', 'APPROVED', 'REJECTED', 'ALL'].map((f) => (
+            <motion.button
+              key={f}
+              onClick={() => setFilter(f)}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                padding: '8px 16px', borderRadius: T.radius.md,
+                background: filter === f ? '#059669' : '#fff',
+                color: filter === f ? '#fff' : T.text.secondary,
+                border: filter === f ? 'none' : `1px solid ${T.border.light}`,
+                fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: T.font,
+              }}
+            >
+              {f === 'PENDING' ? `⏳ Pending (${applications.filter((a) => (a.status || 'PENDING') === 'PENDING').length})`
+                : f === 'APPROVED' ? `✅ Approved (${applications.filter((a) => a.status === 'APPROVED').length})`
+                : f === 'REJECTED' ? `❌ Rejected (${applications.filter((a) => a.status === 'REJECTED').length})`
+                : '📋 All'}
+            </motion.button>
+          ))}
+
+          <motion.button
+            onClick={fetchApplications}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            disabled={loading}
+            style={{
+              padding: '8px 16px', borderRadius: T.radius.md,
+              background: '#ECFDF5', border: '1px solid #A7F3D0',
+              color: '#059669', fontSize: 12, fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer', fontFamily: T.font,
+            }}
+          >
+            🔄 Refresh
+          </motion.button>
+        </div>
+      </div>
+
+      {loading && applications.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+            style={{ width: 44, height: 44, margin: '0 auto 16px', border: `3px solid ${T.border.light}`, borderTopColor: '#059669', borderRadius: '50%' }}
+          />
+          <p style={{ fontSize: 14, fontWeight: 600, color: T.text.muted, fontFamily: T.font }}>Loading applications...</p>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 16, padding: '20px 24px', textAlign: 'center', marginBottom: 20 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#991B1B', margin: '0 0 12px' }}>❌ {error}</p>
+          <Btn onClick={fetchApplications}>🔄 Retry</Btn>
+        </div>
+      )}
+
+      {!loading && !error && filteredApps.length === 0 && (
+        <EmptyState icon="🎉" title="No Applications Found" desc="All Business Partner applications in this status have been reviewed." />
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {filteredApps.map((app, i) => {
+          const appId = app.id || app.applicationId;
+          const isExpanded = expandedId === appId;
+          const isActing = actionLoading === appId;
+          const status = app.status || 'PENDING';
+
+          return (
+            <motion.div key={appId} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+              style={{ ...glass({ bg: '#fff' }), borderRadius: T.radius.xl, border: status === 'PENDING' ? '2px solid #FDE68A' : `1px solid ${T.border.light}`, overflow: 'hidden' }}
+            >
+              <div onClick={() => setExpandedId(isExpanded ? null : appId)}
+                style={{ padding: '20px 24px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16 }}
+              >
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#047857', border: '1px solid #A7F3D0', flexShrink: 0 }}>
+                  {(app.fullName || app.applicantName || 'U')[0].toUpperCase()}
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: T.text.primary, marginBottom: 4, fontFamily: T.font }}>
+                    {app.fullName || app.applicantName || 'Unknown'}
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                    {(app.applicantEmail || app.email) && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: T.text.muted, background: '#F8FAFC', padding: '3px 10px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+                        ✉️ {app.applicantEmail || app.email}
+                      </span>
+                    )}
+                    {app.businessSector && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: '#7C3AED', background: '#F5F3FF', padding: '3px 10px', borderRadius: 8, border: '1px solid #DDD6FE' }}>
+                        🏭 {app.businessSector === 'OTHER' ? `OTHER (${app.otherBusinessSector || 'N/A'})` : app.businessSector.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                  <span style={{ padding: '5px 14px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: status === 'PENDING' ? '#FEF3C7' : status === 'APPROVED' ? '#DCFCE7' : '#FEE2E2', color: status === 'PENDING' ? '#92400E' : status === 'APPROVED' ? '#166534' : '#991B1B' }}>
+                    {status === 'PENDING' ? '⏳' : status === 'APPROVED' ? '✅' : '❌'} {status}
+                  </span>
+
+                  {status === 'PENDING' && (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <motion.button onClick={(e) => { e.stopPropagation(); handleAction(appId, 'APPROVE'); }} disabled={isActing} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        style={{ padding: '6px 14px', borderRadius: 10, background: 'linear-gradient(135deg,#16A34A,#15803D)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        ✅ Approve
+                      </motion.button>
+                      <motion.button onClick={(e) => { e.stopPropagation(); if (!reviewNotes[appId]?.trim()) { setExpandedId(appId); setToast({ message: 'Please enter a rejection reason in the notes field.', type: 'error' }); } else { handleAction(appId, 'REJECT'); } }} disabled={isActing} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        style={{ padding: '6px 14px', borderRadius: 10, background: '#fff', border: '1px solid #FCA5A5', color: '#DC2626', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        ❌ Reject
+                      </motion.button>
+                    </div>
+                  )}
+
+                  <motion.button onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : appId); }}
+                    style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10, padding: '6px 10px', color: '#047857', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    <span>{isExpanded ? 'Hide' : 'Details'}</span>
+                  </motion.button>
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
+                    <div onClick={(e) => e.stopPropagation()} style={{ padding: '0 24px 24px', borderTop: `1px solid ${T.border.light}` }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, padding: '20px 0' }}>
+                        {[
+                          { label: 'Application ID', value: `#${app.applicationId || app.id}`, icon: '🆔' },
+                          { label: 'Applicant Name', value: app.applicantName || app.fullName, icon: '👤' },
+                          { label: 'Applicant Email', value: app.applicantEmail || app.email, icon: '✉️' },
+                          { label: 'Business Sector', value: app.businessSector === 'OTHER' ? `OTHER (${app.otherBusinessSector || 'N/A'})` : app.businessSector?.replace(/_/g, ' '), icon: '🏭' },
+                          { label: 'Submitted Date', value: (app.submittedAt || app.createdAt) ? new Date(app.submittedAt || app.createdAt).toLocaleString() : '—', icon: '📆' },
+                          { label: 'Company', value: app.companyName, icon: '🏢' },
+                          { label: 'Phone', value: app.alternatePhoneNumber || app.phone, icon: '📱' },
+                          { label: 'Status', value: app.status || 'PENDING', icon: '📋' },
+                          { label: 'Reviewed By', value: app.reviewedBy, icon: '🛡️' },
+                          { label: 'Reviewed Date', value: app.reviewedAt ? new Date(app.reviewedAt).toLocaleString() : null, icon: '⏰' },
+                          { label: 'Review Notes', value: app.reviewNotes, icon: '📝' },
+                        ].filter((d) => d.value).map((detail, di) => (
+                          <div key={di} style={{ background: '#F8FAFC', padding: '12px 16px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: T.text.muted, textTransform: 'uppercase', marginBottom: 4 }}>{detail.icon} {detail.label}</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: T.text.primary }}>{detail.value}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {status === 'PENDING' && (
+                        <div style={{ background: '#F8FAFC', borderRadius: 16, padding: '20px', border: '1px solid #E2E8F0', marginTop: 8 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: T.text.primary, marginBottom: 12 }}>
+                            📝 Review Notes (Optional for Approve, <span style={{ color: '#DC2626' }}>Mandatory for Reject *</span>)
+                          </div>
+                          <textarea
+                            placeholder="Add notes or mandatory rejection reason..."
+                            value={reviewNotes[appId] || ''}
+                            onChange={(e) => setReviewNotes((prev) => ({ ...prev, [appId]: e.target.value }))}
+                            style={{ width: '100%', minHeight: 80, padding: '12px 16px', borderRadius: 12, border: '1px solid #E2E8F0', background: '#fff', fontSize: 13, fontWeight: 500, color: T.text.primary, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+                          />
+                          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                            <motion.button onClick={() => handleAction(appId, 'REJECT')} disabled={isActing} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                              style={{ flex: 1, padding: '14px', borderRadius: 12, background: '#fff', border: '2px solid #FCA5A5', color: '#DC2626', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                            >
+                              ❌ Reject
+                            </motion.button>
+                            <motion.button onClick={() => handleAction(appId, 'APPROVE')} disabled={isActing} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                              style={{ flex: 2, padding: '14px', borderRadius: 12, background: 'linear-gradient(135deg,#16A34A,#15803D)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                            >
+                              ✅ Approve
+                            </motion.button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════
+// ── OPERATOR COMMISSIONS TAB
+// ══════════════════════════════════════════════════
+function OperatorCommissionsTab() {
+  const [entryId, setEntryId]         = useState('');
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [actionLoading, setActionLoading] = useState(null);
+  const [toast, setToast]             = useState(null);
+
+  const handleApprove = async () => {
+    if (!entryId) {
+      setToast({ message: 'commissionLedgerEntryId is required.', type: 'error' }); return;
+    }
+    setActionLoading('APPROVE');
+    try {
+      const res = await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
+        method: 'POST',
+        body: JSON.stringify({
+          franchiseOperatorRequestType: 'APPROVE_COMMISSION_ENTRY',
+          commissionLedgerEntryId: Number(entryId),
+          ...(reviewNotes.trim() && { reviewNotes: reviewNotes.trim() }),
+        }),
+      });
+      setToast({ message: res?.message || `Commission Entry #${entryId} approved (PENDING → APPROVED)!`, type: 'success' });
+      setEntryId(''); setReviewNotes('');
+    } catch (err) {
+      setToast({ message: err.message || 'Failed to approve commission entry', type: 'error' });
+    } finally { setActionLoading(null); }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!entryId) {
+      setToast({ message: 'commissionLedgerEntryId is required.', type: 'error' }); return;
+    }
+    setActionLoading('PAID');
+    try {
+      const res = await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
+        method: 'POST',
+        body: JSON.stringify({
+          franchiseOperatorRequestType: 'MARK_COMMISSION_ENTRY_PAID',
+          commissionLedgerEntryId: Number(entryId),
+          ...(reviewNotes.trim() && { reviewNotes: reviewNotes.trim() }),
+        }),
+      });
+      setToast({ message: res?.message || `Commission Entry #${entryId} marked as PAID (APPROVED → PAID)!`, type: 'success' });
+      setEntryId(''); setReviewNotes('');
+    } catch (err) {
+      setToast({ message: err.message || 'Failed to mark commission entry paid', type: 'error' });
+    } finally { setActionLoading(null); }
+  };
+
+  return (
+    <div>
+      <AnimatePresence>{toast && <Toast {...toast} onClose={() => setToast(null)} />}</AnimatePresence>
+
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text.primary, margin: '0 0 4px', fontFamily: T.font }}>
+          Franchise Commission Payouts & Approvals
+        </h2>
+        <p style={{ fontSize: 12, color: T.text.muted, margin: 0, fontFamily: T.font }}>
+          Approve pending Business Partner commission entries and record external payout settlements.
+        </p>
+      </div>
+
+      <div style={{ ...glass({ bg: '#fff' }), padding: 24, borderRadius: T.radius.xl, marginBottom: 24 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: T.text.primary, marginBottom: 12 }}>
+          🔄 Commission Entry Lifecycle
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#92400E' }}>1. PENDING 🟡</div>
+            <div style={{ fontSize: 11, color: '#B45309', marginTop: 4 }}>Auto-generated on brokered deal closure.</div>
+          </div>
+          <div style={{ background: '#DBEAFE', border: '1px solid #BFDBFE', borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#1E40AF' }}>2. APPROVED 🟢</div>
+            <div style={{ fontSize: 11, color: '#1D4ED8', marginTop: 4 }}>Franchise Operator runs APPROVE_COMMISSION_ENTRY.</div>
+          </div>
+          <div style={{ background: '#DCFCE7', border: '1px solid #BBF7D0', borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#166534' }}>3. PAID ✅</div>
+            <div style={{ fontSize: 11, color: '#15803D', marginTop: 4 }}>Franchise Operator runs MARK_COMMISSION_ENTRY_PAID.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ ...glass({ bg: '#fff' }), padding: 28, borderRadius: T.radius.xl, maxWidth: 600 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: T.text.primary, marginBottom: 16 }}>
+          Review & Update Commission Entry Status
+        </h3>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.text.secondary, marginBottom: 6 }}>
+            Commission Ledger Entry ID *
+          </label>
+          <input
+            type="number"
+            placeholder="e.g. 25"
+            value={entryId}
+            onChange={(e) => setEntryId(e.target.value)}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: `1px solid ${T.border.light}`, fontSize: 14, fontWeight: 600, outline: 'none', fontFamily: T.font }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.text.secondary, marginBottom: 6 }}>
+            Review Notes / Payout Audit Traceability (Optional)
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. Verified against deal records / Bank transfer ref #TXN-8821"
+            value={reviewNotes}
+            onChange={(e) => setReviewNotes(e.target.value)}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: `1px solid ${T.border.light}`, fontSize: 13, fontWeight: 600, outline: 'none', fontFamily: T.font }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <motion.button onClick={handleApprove} disabled={!entryId || actionLoading !== null} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            style={{ flex: 1, padding: '12px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: !entryId ? 'not-allowed' : 'pointer', fontFamily: T.font }}
+          >
+            {actionLoading === 'APPROVE' ? 'Approving...' : '🟢 Approve (PENDING → APPROVED)'}
+          </motion.button>
+          <motion.button onClick={handleMarkPaid} disabled={!entryId || actionLoading !== null} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            style={{ flex: 1, padding: '12px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #16A34A, #15803D)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: !entryId ? 'not-allowed' : 'pointer', fontFamily: T.font }}
+          >
+            {actionLoading === 'PAID' ? 'Processing...' : '✅ Mark Paid (APPROVED → PAID)'}
+          </motion.button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════
+// ── PLACEHOLDER TABS
+// ══════════════════════════════════════════════════
 function PlaceholderTab({ name }) {
   return (
     <EmptyState
@@ -916,18 +1691,20 @@ function PlaceholderTab({ name }) {
 // ══════════════════════════════════════════════════
 // ── MAIN CONTENT ROUTER
 // ══════════════════════════════════════════════════
-export default function FranchiseOperatorContent({ activeNav, onNavigate, franchiseConfig }) {
+export default function FranchiseOperatorContent({ activeNav, onNavigate, franchiseConfig, initialFilter }) {
   const cfg = franchiseConfig;
   return (
     <>
-      {activeNav === 'overview'    && <OverviewTab onNavigate={onNavigate} cfg={cfg} />}
-      {activeNav === 'general'     && <GeneralFranchiseTab cfg={cfg} />}
-      {activeNav === 'sector'      && <SectorFranchiseTab cfg={cfg} />}
-      {activeNav === 'members'     && <DirectoryTab />}
-      {activeNav === 'invite'      && <InviteTab cfg={cfg} />}
-      {activeNav === 'marketplace' && <PlaceholderTab name="marketplace" />}
-      {activeNav === 'meetings'    && <MeetingsTab />}
-      {activeNav === 'settings'    && <PlaceholderTab name="settings" />}
+      {activeNav === 'overview'     && <OverviewTab onNavigate={onNavigate} cfg={cfg} />}
+      {activeNav === 'bp_approvals'  && <ApplicationsTab initialFilter={initialFilter} key={initialFilter} />}
+      {activeNav === 'commissions'   && <OperatorCommissionsTab />}
+      {activeNav === 'general'      && <GeneralFranchiseTab cfg={cfg} />}
+      {activeNav === 'sector'       && <SectorFranchiseTab cfg={cfg} />}
+      {activeNav === 'members'      && <DirectoryTab />}
+      {activeNav === 'invite'       && <InviteTab cfg={cfg} />}
+      {activeNav === 'marketplace'  && <PlaceholderTab name="marketplace" />}
+      {activeNav === 'meetings'     && <MeetingsTab />}
+      {activeNav === 'settings'     && <PlaceholderTab name="settings" />}
     </>
   );
 }

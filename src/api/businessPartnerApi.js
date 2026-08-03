@@ -146,10 +146,11 @@ export const deleteLead = async (leadId) => {
  * Raises a Trade Proposal against the Trade Intent attached to this lead.
  * Automatically advances lead stage to NEGOTIATION if currently prior to NEGOTIATION.
  */
-export const createProposalForLead = async (leadId, { quantityRequested, pricePerUnit, timelineDays }) => {
+export const createProposalForLead = async (leadId, { tradeIntentId, quantityRequested, pricePerUnit, timelineDays }) => {
   const body = {
     businessPartnerRequestType: 'CREATE_PROPOSAL_FOR_LEAD',
     leadId: Number(leadId),
+    ...(tradeIntentId && { tradeIntentId: Number(tradeIntentId) }),
     quantityRequested: Number(quantityRequested),
     pricePerUnit: Number(pricePerUnit),
     timelineDays: Number(timelineDays),
@@ -286,6 +287,46 @@ export const findBusinessPartners = async ({ businessSector, country, state, cit
     ...(state && { state }),
     ...(city && { city }),
     ...(search && { search }),
+  };
+
+  return apiCall('/member', { body });
+};
+
+/**
+ * Marks a deal as COMPLETED.
+ * Can be called by the Intent Owner or the Business Partner currently handling their lead.
+ */
+export const markDealCompleted = async (dealId) => {
+  const body = {
+    memberRequestType: 'MARK_DEAL_COMPLETED',
+    dealId: Number(dealId),
+  };
+
+  return apiCall('/member', { body });
+};
+
+/**
+ * Fetches commission ledger entries for the calling Business Partner.
+ */
+export const fetchMyCommissions = async ({ page = 0, size = 10, commissionStatusFilter } = {}) => {
+  const body = {
+    businessPartnerRequestType: 'FETCH_MY_COMMISSIONS',
+    page: Number(page),
+    size: Number(size),
+    ...(commissionStatusFilter && commissionStatusFilter !== 'ALL' && { commissionStatusFilter }),
+  };
+
+  return apiCall('/business-partner', { body });
+};
+
+/**
+ * Fetches completed deals for the calling Intent Owner / Member / Business Partner.
+ */
+export const fetchMyCompletedDeals = async ({ page = 0, size = 10 } = {}) => {
+  const body = {
+    memberRequestType: 'FETCH_MY_COMPLETED_DEALS',
+    page: Number(page),
+    size: Number(size),
   };
 
   return apiCall('/member', { body });

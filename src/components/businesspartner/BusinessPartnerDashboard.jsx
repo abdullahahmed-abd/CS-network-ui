@@ -3,7 +3,8 @@ import {
   Search, Bell, Plus, Filter, X, RefreshCw,
   Sparkles, Target, Rocket, Users, Handshake,
   Wallet, CalendarClock, BarChart3, ArrowUpRight,
-  Loader2, AlertCircle, Trophy, Package,
+  Loader2, AlertCircle, Trophy, Package, Ticket,
+  FileText, Inbox, MessageSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authenticatedFetch, getUserData } from '../../api/auth';
@@ -13,9 +14,15 @@ import BusinessPartnerSidebar from '../businesspartner/BusinessPartnerSidebar';
 import BusinessPartnerPipeline from '../businesspartner/BusinessPartnerPipeline';
 import BusinessPartnerIntents  from '../businesspartner/BusinessPartnerIntents';
 import DirectoryTab            from '../directory/DirectoryTab';
+import MeetingsTab             from '../meetings/MeetingsTab';
+import { EventsTab }           from '../../screens/EventsComponents';
+import MyRegistrationsTab      from '../../screens/MyRegistrationsTab';
 import { AddLeadModal }        from '../businesspartner/modals/AddLeadModal';
 import { CreateIntentModal }   from '../businesspartner/modals/CreateIntentModal';
 import { Toast }               from '../businesspartner/common/Toast';
+import { ProposalsTab, InboxTab, TradeChatScreen } from '../../screens/BuyerSellerDashboard';
+import { BusinessPartnerCommissions } from './BusinessPartnerCommissions';
+import { BusinessPartnerDeals }       from './BusinessPartnerDeals';
 
 import { THEME, PIPELINE_STAGES, NAV_ITEMS, BASE_URL } from '../constants/BpConstants';
 import { getInitials } from '../../utils/BpHelpers';
@@ -29,17 +36,22 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { id: 'pipeline',      label: 'Pipeline',      icon: LayoutGrid    },
-  { id: 'trade_intents', label: 'Trade Intents', icon: BarChart3     },
-  { id: 'deals',         label: 'Deals',         icon: HandshakeIcon },
-  { id: 'commissions',   label: 'Commissions',   icon: WalletIcon    },
-  { id: 'meetings',      label: 'Meetings',      icon: CalIcon       },
+  { id: 'pipeline',         label: 'Pipeline',      icon: LayoutGrid    },
+  { id: 'trade_intents',    label: 'Trade Intents', icon: BarChart3     },
+  { id: 'proposals',        label: 'Proposals',     icon: FileText      },
+  { id: 'inbox',            label: 'Inbox',         icon: MessageSquare },
+  { id: 'deals',            label: 'Deals',         icon: HandshakeIcon },
+  { id: 'commissions',      label: 'Commissions',   icon: WalletIcon    },
+  { id: 'meetings',         label: 'Meetings',      icon: CalIcon       },
+  { id: 'events',           label: 'Events',        icon: CalendarClock },
+  { id: 'my_registrations', label: 'My Tickets',    icon: Ticket        },
 ];
 
 export default function BusinessPartnerDashboard({ onLogout }) {
   /* ── Nav ── */
   const [activeNav,   setActiveNav]   = useState('pipeline');
   const [activeStage, setActiveStage] = useState('all');
+  const [activeProposalLead, setActiveProposalLead] = useState(null);
 
   /* ── Pipeline ── */
   const [leads,       setLeads]       = useState({});
@@ -156,7 +168,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
   }, [activeNav, intentPage, fetchIntents]);
 
   useEffect(() => {
-    if (activeNav === 'my_intents') fetchMyIntents();
+    if (activeNav === 'my_intents' || activeNav === 'proposals') fetchMyIntents();
   }, [activeNav, fetchMyIntents]);
 
   /* ════════ Handlers ════════ */
@@ -235,7 +247,10 @@ export default function BusinessPartnerDashboard({ onLogout }) {
       <BusinessPartnerSidebar
         navItems={navItems}
         activeNav={activeNav}
-        setActiveNav={setActiveNav}
+        setActiveNav={(navId) => {
+          if (navId !== 'trade_intents') setActiveProposalLead(null);
+          setActiveNav(navId);
+        }}
         activeStage={activeStage}
         setActiveStage={setActiveStage}
         stageCounts={stageCounts}
@@ -397,6 +412,10 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               onFetchPipeline={fetchPipeline}
               onAddLead={() => setShowAddLead(true)}
               showToast={showToast}
+              onBrowseLeadIntents={(lead) => {
+                setActiveProposalLead(lead);
+                setActiveNav('trade_intents');
+              }}
             />
           )}
 
@@ -416,6 +435,12 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               onRefresh={() => fetchIntents(intentPage)}
               onCreateIntent={() => setShowCreateIntent(true)}
               showToast={showToast}
+              activeProposalLead={activeProposalLead}
+              onClearProposalLead={() => setActiveProposalLead(null)}
+              onSuccessProposal={() => {
+                setActiveProposalLead(null);
+                fetchPipeline(true);
+              }}
             />
           )}
 
@@ -437,19 +462,59 @@ export default function BusinessPartnerDashboard({ onLogout }) {
             />
           )}
 
+          {/* ══ Tab: Proposals ══ */}
+          {activeNav === 'proposals' && (
+            <ProposalsTab
+              myIntents={myIntents}
+              myIntentsLoading={myIntentsLoading}
+              onRefreshMyIntents={fetchMyIntents}
+            />
+          )}
+
+          {/* ══ Tab: Inbox ══ */}
+          {activeNav === 'inbox' && (
+            <InboxTab />
+          )}
+
           {/* ══ Tab: Directory ══ */}
           {activeNav === 'directory' && (
             <DirectoryTab />
           )}
 
+          {/* ══ Tab: Meetings ══ */}
+          {activeNav === 'meetings' && (
+            <MeetingsTab />
+          )}
+
+          {/* ══ Tab: Events ══ */}
+          {activeNav === 'events' && (
+            <EventsTab />
+          )}
+
+          {/* ══ Tab: My Tickets ══ */}
+          {activeNav === 'my_registrations' && (
+            <MyRegistrationsTab />
+          )}
+
+          {/* ══ Tab: Deals ══ */}
+          {activeNav === 'deals' && (
+            <BusinessPartnerDeals
+              leads={leads}
+              showToast={showToast}
+              onNavigateToCommissions={() => setActiveNav('commissions')}
+            />
+          )}
+
+          {/* ══ Tab: Commissions ══ */}
+          {activeNav === 'commissions' && (
+            <BusinessPartnerCommissions showToast={showToast} />
+          )}
+
           {/* ── Coming Soon tabs ── */}
-          {['my_leads','deals','commissions','meetings'].includes(activeNav) && (
+          {['my_leads'].includes(activeNav) && (
             <div className="coming-soon">
               <div className="coming-soon-icon">
-                {activeNav === 'my_leads'    && <Users />}
-                {activeNav === 'deals'       && <Handshake />}
-                {activeNav === 'commissions' && <Wallet />}
-                {activeNav === 'meetings'    && <CalendarClock />}
+                {activeNav === 'my_leads' && <Users />}
               </div>
               <div className="coming-soon-title">
                 {getPageTitle()} — Coming Soon
