@@ -1,18 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clearTokens, getUserData, authenticatedFetch } from '../api/auth';
-import { inviteMember } from '../api/adminApi';
+import {
+  inviteMember,
+  fetchFranchiseCommissions,
+  approveCommissionEntry,
+  markCommissionEntryPaid,
+} from '../api/adminApi';
 
 const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 
 const navItems = [
-  { id: 'overview',      label: 'Overview',           icon: '🏠' },
-  { id: 'bp_approvals',  label: 'BP Approvals',       icon: '🛡️' },
-  { id: 'applications',  label: 'Applications',       icon: '📋' },
-  { id: 'commissions',   label: 'Commissions',        icon: '💰' },
-  { id: 'invitations',   label: 'Invite Members',     icon: '📨' },
-  { id: 'members',       label: 'Members',            icon: '👥' },
-  { id: 'settings',      label: 'Settings',           icon: '⚙️' },
+  { id: 'overview', label: 'Overview', icon: '🏠' },
+  { id: 'bp_approvals', label: 'BP Approvals', icon: '🛡️' },
+  { id: 'applications', label: 'Applications', icon: '📋' },
+  { id: 'commissions', label: 'Commissions', icon: '💰' },
+  { id: 'invitations', label: 'Invite Members', icon: '📨' },
+  { id: 'members', label: 'Members', icon: '👥' },
+  { id: 'settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export default function GeneralOperatorDashboard({ onLogout }) {
@@ -297,13 +302,13 @@ export default function GeneralOperatorDashboard({ onLogout }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.22 }}
             >
-              {activeNav === 'overview'     && <OverviewTab onNavigate={handleNavigate} pendingCount={pendingCount} />}
+              {activeNav === 'overview' && <OverviewTab onNavigate={handleNavigate} pendingCount={pendingCount} />}
               {activeNav === 'bp_approvals' && <ApplicationsTab onCountChange={setPendingCount} initialFilter={appFilter} key={appFilter} />}
               {activeNav === 'applications' && <ApplicationsTab onCountChange={setPendingCount} initialFilter={appFilter} key={appFilter} />}
-              {activeNav === 'commissions'  && <OperatorCommissionsTab />}
-              {activeNav === 'invitations'  && <InviteMembersTab />}
-              {activeNav === 'members'      && <PlaceholderTab name="members" />}
-              {activeNav === 'settings'     && <PlaceholderTab name="settings" />}
+              {activeNav === 'commissions' && <OperatorCommissionsTab />}
+              {activeNav === 'invitations' && <InviteMembersTab />}
+              {activeNav === 'members' && <PlaceholderTab name="members" />}
+              {activeNav === 'settings' && <PlaceholderTab name="settings" />}
             </motion.div>
           </AnimatePresence>
           <div style={{ height: 40 }} />
@@ -335,7 +340,7 @@ function Toast({ message, type = 'success', onClose }) {
 
   const c = {
     success: { bg: '#F0FDF4', border: '#BBF7D0', color: '#166534', icon: '✅' },
-    error:   { bg: '#FEF2F2', border: '#FECACA', color: '#991B1B', icon: '❌' },
+    error: { bg: '#FEF2F2', border: '#FECACA', color: '#991B1B', icon: '❌' },
   }[type] || { bg: '#F0FDF4', border: '#BBF7D0', color: '#166534', icon: '✅' };
 
   return (
@@ -579,13 +584,13 @@ function OverviewTab({ onNavigate, pendingCount }) {
 /* ══════════════════════════════════════════════════════════ */
 function ApplicationsTab({ onCountChange }) {
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState('');
-  const [toast, setToast]               = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState(null);
   const [actionLoading, setActionLoading] = useState(null); // applicationId being acted on
-  const [reviewNotes, setReviewNotes]   = useState({});
-  const [expandedId, setExpandedId]     = useState(null);
-  const [filter, setFilter]             = useState('PENDING'); // PENDING | ALL
+  const [reviewNotes, setReviewNotes] = useState({});
+  const [expandedId, setExpandedId] = useState(null);
+  const [filter, setFilter] = useState('PENDING'); // PENDING | ALL
 
   // ── Fetch pending applications ──
   const fetchApplications = useCallback(async () => {
@@ -684,12 +689,12 @@ function ApplicationsTab({ onCountChange }) {
   const filteredApps = filter === 'ALL'
     ? applications
     : filter === 'PENDING'
-    ? applications.filter((a) => (a.status || 'PENDING') === 'PENDING')
-    : filter === 'APPROVED'
-    ? applications.filter((a) => a.status === 'APPROVED')
-    : filter === 'REJECTED'
-    ? applications.filter((a) => a.status === 'REJECTED')
-    : applications;
+      ? applications.filter((a) => (a.status || 'PENDING') === 'PENDING')
+      : filter === 'APPROVED'
+        ? applications.filter((a) => a.status === 'APPROVED')
+        : filter === 'REJECTED'
+          ? applications.filter((a) => a.status === 'REJECTED')
+          : applications;
 
   return (
     <div>
@@ -734,8 +739,8 @@ function ApplicationsTab({ onCountChange }) {
             >
               {f === 'PENDING' ? `⏳ Pending (${applications.filter((a) => (a.status || 'PENDING') === 'PENDING').length})`
                 : f === 'APPROVED' ? `✅ Approved (${applications.filter((a) => a.status === 'APPROVED').length})`
-                : f === 'REJECTED' ? `❌ Rejected (${applications.filter((a) => a.status === 'REJECTED').length})`
-                : '📋 All'}
+                  : f === 'REJECTED' ? `❌ Rejected (${applications.filter((a) => a.status === 'REJECTED').length})`
+                    : '📋 All'}
             </motion.button>
           ))}
 
@@ -1176,10 +1181,10 @@ function ApplicationsTab({ onCountChange }) {
 /* ══ INVITE MEMBERS TAB              ══ */
 /* ══════════════════════════════════════ */
 function InviteMembersTab() {
-  const [loading, setLoading]           = useState(false);
-  const [toast, setToast]               = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
   const [inviteResult, setInviteResult] = useState(null);
-  const [history, setHistory]           = useState([]);
+  const [history, setHistory] = useState([]);
 
   const handleInvite = async () => {
     setLoading(true);
@@ -1469,10 +1474,10 @@ function PlaceholderTab({ name }) {
 /* ══ OperatorCommissionsTab          ══ */
 /* ══════════════════════════════════════ */
 function OperatorCommissionsTab() {
-  const [entryId, setEntryId]         = useState('');
+  const [entryId, setEntryId] = useState('');
   const [reviewNotes, setReviewNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
-  const [toast, setToast]             = useState(null);
+  const [toast, setToast] = useState(null);
 
   const handleApprove = async () => {
     if (!entryId) {

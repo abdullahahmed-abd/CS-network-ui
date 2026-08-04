@@ -81,8 +81,6 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const EVENT_INTEREST_OPTIONS = [
-  { label: 'Networking',      value: 'NETWORKING',      icon: '🤝', desc: 'Connect with professionals' },
-  { label: 'Business Growth', value: 'BUSINESS_GROWTH', icon: '📈', desc: 'Expand your business'       },
   { label: 'Online Event',    value: 'ONLINE_EVENT',    icon: '💻', desc: 'Virtual events & webinars'  },
   { label: 'In-Person Event', value: 'IN_PERSON_EVENT', icon: '🏢', desc: 'Physical meetups'            },
   { label: 'In Country',      value: 'IN_COUNTRY',      icon: '🌍', desc: 'Local country events'       },
@@ -1024,6 +1022,9 @@ export default function UserFormScreen({
 
         // ✅ Always send franchiseId
         franchiseId: finalFranchiseId,
+
+        // ✅ Send isInvited flag (true if from invite link, false if manual)
+        isInvited: isInviteFlow,
 
         ...(!isBusinessPartner && planId !== null && { planId }),
       };

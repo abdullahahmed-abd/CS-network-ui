@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   submitMasterOperatorForm,
@@ -6,6 +6,10 @@ import {
   acceptInvitation,
 } from '../api/adminApi';
 import { getUserData, saveUserData, setItem, getItem, removeItem } from '../api/auth';
+import {
+  getCountries, getStates, getCities,
+  COUNTRY_CODES, COUNTRY_TO_CODE_MAP,
+} from '../utils/locationData';
 
 const positions = ['OWNER', 'CEO', 'DIRECTOR', 'MANAGER', 'PARTNER', 'OTHER'];
 const contactMethods = ['WHATSAPP', 'PHONE', 'EMAIL'];
@@ -23,6 +27,7 @@ export default function OperatorFormScreen({ inviteData, onComplete, onSessionEx
   const [form, setForm] = useState({
     companyName: '',
     alternatePhoneNumber: '',
+    alternatePhoneCountryCode: '+91',
     preferredContactMethod: 'WHATSAPP',
     position: 'OWNER',
     linkedinProfile: '',
@@ -68,9 +73,25 @@ export default function OperatorFormScreen({ inviteData, onComplete, onSessionEx
     setStep((s) => s + 1);
   };
 
-  const handleBack = () => {
-    setError('');
-    setStep((s) => s - 1);
+  const countries = getCountries();
+  const availableStates = form.country ? getStates(form.country) : [];
+  const availableCities = (form.country && form.state) ? getCities(form.country, form.state) : [];
+
+  const handleCountryChange = (c) => {
+    const code = COUNTRY_TO_CODE_MAP[c] || form.alternatePhoneCountryCode;
+    setForm((prev) => ({
+      ...prev,
+      country: c,
+      state: '',
+      city: '',
+      alternatePhoneCountryCode: code,
+    }));
+    if (error) setError('');
+  };
+
+  const handleStateChange = (s) => {
+    setForm((prev) => ({ ...prev, state: s, city: '' }));
+    if (error) setError('');
   };
 
   const handleSubmit = async () => {
@@ -84,11 +105,21 @@ export default function OperatorFormScreen({ inviteData, onComplete, onSessionEx
       // ── Step 1: Submit form to correct endpoint ──
       console.log(`📝 Submitting ${operatorLabel} form...`);
 
+      const cleanPhone = form.alternatePhoneNumber.replace(/\s+/g, '');
+      const formattedPhone = cleanPhone.startsWith('+')
+        ? cleanPhone
+        : `${form.alternatePhoneCountryCode}${cleanPhone}`;
+
+      const payload = {
+        ...form,
+        alternatePhoneNumber: formattedPhone,
+      };
+
       if (isMasterOperator) {
-        const formRes = await submitMasterOperatorForm(form);
+        const formRes = await submitMasterOperatorForm(payload);
         console.log('✅ Master operator form submitted:', formRes);
       } else {
-        const formRes = await submitGeneralOperatorForm(form);
+        const formRes = await submitGeneralOperatorForm(payload);
         console.log('✅ General operator form submitted:', formRes);
       }
 
@@ -314,8 +345,46 @@ export default function OperatorFormScreen({ inviteData, onComplete, onSessionEx
               <motion.div key="s2" initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
                 <StepHeader icon="📞" title="Contact Details" subtitle="How should we reach you?" />
-                <FormInput label="Alternate Phone *" value={form.alternatePhoneNumber}
-                  onChange={(v) => updateField('alternatePhoneNumber', v)} placeholder="+919876543210" />
+                
+                {/* Phone with Country Code Dropdown */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#1A3A1A', marginBottom: 6 }}>
+                    Alternate Phone *
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <select
+                      value={form.alternatePhoneCountryCode}
+                      onChange={(e) => updateField('alternatePhoneCountryCode', e.target.value)}
+                      style={{
+                        padding: '12px 12px', borderRadius: 12, border: '1.5px solid #E8F0E0',
+                        background: '#fff', fontSize: 13, fontWeight: 700, color: '#1A3A1A',
+                        outline: 'none', cursor: 'pointer',
+                      }}
+                    >
+                      {COUNTRY_CODES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.flag} {c.code} ({c.short})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      value={form.alternatePhoneNumber}
+                      onChange={(e) => updateField('alternatePhoneNumber', e.target.value.replace(/\D/g, ''))}
+                      placeholder="9876543210"
+                      style={{
+                        flex: 1, padding: '12px 16px', borderRadius: 12, border: '1.5px solid #E8F0E0',
+                        background: '#fff', fontSize: 14, fontWeight: 500, color: '#1A3A1A', outline: 'none',
+                      }}
+                    />
+                  </div>
+                  {form.alternatePhoneNumber && (
+                    <p style={{ fontSize: 11, color: '#166534', marginTop: 4, fontWeight: 600 }}>
+                      Full Number: {form.alternatePhoneCountryCode} {form.alternatePhoneNumber}
+                    </p>
+                  )}
+                </div>
+
                 <FormSelect label="Preferred Contact" value={form.preferredContactMethod}
                   onChange={(v) => updateField('preferredContactMethod', v)} options={contactMethods} />
                 <FormSelect label="Language" value={form.languagePreference}
@@ -327,13 +396,33 @@ export default function OperatorFormScreen({ inviteData, onComplete, onSessionEx
               <motion.div key="s3" initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }}>
                 <StepHeader icon="📍" title="Location" subtitle="Where are you based?" />
-                <FormInput label="Country *" value={form.country}
-                  onChange={(v) => updateField('country', v)}
-                  placeholder="e.g. India" disabled={!!inviteData?.country} />
-                <FormInput label="State / Province *" value={form.state}
-                  onChange={(v) => updateField('state', v)} placeholder="e.g. Madhya Pradesh" />
-                <FormInput label="City *" value={form.city}
-                  onChange={(v) => updateField('city', v)} placeholder="e.g. Bhopal" />
+                
+                {/* Country Dropdown */}
+                <FormSelect
+                  label="Country *"
+                  value={form.country}
+                  onChange={handleCountryChange}
+                  options={['Select Country', ...countries]}
+                  disabled={!!inviteData?.country}
+                />
+
+                {/* State Dropdown */}
+                <FormSelect
+                  label="State / Province *"
+                  value={form.state}
+                  onChange={handleStateChange}
+                  options={['Select State', ...availableStates]}
+                  disabled={!form.country}
+                />
+
+                {/* City Dropdown */}
+                <FormSelect
+                  label="City *"
+                  value={form.city}
+                  onChange={(v) => updateField('city', v)}
+                  options={['Select City', ...availableCities]}
+                  disabled={!form.state}
+                />
               </motion.div>
             )}
           </AnimatePresence>

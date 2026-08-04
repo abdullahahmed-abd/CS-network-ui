@@ -15,10 +15,15 @@ import {
   createSectorFranchise,
   inviteGeneralOperator,
   inviteSectorOperator,
+  fetchFranchiseCommissions,
+  approveCommissionEntry,
+  markCommissionEntryPaid,
 } from '../../api/adminApi';
 import { T } from '../masterOperator/MasterOperatorDashboard';
 import MeetingsTab from '../meetings/MeetingsTab';
 import DirectoryTab from '../directory/DirectoryTab';
+import RoleEventsTab from '../events/RoleEventsTab';
+import { getStates, getCities } from '../../utils/locationData';
 
 const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 
@@ -26,12 +31,12 @@ const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 // ── DESIGN HELPERS
 // ══════════════════════════════════════════════════
 const glass = (opts = {}) => ({
-  background:           opts.bg     || 'rgba(255,255,255,0.72)',
-  backdropFilter:       opts.blur   || T.blur.md,
-  WebkitBackdropFilter: opts.blur   || T.blur.md,
-  border:               `1px solid ${opts.border || T.border.light}`,
-  borderRadius:         opts.radius || T.radius.xl,
-  boxShadow:            opts.shadow || T.shadow.card,
+  background: opts.bg || 'rgba(255,255,255,0.72)',
+  backdropFilter: opts.blur || T.blur.md,
+  WebkitBackdropFilter: opts.blur || T.blur.md,
+  border: `1px solid ${opts.border || T.border.light}`,
+  borderRadius: opts.radius || T.radius.xl,
+  boxShadow: opts.shadow || T.shadow.card,
 });
 
 // ══════════════════════════════════════════════════
@@ -40,30 +45,30 @@ const glass = (opts = {}) => ({
 function Toast({ message, type = 'success', onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 4200); return () => clearTimeout(t); }, [onClose]);
   const cfg = {
-    success: { gradient:'linear-gradient(135deg,rgba(16,185,129,0.12),rgba(52,211,153,0.07))', border:'rgba(16,185,129,0.25)', color:'#065F46', accent:'#10B981', icon:'✅' },
-    error:   { gradient:'linear-gradient(135deg,rgba(239,68,68,0.12),rgba(248,113,113,0.07))', border:'rgba(239,68,68,0.25)', color:'#991B1B', accent:'#EF4444', icon:'❌' },
-    info:    { gradient:'linear-gradient(135deg,rgba(59,130,246,0.12),rgba(96,165,250,0.07))', border:'rgba(59,130,246,0.25)', color:'#1E3A8A', accent:'#3B82F6', icon:'ℹ️' },
+    success: { gradient: 'linear-gradient(135deg,rgba(16,185,129,0.12),rgba(52,211,153,0.07))', border: 'rgba(16,185,129,0.25)', color: '#065F46', accent: '#10B981', icon: '✅' },
+    error: { gradient: 'linear-gradient(135deg,rgba(239,68,68,0.12),rgba(248,113,113,0.07))', border: 'rgba(239,68,68,0.25)', color: '#991B1B', accent: '#EF4444', icon: '❌' },
+    info: { gradient: 'linear-gradient(135deg,rgba(59,130,246,0.12),rgba(96,165,250,0.07))', border: 'rgba(59,130,246,0.25)', color: '#1E3A8A', accent: '#3B82F6', icon: 'ℹ️' },
   }[type] || {};
   return (
     <motion.div
-      initial={{ opacity:0, y:-28, x:'-50%', scale:0.9 }}
-      animate={{ opacity:1, y:0,   x:'-50%', scale:1   }}
-      exit={{   opacity:0, y:-18,  x:'-50%', scale:0.95 }}
-      transition={{ type:'spring', stiffness:320, damping:26 }}
+      initial={{ opacity: 0, y: -28, x: '-50%', scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, x: '-50%', scale: 1 }}
+      exit={{ opacity: 0, y: -18, x: '-50%', scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 26 }}
       style={{
-        position:'fixed', top:24, left:'50%',
-        background:cfg.gradient, backdropFilter:T.blur.lg, WebkitBackdropFilter:T.blur.lg,
-        border:`1px solid ${cfg.border}`, borderRadius:T.radius.lg, padding:'15px 24px',
-        boxShadow:T.shadow.xl, zIndex:9999,
-        display:'flex', alignItems:'center', gap:12,
-        maxWidth:460, minWidth:320,
+        position: 'fixed', top: 24, left: '50%',
+        background: cfg.gradient, backdropFilter: T.blur.lg, WebkitBackdropFilter: T.blur.lg,
+        border: `1px solid ${cfg.border}`, borderRadius: T.radius.lg, padding: '15px 24px',
+        boxShadow: T.shadow.xl, zIndex: 9999,
+        display: 'flex', alignItems: 'center', gap: 12,
+        maxWidth: 460, minWidth: 320,
       }}
     >
-      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:4, borderRadius:'12px 0 0 12px', background:cfg.accent }} />
-      <span style={{ fontSize:20 }}>{cfg.icon}</span>
-      <span style={{ fontSize:13, fontWeight:600, color:cfg.color, flex:1, fontFamily:T.font, lineHeight:1.4 }}>{message}</span>
-      <motion.button onClick={onClose} whileHover={{ scale:1.15, rotate:90 }} whileTap={{ scale:0.85 }}
-        style={{ background:'rgba(0,0,0,0.05)', border:'none', cursor:'pointer', color:cfg.color, fontSize:14, width:28, height:28, borderRadius:T.radius.sm, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, borderRadius: '12px 0 0 12px', background: cfg.accent }} />
+      <span style={{ fontSize: 20 }}>{cfg.icon}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: cfg.color, flex: 1, fontFamily: T.font, lineHeight: 1.4 }}>{message}</span>
+      <motion.button onClick={onClose} whileHover={{ scale: 1.15, rotate: 90 }} whileTap={{ scale: 0.85 }}
+        style={{ background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer', color: cfg.color, fontSize: 14, width: 28, height: 28, borderRadius: T.radius.sm, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}
       >×</motion.button>
     </motion.div>
   );
@@ -135,36 +140,62 @@ function InputField({ label, value, onChange, placeholder, disabled, type = 'tex
   );
 }
 
+function SelectField({ label, value, onChange, options, disabled }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.text.primary, marginBottom: 6, fontFamily: T.font }}>
+        {label}
+      </label>
+      <select
+        value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
+        style={{
+          width: '100%', padding: '12px 16px', borderRadius: T.radius.md,
+          border: `1.5px solid ${T.border.light}`, background: disabled ? '#F7FAF4' : '#fff',
+          fontSize: 14, fontWeight: 600, color: T.text.primary,
+          fontFamily: T.font, outline: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+          boxSizing: 'border-box', opacity: disabled ? 0.7 : 1,
+        }}
+      >
+        {options.map((opt) => {
+          const val = typeof opt === 'string' ? opt : opt.value;
+          const lbl = typeof opt === 'string' ? opt : opt.label;
+          return <option key={val} value={val}>{lbl}</option>;
+        })}
+      </select>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════
 // ── BUTTON
 // ══════════════════════════════════════════════════
 function Btn({ onClick, loading, children, fullWidth, variant = 'primary', size = 'md', accent }) {
   const ac = accent || T.green[500];
   const variants = {
-    primary:   { background:`linear-gradient(135deg,${ac},${ac}dd)`, color:'#fff', border:'none', boxShadow:T.shadow.button },
-    secondary: { background:'rgba(255,255,255,0.75)', backdropFilter:T.blur.sm, color:ac, border:`1.5px solid ${ac}44`, boxShadow:T.shadow.card },
-    danger:    { background:'linear-gradient(135deg,#EF4444,#DC2626)', color:'#fff', border:'none', boxShadow:'0 4px 14px rgba(239,68,68,0.35)' },
+    primary: { background: `linear-gradient(135deg,${ac},${ac}dd)`, color: '#fff', border: 'none', boxShadow: T.shadow.button },
+    secondary: { background: 'rgba(255,255,255,0.75)', backdropFilter: T.blur.sm, color: ac, border: `1.5px solid ${ac}44`, boxShadow: T.shadow.card },
+    danger: { background: 'linear-gradient(135deg,#EF4444,#DC2626)', color: '#fff', border: 'none', boxShadow: '0 4px 14px rgba(239,68,68,0.35)' },
   };
-  const sizes = { sm:'8px 16px', md:'12px 24px', lg:'14px 32px' };
+  const sizes = { sm: '8px 16px', md: '12px 24px', lg: '14px 32px' };
   const s = variants[variant] || variants.primary;
 
   return (
     <motion.button onClick={onClick} disabled={loading}
-      whileHover={{ scale:loading?1:1.025 }} whileTap={{ scale:loading?1:0.97 }}
-      transition={{ type:'spring', stiffness:300, damping:25 }}
+      whileHover={{ scale: loading ? 1 : 1.025 }} whileTap={{ scale: loading ? 1 : 0.97 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       style={{
-        ...s, padding:sizes[size]||sizes.md, borderRadius:T.radius.md,
-        fontSize:size==='sm'?12:14, fontWeight:700,
-        cursor:loading?'not-allowed':'pointer',
-        display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-        width:fullWidth?'100%':'auto', opacity:loading?0.7:1,
-        fontFamily:T.font, letterSpacing:'-0.1px',
-        position:'relative', overflow:'hidden', transition:'all 0.18s ease',
+        ...s, padding: sizes[size] || sizes.md, borderRadius: T.radius.md,
+        fontSize: size === 'sm' ? 12 : 14, fontWeight: 700,
+        cursor: loading ? 'not-allowed' : 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        width: fullWidth ? '100%' : 'auto', opacity: loading ? 0.7 : 1,
+        fontFamily: T.font, letterSpacing: '-0.1px',
+        position: 'relative', overflow: 'hidden', transition: 'all 0.18s ease',
       }}
     >
       {loading && (
-        <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:0.8, ease:'linear' }}
-          style={{ width:16, height:16, border:'2.5px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', borderRadius:'50%', flexShrink:0 }}
+        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
+          style={{ width: 16, height: 16, border: '2.5px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', flexShrink: 0 }}
         />
       )}
       {children}
@@ -178,25 +209,25 @@ function Btn({ onClick, loading, children, fullWidth, variant = 'primary', size 
 function StatCard({ label, value, icon, gradient, delay = 0 }) {
   return (
     <motion.div
-      initial={{ opacity:0, y:14, scale:0.96 }}
-      animate={{ opacity:1, y:0,  scale:1    }}
-      transition={{ delay, type:'spring', stiffness:280, damping:24 }}
-      whileHover={{ y:-4, boxShadow:'0 12px 40px rgba(0,0,0,0.08)' }}
+      initial={{ opacity: 0, y: 14, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, type: 'spring', stiffness: 280, damping: 24 }}
+      whileHover={{ y: -4, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
       style={{
-        ...glass({ bg:'rgba(255,255,255,0.75)' }),
-        padding:'20px 22px', display:'flex', alignItems:'center', gap:16,
-        position:'relative', overflow:'hidden',
+        ...glass({ bg: 'rgba(255,255,255,0.75)' }),
+        padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 16,
+        position: 'relative', overflow: 'hidden',
       }}
     >
-      <div style={{ position:'absolute', top:-18, right:-18, width:70, height:70, borderRadius:'50%', background:gradient, opacity:0.08, filter:'blur(16px)' }} />
+      <div style={{ position: 'absolute', top: -18, right: -18, width: 70, height: 70, borderRadius: '50%', background: gradient, opacity: 0.08, filter: 'blur(16px)' }} />
       <div style={{
-        width:50, height:50, borderRadius:T.radius.lg,
-        background:gradient, display:'flex', alignItems:'center', justifyContent:'center',
-        fontSize:22, flexShrink:0, boxShadow:'0 4px 14px rgba(0,0,0,0.09)',
+        width: 50, height: 50, borderRadius: T.radius.lg,
+        background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 22, flexShrink: 0, boxShadow: '0 4px 14px rgba(0,0,0,0.09)',
       }}>{icon}</div>
-      <div style={{ position:'relative', zIndex:1 }}>
-        <div style={{ fontSize:26, fontWeight:800, color:T.text.primary, fontFamily:T.font, letterSpacing:'-0.5px', lineHeight:1 }}>{value ?? 0}</div>
-        <div style={{ fontSize:11, color:T.text.muted, fontWeight:600, marginTop:4, fontFamily:T.font }}>{label}</div>
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ fontSize: 26, fontWeight: 800, color: T.text.primary, fontFamily: T.font, letterSpacing: '-0.5px', lineHeight: 1 }}>{value ?? 0}</div>
+        <div style={{ fontSize: 11, color: T.text.muted, fontWeight: 600, marginTop: 4, fontFamily: T.font }}>{label}</div>
       </div>
     </motion.div>
   );
@@ -207,9 +238,9 @@ function StatCard({ label, value, icon, gradient, delay = 0 }) {
 // ══════════════════════════════════════════════════
 function InfoTable({ title, icon, items, onItemClick }) {
   return (
-    <div style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'22px 24px' }}>
-      <div style={{ fontSize:14, fontWeight:800, color:T.text.primary, marginBottom:16, fontFamily:T.font, display:'flex', alignItems:'center', gap:8 }}>
-        <span style={{ fontSize:18 }}>{icon}</span>{title}
+    <div style={{ ...glass({ bg: 'rgba(255,255,255,0.72)' }), padding: '22px 24px' }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: T.text.primary, marginBottom: 16, fontFamily: T.font, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 18 }}>{icon}</span>{title}
       </div>
       {items.map((item, i) => {
         const isClickable = Boolean(item.onClick || onItemClick);
@@ -220,10 +251,10 @@ function InfoTable({ title, icon, items, onItemClick }) {
               else if (onItemClick) onItemClick(item);
             }}
             style={{
-              display:'flex', alignItems:'center', justifyContent:'space-between',
-              padding:'9px 10px', borderRadius: 8,
-              borderBottom:i<items.length-1?`1px solid ${T.border.light}`:'none',
-              fontSize:13, color:T.text.muted, fontWeight:500, fontFamily:T.font,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '9px 10px', borderRadius: 8,
+              borderBottom: i < items.length - 1 ? `1px solid ${T.border.light}` : 'none',
+              fontSize: 13, color: T.text.muted, fontWeight: 500, fontFamily: T.font,
               cursor: isClickable ? 'pointer' : 'default',
               transition: 'background 0.2s ease',
             }}
@@ -231,7 +262,7 @@ function InfoTable({ title, icon, items, onItemClick }) {
             onMouseLeave={(e) => { if (isClickable) e.currentTarget.style.background = 'transparent'; }}
           >
             <span style={{ textDecoration: isClickable ? 'underline' : 'none' }}>{item.label}</span>
-            <span style={{ fontWeight:800, color:T.text.primary, fontSize:14 }}>{item.value ?? 0}</span>
+            <span style={{ fontWeight: 800, color: T.text.primary, fontSize: 14 }}>{item.value ?? 0}</span>
           </div>
         );
       })}
@@ -248,49 +279,49 @@ function HierarchyNode({ node, depth = 0, accent }) {
   const grad = node.franchiseType === 'MASTER'
     ? 'linear-gradient(135deg,#4F46E5,#6366F1)'
     : node.franchiseType === 'GENERAL'
-    ? 'linear-gradient(135deg,#3B82F6,#60A5FA)'
-    : 'linear-gradient(135deg,#10B981,#34D399)';
+      ? 'linear-gradient(135deg,#3B82F6,#60A5FA)'
+      : 'linear-gradient(135deg,#10B981,#34D399)';
   const bdr = node.franchiseType === 'MASTER' ? 'rgba(79,70,229,0.18)' : (node.franchiseType === 'GENERAL' ? 'rgba(59,130,246,0.18)' : 'rgba(16,185,129,0.18)');
 
   return (
     <div style={{ marginLeft: depth > 0 ? 22 : 0 }}>
       <motion.div
-        initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
-        transition={{ delay:depth*0.05, type:'spring', stiffness:280, damping:24 }}
-        whileHover={{ scale:1.01, x:2 }}
+        initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: depth * 0.05, type: 'spring', stiffness: 280, damping: 24 }}
+        whileHover={{ scale: 1.01, x: 2 }}
         onClick={() => hasChildren && setCollapsed(c => !c)}
         style={{
-          ...glass({ bg:'rgba(255,255,255,0.6)', blur:T.blur.sm, border:bdr, radius:T.radius.md }),
-          padding:'13px 18px', marginBottom:8,
-          display:'flex', alignItems:'center', gap:12, flexWrap:'wrap',
-          cursor:hasChildren?'pointer':'default',
+          ...glass({ bg: 'rgba(255,255,255,0.6)', blur: T.blur.sm, border: bdr, radius: T.radius.md }),
+          padding: '13px 18px', marginBottom: 8,
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          cursor: hasChildren ? 'pointer' : 'default',
         }}
       >
         {hasChildren ? (
-          <motion.div animate={{ rotate:collapsed?0:90 }} transition={{ duration:0.2 }}
-            style={{ width:24, height:24, borderRadius:6, background:grad, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, color:'#fff', flexShrink:0, boxShadow:'0 2px 8px rgba(0,0,0,0.1)' }}
+          <motion.div animate={{ rotate: collapsed ? 0 : 90 }} transition={{ duration: 0.2 }}
+            style={{ width: 24, height: 24, borderRadius: 6, background: grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
           >▶</motion.div>
-        ) : <div style={{ width:24 }} />}
-        <span style={{ padding:'3px 10px', borderRadius:6, fontSize:9, fontWeight:800, background:grad, color:'#fff', letterSpacing:'0.8px', whiteSpace:'nowrap', flexShrink:0 }}>
+        ) : <div style={{ width: 24 }} />}
+        <span style={{ padding: '3px 10px', borderRadius: 6, fontSize: 9, fontWeight: 800, background: grad, color: '#fff', letterSpacing: '0.8px', whiteSpace: 'nowrap', flexShrink: 0 }}>
           {node.franchiseType} #{node.franchiseId}
         </span>
-        <div style={{ flex:1, minWidth:100 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:T.text.primary, fontFamily:T.font }}>{node.franchiseName}</div>
-          <div style={{ fontSize:10, color:T.text.muted, marginTop:2, fontFamily:T.font }}>👤 Operator: {node.operatorName || 'Unassigned'}</div>
+        <div style={{ flex: 1, minWidth: 100 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text.primary, fontFamily: T.font }}>{node.franchiseName}</div>
+          <div style={{ fontSize: 10, color: T.text.muted, marginTop: 2, fontFamily: T.font }}>👤 Operator: {node.operatorName || 'Unassigned'}</div>
         </div>
-        <span style={{ padding:'4px 10px', borderRadius:8, fontSize:10, fontWeight:700, background:'rgba(16,185,129,0.1)', color:T.green[700], fontFamily:T.font }}>
+        <span style={{ padding: '4px 10px', borderRadius: 8, fontSize: 10, fontWeight: 700, background: 'rgba(16,185,129,0.1)', color: T.green[700], fontFamily: T.font }}>
           👥 {node.totalMemberCount} Members
         </span>
       </motion.div>
       <AnimatePresence>
         {hasChildren && !collapsed && (
           <motion.div
-            initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }}
-            exit={{ opacity:0, height:0 }}
-            transition={{ duration:0.28, ease:[0.4,0,0.2,1] }}
-            style={{ overflow:'hidden', borderLeft:`2px dashed ${bdr}`, marginLeft:12, paddingLeft:10, marginBottom:4 }}
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+            style={{ overflow: 'hidden', borderLeft: `2px dashed ${bdr}`, marginLeft: 12, paddingLeft: 10, marginBottom: 4 }}
           >
-            {node.children.map(child => <HierarchyNode key={child.franchiseId} node={child} depth={depth+1} accent={accent} />)}
+            {node.children.map(child => <HierarchyNode key={child.franchiseId} node={child} depth={depth + 1} accent={accent} />)}
           </motion.div>
         )}
       </AnimatePresence>
@@ -303,18 +334,18 @@ function HierarchyNode({ node, depth = 0, accent }) {
 // ══════════════════════════════════════════════════
 function EmptyState({ icon, title, desc, action, actionLabel }) {
   return (
-    <motion.div initial={{ opacity:0, y:18 }} animate={{ opacity:1, y:0 }}
-      style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'72px 40px', textAlign:'center' }}
+    <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+      style={{ ...glass({ bg: 'rgba(255,255,255,0.72)' }), padding: '72px 40px', textAlign: 'center' }}
     >
-      <motion.div animate={{ y:[0,-8,0] }} transition={{ repeat:Infinity, duration:3, ease:'easeInOut' }}
+      <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
         style={{
-          width:88, height:88, borderRadius:T.radius.xxl,
-          background:'linear-gradient(135deg,rgba(16,185,129,0.1),rgba(59,130,246,0.07))',
-          display:'flex', alignItems:'center', justifyContent:'center',
-          fontSize:40, margin:'0 auto 24px', border:`1px solid ${T.border.light}`,
+          width: 88, height: 88, borderRadius: T.radius.xxl,
+          background: 'linear-gradient(135deg,rgba(16,185,129,0.1),rgba(59,130,246,0.07))',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 40, margin: '0 auto 24px', border: `1px solid ${T.border.light}`,
         }}>{icon}</motion.div>
-      <h3 style={{ fontSize:20, fontWeight:800, color:T.text.primary, marginBottom:8, fontFamily:T.font }}>{title}</h3>
-      <p style={{ color:T.text.muted, fontSize:14, fontFamily:T.font, lineHeight:1.5, marginBottom: action ? 20 : 0 }}>{desc}</p>
+      <h3 style={{ fontSize: 20, fontWeight: 800, color: T.text.primary, marginBottom: 8, fontFamily: T.font }}>{title}</h3>
+      <p style={{ color: T.text.muted, fontSize: 14, fontFamily: T.font, lineHeight: 1.5, marginBottom: action ? 20 : 0 }}>{desc}</p>
       {action && (
         <Btn onClick={action}>{actionLabel}</Btn>
       )}
@@ -412,11 +443,11 @@ function InviteLinkCard({ inviteData, onRefresh, refreshLoading, onCopy, accent 
 // ── OVERVIEW TAB
 // ══════════════════════════════════════════════════
 function OverviewTab({ onNavigate, cfg }) {
-  const [dashData, setDashData]       = useState(null);
-  const [inviteData, setInviteData]   = useState(null);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState(null);
-  const [toast, setToast]             = useState(null);
+  const [dashData, setDashData] = useState(null);
+  const [inviteData, setInviteData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
 
   /* ── Fetch dashboard ── */
@@ -455,20 +486,20 @@ function OverviewTab({ onNavigate, cfg }) {
 
   /* Loading */
   if (loading) return (
-    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'100px 20px', gap:18 }}>
-      <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:1.2, ease:'linear' }}
-        style={{ width:46, height:46, border:`3px solid ${T.border.light}`, borderTopColor:accent, borderRadius:'50%' }} />
-      <p style={{ fontSize:14, color:T.text.muted, fontWeight:600, fontFamily:T.font }}>Loading dashboard...</p>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 20px', gap: 18 }}>
+      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+        style={{ width: 46, height: 46, border: `3px solid ${T.border.light}`, borderTopColor: accent, borderRadius: '50%' }} />
+      <p style={{ fontSize: 14, color: T.text.muted, fontWeight: 600, fontFamily: T.font }}>Loading dashboard...</p>
     </div>
   );
 
   /* Error */
   if (error) return (
-    <motion.div initial={{ opacity:0, scale:0.96 }} animate={{ opacity:1, scale:1 }}
-      style={{ ...glass({ bg:'rgba(239,68,68,0.06)', border:'rgba(239,68,68,0.15)' }), padding:'40px', textAlign:'center' }}>
-      <div style={{ fontSize:36, marginBottom:14 }}>⚠️</div>
-      <div style={{ fontSize:16, fontWeight:700, color:'#991B1B', marginBottom:8, fontFamily:T.font }}>Failed to load dashboard</div>
-      <div style={{ fontSize:13, color:'#DC2626', fontFamily:T.font }}>{error}</div>
+    <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+      style={{ ...glass({ bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.15)' }), padding: '40px', textAlign: 'center' }}>
+      <div style={{ fontSize: 36, marginBottom: 14 }}>⚠️</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: '#991B1B', marginBottom: 8, fontFamily: T.font }}>Failed to load dashboard</div>
+      <div style={{ fontSize: 13, color: '#DC2626', fontFamily: T.font }}>{error}</div>
     </motion.div>
   );
 
@@ -480,28 +511,28 @@ function OverviewTab({ onNavigate, cfg }) {
 
       {/* ── Welcome Banner ── */}
       <motion.div
-        initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }}
+        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
         style={{
           background: cfg.isMaster
             ? 'linear-gradient(135deg,#1E1B4B 0%,#312E81 55%,#4F46E5 100%)'
             : (cfg.isGeneral
-                ? 'linear-gradient(135deg,#1E3A5F 0%,#2563EB 55%,#60A5FA 100%)'
-                : 'linear-gradient(135deg,#064E3B 0%,#059669 55%,#34D399 100%)'),
-          borderRadius:T.radius.xxl, padding:'32px 36px',
-          marginBottom:28, color:'#fff',
-          position:'relative', overflow:'hidden',
+              ? 'linear-gradient(135deg,#1E3A5F 0%,#2563EB 55%,#60A5FA 100%)'
+              : 'linear-gradient(135deg,#064E3B 0%,#059669 55%,#34D399 100%)'),
+          borderRadius: T.radius.xxl, padding: '32px 36px',
+          marginBottom: 28, color: '#fff',
+          position: 'relative', overflow: 'hidden',
         }}
       >
-        <div style={{ position:'absolute', top:-50, right:-30, width:180, height:180, borderRadius:'50%', background:'rgba(255,255,255,0.05)' }} />
-        <div style={{ position:'absolute', bottom:-30, left:'35%', width:120, height:120, borderRadius:'50%', background:'rgba(255,255,255,0.04)' }} />
-        <motion.div animate={{ y:[0,-6,0] }} transition={{ repeat:Infinity, duration:4, ease:'easeInOut' }}
-          style={{ position:'absolute', top:20, right:44, fontSize:52, opacity:0.12 }}
+        <div style={{ position: 'absolute', top: -50, right: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+        <div style={{ position: 'absolute', bottom: -30, left: '35%', width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+        <motion.div animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+          style={{ position: 'absolute', top: 20, right: 44, fontSize: 52, opacity: 0.12 }}
         >{cfg.icon}</motion.div>
 
-        <h2 style={{ fontSize:26, fontWeight:800, margin:'0 0 8px', position:'relative', zIndex:1, fontFamily:T.font, letterSpacing:'-0.5px' }}>
+        <h2 style={{ fontSize: 26, fontWeight: 800, margin: '0 0 8px', position: 'relative', zIndex: 1, fontFamily: T.font, letterSpacing: '-0.5px' }}>
           Welcome, {cfg.label} 👋
         </h2>
-        <p style={{ fontSize:14, margin:0, opacity:0.85, fontWeight:500, position:'relative', zIndex:1, fontFamily:T.font, lineHeight:1.5 }}>
+        <p style={{ fontSize: 14, margin: 0, opacity: 0.85, fontWeight: 500, position: 'relative', zIndex: 1, fontFamily: T.font, lineHeight: 1.5 }}>
           {overview
             ? `Managing ${overview.totalMembers} members across ${overview.totalActiveFranchises} active franchises`
             : `Manage your ${cfg.label} from here.`}
@@ -511,10 +542,10 @@ function OverviewTab({ onNavigate, cfg }) {
       {/* ── Invite Link Card ── */}
       {inviteData && (
         <>
-          <div style={{ fontSize:12, fontWeight:800, color:cfg.isMaster?'#4338CA':(cfg.isGeneral?'#1D4ED8':T.green[700]), margin:'0 0 14px', fontFamily:T.font, display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: cfg.isMaster ? '#4338CA' : (cfg.isGeneral ? '#1D4ED8' : T.green[700]), margin: '0 0 14px', fontFamily: T.font, display: 'flex', alignItems: 'center', gap: 8 }}>
             🔗 Member Invite Link
           </div>
-          <div style={{ marginBottom:28 }}>
+          <div style={{ marginBottom: 28 }}>
             <InviteLinkCard
               inviteData={inviteData}
               onRefresh={handleRefresh}
@@ -529,18 +560,18 @@ function OverviewTab({ onNavigate, cfg }) {
       {/* ── Platform Overview Stats ── */}
       {overview && (
         <>
-          <div style={{ fontSize:12, fontWeight:800, color:cfg.isMaster?'#4338CA':(cfg.isGeneral?'#1D4ED8':T.green[700]), margin:'0 0 14px', fontFamily:T.font, display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: cfg.isMaster ? '#4338CA' : (cfg.isGeneral ? '#1D4ED8' : T.green[700]), margin: '0 0 14px', fontFamily: T.font, display: 'flex', alignItems: 'center', gap: 8 }}>
             📊 Overview Stats
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:14, marginBottom:28 }}>
-            <StatCard label="Total Users"        value={overview.totalUsers}             icon="👥" gradient={cfg.isMaster?'linear-gradient(135deg,#4F46E5,#6366F1)':(cfg.isGeneral?'linear-gradient(135deg,#3B82F6,#60A5FA)':'linear-gradient(135deg,#10B981,#34D399)')} delay={0.00} />
-            <StatCard label="Members"            value={overview.totalMembers}           icon="🙋" gradient="linear-gradient(135deg,#8B5CF6,#A78BFA)" delay={0.05} />
-            <StatCard label="Operators"          value={overview.totalOperators}         icon="🧑‍💼" gradient="linear-gradient(135deg,#F59E0B,#FBBF24)" delay={0.10} />
-            <StatCard label="Active Franchises"  value={overview.totalActiveFranchises}  icon="🏢" gradient="linear-gradient(135deg,#EC4899,#F472B6)" delay={0.15} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14, marginBottom: 28 }}>
+            <StatCard label="Total Users" value={overview.totalUsers} icon="👥" gradient={cfg.isMaster ? 'linear-gradient(135deg,#4F46E5,#6366F1)' : (cfg.isGeneral ? 'linear-gradient(135deg,#3B82F6,#60A5FA)' : 'linear-gradient(135deg,#10B981,#34D399)')} delay={0.00} />
+            <StatCard label="Members" value={overview.totalMembers} icon="🙋" gradient="linear-gradient(135deg,#8B5CF6,#A78BFA)" delay={0.05} />
+            <StatCard label="Operators" value={overview.totalOperators} icon="🧑‍💼" gradient="linear-gradient(135deg,#F59E0B,#FBBF24)" delay={0.10} />
+            <StatCard label="Active Franchises" value={overview.totalActiveFranchises} icon="🏢" gradient="linear-gradient(135deg,#EC4899,#F472B6)" delay={0.15} />
             {cfg.isMaster && (
               <>
                 <StatCard label="General Franchises" value={overview.totalGeneralFranchises} icon="🏢" gradient="linear-gradient(135deg,#3B82F6,#60A5FA)" delay={0.20} />
-                <StatCard label="Sector Franchises"  value={overview.totalSectorFranchises}  icon="🏭" gradient="linear-gradient(135deg,#10B981,#34D399)" delay={0.25} />
+                <StatCard label="Sector Franchises" value={overview.totalSectorFranchises} icon="🏭" gradient="linear-gradient(135deg,#10B981,#34D399)" delay={0.25} />
               </>
             )}
           </div>
@@ -550,26 +581,26 @@ function OverviewTab({ onNavigate, cfg }) {
       {/* ── Growth ── */}
       {(userGrowth || franchiseGrowth) && (
         <>
-          <div style={{ fontSize:12, fontWeight:800, color:cfg.isMaster?'#4338CA':(cfg.isGeneral?'#1D4ED8':T.green[700]), margin:'0 0 14px', fontFamily:T.font, display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: cfg.isMaster ? '#4338CA' : (cfg.isGeneral ? '#1D4ED8' : T.green[700]), margin: '0 0 14px', fontFamily: T.font, display: 'flex', alignItems: 'center', gap: 8 }}>
             📈 Growth & Analytics
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
             {userGrowth && (
               <InfoTable title="User Growth" icon="👥" items={[
-                { label:'New Today',     value:userGrowth.newUsersToday },
-                { label:'This Week',     value:userGrowth.newUsersThisWeek },
-                { label:'This Month',    value:userGrowth.newUsersThisMonth },
-                { label:'New Members',   value:userGrowth.newMembers },
-                { label:'New Operators', value:userGrowth.newOperators },
+                { label: 'New Today', value: userGrowth.newUsersToday },
+                { label: 'This Week', value: userGrowth.newUsersThisWeek },
+                { label: 'This Month', value: userGrowth.newUsersThisMonth },
+                { label: 'New Members', value: userGrowth.newMembers },
+                { label: 'New Operators', value: userGrowth.newOperators },
               ]} />
             )}
             {franchiseGrowth && (
               <InfoTable title="Franchise Growth" icon="🏢" items={[
-                { label:'New General',   value:franchiseGrowth.newGeneralFranchises },
-                { label:'New Sector',    value:franchiseGrowth.newSectorFranchises },
-                { label:'New Today',     value:franchiseGrowth.newFranchisesToday },
-                { label:'This Week',     value:franchiseGrowth.newFranchisesThisWeek },
-                { label:'This Month',    value:franchiseGrowth.newFranchisesThisMonth },
+                { label: 'New General', value: franchiseGrowth.newGeneralFranchises },
+                { label: 'New Sector', value: franchiseGrowth.newSectorFranchises },
+                { label: 'New Today', value: franchiseGrowth.newFranchisesToday },
+                { label: 'This Week', value: franchiseGrowth.newFranchisesThisWeek },
+                { label: 'This Month', value: franchiseGrowth.newFranchisesThisMonth },
               ]} />
             )}
             {businessPartners && !franchiseGrowth && (
@@ -577,10 +608,10 @@ function OverviewTab({ onNavigate, cfg }) {
                 title="Business Partners"
                 icon="🤝"
                 items={[
-                  { label:'Pending',  value:businessPartners.pendingApplications,  filter: 'PENDING' },
-                  { label:'Approved', value:businessPartners.approvedApplications, filter: 'APPROVED' },
-                  { label:'Rejected', value:businessPartners.rejectedApplications, filter: 'REJECTED' },
-                  { label:'Today',    value:businessPartners.applicationsToday,     filter: 'ALL' },
+                  { label: 'Pending', value: businessPartners.pendingApplications, filter: 'PENDING' },
+                  { label: 'Approved', value: businessPartners.approvedApplications, filter: 'APPROVED' },
+                  { label: 'Rejected', value: businessPartners.rejectedApplications, filter: 'REJECTED' },
+                  { label: 'Today', value: businessPartners.applicationsToday, filter: 'ALL' },
                 ]}
                 onItemClick={(item) => onNavigate && onNavigate('bp_approvals', item.filter)}
               />
@@ -592,22 +623,22 @@ function OverviewTab({ onNavigate, cfg }) {
       {/* ── Activity ── */}
       {(marketplace || meetings) && (
         <>
-          <div style={{ fontSize:12, fontWeight:800, color:cfg.isMaster?'#4338CA':(cfg.isGeneral?'#1D4ED8':T.green[700]), margin:'0 0 14px', fontFamily:T.font, display:'flex', items:'center', gap:8 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: cfg.isMaster ? '#4338CA' : (cfg.isGeneral ? '#1D4ED8' : T.green[700]), margin: '0 0 14px', fontFamily: T.font, display: 'flex', items: 'center', gap: 8 }}>
             🛒 Activity
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
             {marketplace && <InfoTable title="Marketplace" icon="🛒" items={[
-              { label:'Active Intents',  value:marketplace.activeTradeIntents },
-              { label:'Deals Today',     value:marketplace.dealsToday },
-              { label:'Deals This Week', value:marketplace.dealsThisWeek },
-              { label:'Completed Deals', value:marketplace.completedDeals },
-              { label:'Pending Deals',   value:marketplace.pendingDeals },
+              { label: 'Active Intents', value: marketplace.activeTradeIntents },
+              { label: 'Deals Today', value: marketplace.dealsToday },
+              { label: 'Deals This Week', value: marketplace.dealsThisWeek },
+              { label: 'Completed Deals', value: marketplace.completedDeals },
+              { label: 'Pending Deals', value: marketplace.pendingDeals },
             ]} />}
             {meetings && <InfoTable title="Meetings" icon="📅" items={[
-              { label:'Today',     value:meetings.meetingsToday },
-              { label:'Upcoming',  value:meetings.upcomingMeetings },
-              { label:'Completed', value:meetings.completedMeetings },
-              { label:'Cancelled', value:meetings.cancelledMeetings },
+              { label: 'Today', value: meetings.meetingsToday },
+              { label: 'Upcoming', value: meetings.upcomingMeetings },
+              { label: 'Completed', value: meetings.completedMeetings },
+              { label: 'Cancelled', value: meetings.cancelledMeetings },
             ]} />}
           </div>
         </>
@@ -616,10 +647,10 @@ function OverviewTab({ onNavigate, cfg }) {
       {/* ── Hierarchy ── */}
       {hierarchy?.roots?.length > 0 && (
         <>
-          <div style={{ fontSize:12, fontWeight:800, color:cfg.isMaster?'#4338CA':(cfg.isGeneral?'#1D4ED8':T.green[700]), margin:'0 0 14px', fontFamily:T.font, display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: cfg.isMaster ? '#4338CA' : (cfg.isGeneral ? '#1D4ED8' : T.green[700]), margin: '0 0 14px', fontFamily: T.font, display: 'flex', alignItems: 'center', gap: 8 }}>
             🌐 Franchise Network Hierarchy
           </div>
-          <div style={{ ...glass({ bg:'rgba(255,255,255,0.55)' }), padding:'22px 24px', marginBottom:28 }}>
+          <div style={{ ...glass({ bg: 'rgba(255,255,255,0.55)' }), padding: '22px 24px', marginBottom: 28 }}>
             {hierarchy.roots.map(root => (
               <HierarchyNode key={root.franchiseId} node={root} depth={0} accent={accentHue} />
             ))}
@@ -628,33 +659,33 @@ function OverviewTab({ onNavigate, cfg }) {
       )}
 
       {/* ── Quick Actions ── */}
-      <div style={{ fontSize:12, fontWeight:800, color:cfg.isMaster?'#4338CA':(cfg.isGeneral?'#1D4ED8':T.green[700]), margin:'0 0 14px', fontFamily:T.font, display:'flex', alignItems:'center', gap:8 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, color: cfg.isMaster ? '#4338CA' : (cfg.isGeneral ? '#1D4ED8' : T.green[700]), margin: '0 0 14px', fontFamily: T.font, display: 'flex', alignItems: 'center', gap: 8 }}>
         ⚡ Quick Actions
       </div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))', gap:16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 16 }}>
         {(cfg.isMaster ? [
-          { label:'General Franchises', icon:'🏢', desc:'Create & invite general operators', nav:'general', gradient:'linear-gradient(135deg,#3B82F6,#60A5FA)' },
-          { label:'Sector Franchises',  icon:'🏭', desc:'Create & invite sector operators',  nav:'sector',  gradient:'linear-gradient(135deg,#10B981,#34D399)' },
-          { label:'Members',            icon:'👥', desc:'View network members',               nav:'members', gradient:'linear-gradient(135deg,#8B5CF6,#A78BFA)' },
-          { label:'Meetings',           icon:'📅', desc:'Schedule role-based meetings',       nav:'meetings',gradient:'linear-gradient(135deg,#EC4899,#F472B6)' },
+          { label: 'General Franchises', icon: '🏢', desc: 'Create & invite general operators', nav: 'general', gradient: 'linear-gradient(135deg,#3B82F6,#60A5FA)' },
+          { label: 'Sector Franchises', icon: '🏭', desc: 'Create & invite sector operators', nav: 'sector', gradient: 'linear-gradient(135deg,#10B981,#34D399)' },
+          { label: 'Members', icon: '👥', desc: 'View network members', nav: 'members', gradient: 'linear-gradient(135deg,#8B5CF6,#A78BFA)' },
+          { label: 'Meetings', icon: '📅', desc: 'Schedule role-based meetings', nav: 'meetings', gradient: 'linear-gradient(135deg,#EC4899,#F472B6)' },
         ] : [
-          { label:'Members',     icon:'👥', desc:'View and manage members',     nav:'members',     gradient: cfg.isGeneral ? 'linear-gradient(135deg,#3B82F6,#60A5FA)' : 'linear-gradient(135deg,#10B981,#34D399)' },
-          { label:'Invite Link', icon:'🔗', desc:'Share member invite link',    nav:'invite',      gradient:'linear-gradient(135deg,#8B5CF6,#A78BFA)' },
-          { label:'Marketplace', icon:'🛒', desc:'View marketplace activity',   nav:'marketplace', gradient:'linear-gradient(135deg,#F59E0B,#FBBF24)' },
-          { label:'Meetings',    icon:'📅', desc:'Manage scheduled meetings',   nav:'meetings',    gradient:'linear-gradient(135deg,#EC4899,#F472B6)' },
+          { label: 'Members', icon: '👥', desc: 'View and manage members', nav: 'members', gradient: cfg.isGeneral ? 'linear-gradient(135deg,#3B82F6,#60A5FA)' : 'linear-gradient(135deg,#10B981,#34D399)' },
+          { label: 'Invite Link', icon: '🔗', desc: 'Share member invite link', nav: 'invite', gradient: 'linear-gradient(135deg,#8B5CF6,#A78BFA)' },
+          { label: 'Marketplace', icon: '🛒', desc: 'View marketplace activity', nav: 'marketplace', gradient: 'linear-gradient(135deg,#F59E0B,#FBBF24)' },
+          { label: 'Meetings', icon: '📅', desc: 'Manage scheduled meetings', nav: 'meetings', gradient: 'linear-gradient(135deg,#EC4899,#F472B6)' },
         ]).map((a, i) => (
           <motion.button key={i}
-            initial={{ opacity:0, y:18 }} animate={{ opacity:1, y:0 }}
-            transition={{ delay:i*0.08, type:'spring', stiffness:280, damping:24 }}
-            whileHover={{ y:-6, boxShadow:'0 12px 36px rgba(0,0,0,0.08)' }}
-            whileTap={{ scale:0.97 }}
+            initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08, type: 'spring', stiffness: 280, damping: 24 }}
+            whileHover={{ y: -6, boxShadow: '0 12px 36px rgba(0,0,0,0.08)' }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => onNavigate(a.nav)}
-            style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'24px', cursor:'pointer', textAlign:'left', position:'relative', overflow:'hidden' }}
+            style={{ ...glass({ bg: 'rgba(255,255,255,0.72)' }), padding: '24px', cursor: 'pointer', textAlign: 'left', position: 'relative', overflow: 'hidden' }}
           >
-            <div style={{ position:'absolute', top:-18, right:-18, width:80, height:80, borderRadius:'50%', background:a.gradient, opacity:0.07, filter:'blur(14px)' }} />
-            <div style={{ width:50, height:50, borderRadius:T.radius.lg, background:a.gradient, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, marginBottom:16, boxShadow:'0 4px 14px rgba(0,0,0,0.1)' }}>{a.icon}</div>
-            <div style={{ fontSize:15, fontWeight:700, color:T.text.primary, marginBottom:5, fontFamily:T.font }}>{a.label}</div>
-            <div style={{ fontSize:12, color:T.text.muted, fontWeight:500, fontFamily:T.font, lineHeight:1.4 }}>{a.desc}</div>
+            <div style={{ position: 'absolute', top: -18, right: -18, width: 80, height: 80, borderRadius: '50%', background: a.gradient, opacity: 0.07, filter: 'blur(14px)' }} />
+            <div style={{ width: 50, height: 50, borderRadius: T.radius.lg, background: a.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 16, boxShadow: '0 4px 14px rgba(0,0,0,0.1)' }}>{a.icon}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text.primary, marginBottom: 5, fontFamily: T.font }}>{a.label}</div>
+            <div style={{ fontSize: 12, color: T.text.muted, fontWeight: 500, fontFamily: T.font, lineHeight: 1.4 }}>{a.desc}</div>
           </motion.button>
         ))}
       </div>
@@ -666,19 +697,19 @@ function OverviewTab({ onNavigate, cfg }) {
 // ── GENERAL FRANCHISE TAB (MASTER OPERATOR)
 // ══════════════════════════════════════════════════
 function GeneralFranchiseTab({ cfg }) {
-  const [franchises, setFranchises]   = useState([]);
-  const [showCreate, setShowCreate]   = useState(false);
+  const [franchises, setFranchises] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
   const [createResult, setCreateResult] = useState(null);
-  const [showInvite, setShowInvite]   = useState(false);
-  const [name, setName]               = useState('');
-  const [state, setState]             = useState('');
-  const [city, setCity]               = useState('');
-  const [loading, setLoading]         = useState(false);
-  const [toast, setToast]             = useState(null);
+  const [showInvite, setShowInvite] = useState(false);
+  const [name, setName] = useState('');
+  const [state, setState] = useState('');
+  const [city, setCity] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  const [inviteId, setInviteId]             = useState('');
-  const [inviteLoading, setInviteLoading]   = useState(false);
-  const [inviteResult, setInviteResult]     = useState(null);
+  const [inviteId, setInviteId] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteResult, setInviteResult] = useState(null);
 
   const getLinkFromRes = (res) => {
     if (!res) return '';
@@ -770,7 +801,7 @@ function GeneralFranchiseTab({ cfg }) {
 
       {/* Franchises Cards List / Empty State */}
       {franchises.length === 0 ? (
-        <div style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'36px', textAlign:'center', borderRadius: T.radius.xxl }}>
+        <div style={{ ...glass({ bg: 'rgba(255,255,255,0.72)' }), padding: '36px', textAlign: 'center', borderRadius: T.radius.xxl }}>
           <div style={{ fontSize: 42, marginBottom: 16 }}>🏢</div>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: T.text.primary, fontFamily: T.font, margin: '0 0 8px' }}>
             General Franchises Management
@@ -822,8 +853,19 @@ function GeneralFranchiseTab({ cfg }) {
             {!createResult ? (
               <>
                 <InputField label="Franchise Name" value={name} onChange={setName} placeholder="e.g. Bhopal General Franchise" />
-                <InputField label="State" value={state} onChange={setState} placeholder="e.g. Madhya Pradesh" />
-                <InputField label="City" value={city} onChange={setCity} placeholder="e.g. Bhopal" />
+                <SelectField
+                  label="State"
+                  value={state}
+                  onChange={(s) => { setState(s); setCity(''); }}
+                  options={['Select State', ...getStates('India'), ...getStates('United Arab Emirates'), ...getStates('Saudi Arabia')]}
+                />
+                <SelectField
+                  label="City"
+                  value={city}
+                  onChange={setCity}
+                  disabled={!state}
+                  options={['Select City', ...(getCities('India', state).length ? getCities('India', state) : getCities('United Arab Emirates', state).length ? getCities('United Arab Emirates', state) : getCities('Saudi Arabia', state))]}
+                />
                 <div style={{ marginTop: 12 }}>
                   <Btn fullWidth onClick={handleCreate} loading={loading} accent="#3B82F6">
                     {loading ? 'Creating...' : '🏢 Create General Franchise'}
@@ -920,18 +962,18 @@ function GeneralFranchiseTab({ cfg }) {
 // ── SECTOR FRANCHISE TAB (MASTER OPERATOR)
 // ══════════════════════════════════════════════════
 function SectorFranchiseTab({ cfg }) {
-  const [franchises, setFranchises]   = useState([]);
-  const [showCreate, setShowCreate]   = useState(false);
+  const [franchises, setFranchises] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
   const [createResult, setCreateResult] = useState(null);
-  const [showInvite, setShowInvite]   = useState(false);
-  const [name, setName]               = useState('');
-  const [sector, setSector]           = useState('');
-  const [loading, setLoading]         = useState(false);
-  const [toast, setToast]             = useState(null);
+  const [showInvite, setShowInvite] = useState(false);
+  const [name, setName] = useState('');
+  const [sector, setSector] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  const [inviteId, setInviteId]             = useState('');
-  const [inviteLoading, setInviteLoading]   = useState(false);
-  const [inviteResult, setInviteResult]     = useState(null);
+  const [inviteId, setInviteId] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteResult, setInviteResult] = useState(null);
 
   const getLinkFromRes = (res) => {
     if (!res) return '';
@@ -1020,7 +1062,7 @@ function SectorFranchiseTab({ cfg }) {
       </div>
 
       {franchises.length === 0 ? (
-        <div style={{ ...glass({ bg:'rgba(255,255,255,0.72)' }), padding:'36px', textAlign:'center', borderRadius: T.radius.xxl }}>
+        <div style={{ ...glass({ bg: 'rgba(255,255,255,0.72)' }), padding: '36px', textAlign: 'center', borderRadius: T.radius.xxl }}>
           <div style={{ fontSize: 42, marginBottom: 16 }}>🏭</div>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: T.text.primary, fontFamily: T.font, margin: '0 0 8px' }}>
             Sector Franchises Management
@@ -1169,9 +1211,9 @@ function SectorFranchiseTab({ cfg }) {
 // ── INVITE TAB (Standalone invite page)
 // ══════════════════════════════════════════════════
 function InviteTab({ cfg }) {
-  const [inviteData, setInviteData]         = useState(null);
-  const [loading, setLoading]               = useState(true);
-  const [toast, setToast]                   = useState(null);
+  const [inviteData, setInviteData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
   const [refreshLoading, setRefreshLoading] = useState(false);
 
   useEffect(() => {
@@ -1181,7 +1223,7 @@ function InviteTab({ cfg }) {
         const res = cfg.isMaster ? await fetchMasterDashboard() : await fetchFranchiseDashboard();
         const data = res?.masterDashboardResponse || res?.dashboardResponse || res;
         setInviteData(res?.memberInviteLink || res?.inviteLink || data?.memberInviteLink);
-      } catch (err) { setToast({ message: err.message, type:'error' }); }
+      } catch (err) { setToast({ message: err.message, type: 'error' }); }
       finally { setLoading(false); }
     })();
   }, [cfg.isMaster]);
@@ -1191,21 +1233,21 @@ function InviteTab({ cfg }) {
     try {
       const res = await refreshMemberInvite();
       setInviteData(res.memberInviteLink);
-      setToast({ message: res.message || 'Invite link refreshed!', type:'success' });
-    } catch (err) { setToast({ message: err.message, type:'error' }); }
+      setToast({ message: res.message || 'Invite link refreshed!', type: 'success' });
+    } catch (err) { setToast({ message: err.message, type: 'error' }); }
     finally { setRefreshLoading(false); }
   };
 
   const copyLink = (text) => {
     navigator.clipboard.writeText(text);
-    setToast({ message:'Link copied!', type:'success' });
+    setToast({ message: 'Link copied!', type: 'success' });
   };
 
   if (loading) return (
-    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'80px 20px', gap:18 }}>
-      <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:1.2, ease:'linear' }}
-        style={{ width:46, height:46, border:`3px solid ${T.border.light}`, borderTopColor:cfg.accent, borderRadius:'50%' }} />
-      <p style={{ fontSize:14, color:T.text.muted, fontWeight:600, fontFamily:T.font }}>Loading invite link...</p>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: 18 }}>
+      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+        style={{ width: 46, height: 46, border: `3px solid ${T.border.light}`, borderTopColor: cfg.accent, borderRadius: '50%' }} />
+      <p style={{ fontSize: 14, color: T.text.muted, fontWeight: 600, fontFamily: T.font }}>Loading invite link...</p>
     </div>
   );
 
@@ -1213,10 +1255,10 @@ function InviteTab({ cfg }) {
     <div>
       <AnimatePresence>{toast && <Toast {...toast} onClose={() => setToast(null)} />}</AnimatePresence>
 
-      <h2 style={{ fontSize:22, fontWeight:800, color:T.text.primary, margin:'0 0 6px', fontFamily:T.font }}>
+      <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text.primary, margin: '0 0 6px', fontFamily: T.font }}>
         Member Invite Link
       </h2>
-      <p style={{ fontSize:11, color:T.text.muted, margin:'0 0 28px', fontWeight:500, fontFamily:T.font }}>
+      <p style={{ fontSize: 11, color: T.text.muted, margin: '0 0 28px', fontWeight: 500, fontFamily: T.font }}>
         Share this link with people to invite them as members to your {cfg.isMaster ? 'master' : (cfg.isSector ? 'sector' : 'general')} franchise
       </p>
 
@@ -1242,13 +1284,13 @@ function InviteTab({ cfg }) {
 // ══════════════════════════════════════════════════
 function ApplicationsTab({ onCountChange, initialFilter = 'PENDING' }) {
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState('');
-  const [toast, setToast]               = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
-  const [reviewNotes, setReviewNotes]   = useState({});
-  const [expandedId, setExpandedId]     = useState(null);
-  const [filter, setFilter]             = useState(initialFilter);
+  const [reviewNotes, setReviewNotes] = useState({});
+  const [expandedId, setExpandedId] = useState(null);
+  const [filter, setFilter] = useState(initialFilter);
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -1335,12 +1377,12 @@ function ApplicationsTab({ onCountChange, initialFilter = 'PENDING' }) {
   const filteredApps = filter === 'ALL'
     ? applications
     : filter === 'PENDING'
-    ? applications.filter((a) => (a.status || 'PENDING') === 'PENDING')
-    : filter === 'APPROVED'
-    ? applications.filter((a) => a.status === 'APPROVED')
-    : filter === 'REJECTED'
-    ? applications.filter((a) => a.status === 'REJECTED')
-    : applications;
+      ? applications.filter((a) => (a.status || 'PENDING') === 'PENDING')
+      : filter === 'APPROVED'
+        ? applications.filter((a) => a.status === 'APPROVED')
+        : filter === 'REJECTED'
+          ? applications.filter((a) => a.status === 'REJECTED')
+          : applications;
 
   return (
     <div>
@@ -1375,8 +1417,8 @@ function ApplicationsTab({ onCountChange, initialFilter = 'PENDING' }) {
             >
               {f === 'PENDING' ? `⏳ Pending (${applications.filter((a) => (a.status || 'PENDING') === 'PENDING').length})`
                 : f === 'APPROVED' ? `✅ Approved (${applications.filter((a) => a.status === 'APPROVED').length})`
-                : f === 'REJECTED' ? `❌ Rejected (${applications.filter((a) => a.status === 'REJECTED').length})`
-                : '📋 All'}
+                  : f === 'REJECTED' ? `❌ Rejected (${applications.filter((a) => a.status === 'REJECTED').length})`
+                    : '📋 All'}
             </motion.button>
           ))}
 
@@ -1547,129 +1589,383 @@ function ApplicationsTab({ onCountChange, initialFilter = 'PENDING' }) {
 // ── OPERATOR COMMISSIONS TAB
 // ══════════════════════════════════════════════════
 function OperatorCommissionsTab() {
-  const [entryId, setEntryId]         = useState('');
-  const [reviewNotes, setReviewNotes] = useState('');
-  const [actionLoading, setActionLoading] = useState(null);
-  const [toast, setToast]             = useState(null);
+  const [commissions, setCommissions]         = useState([]);
+  const [loading, setLoading]                 = useState(true);
+  const [error, setError]                     = useState('');
+  const [statusFilter, setStatusFilter]       = useState('ALL');
+  const [page, setPage]                       = useState(0);
+  const [totalPages, setTotalPages]           = useState(1);
+  const [totalRecords, setTotalRecords]       = useState(0);
+  const [totalPending, setTotalPending]       = useState(0);
+  const [totalApproved, setTotalApproved]     = useState(0);
+  const [totalPaid, setTotalPaid]             = useState(0);
 
-  const handleApprove = async () => {
-    if (!entryId) {
-      setToast({ message: 'commissionLedgerEntryId is required.', type: 'error' }); return;
-    }
-    setActionLoading('APPROVE');
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [reviewNotes, setReviewNotes]         = useState('');
+  const [selectedNotesId, setSelectedNotesId] = useState(null);
+  const [manualEntryId, setManualEntryId]     = useState('');
+  const [showManual, setShowManual]           = useState(false);
+  const [toast, setToast]                     = useState(null);
+
+  const loadCommissions = useCallback(async (pg = 0, filter = statusFilter) => {
+    setLoading(true);
+    setError('');
     try {
-      const res = await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
-        method: 'POST',
-        body: JSON.stringify({
-          franchiseOperatorRequestType: 'APPROVE_COMMISSION_ENTRY',
-          commissionLedgerEntryId: Number(entryId),
-          ...(reviewNotes.trim() && { reviewNotes: reviewNotes.trim() }),
-        }),
+      const res = await fetchFranchiseCommissions({
+        page: pg,
+        size: 10,
+        commissionStatusFilter: filter,
       });
+
+      setCommissions(res?.commissionEntries || res?.entries || res?.content || []);
+      setTotalPending(res?.totalPendingAmount || 0);
+      setTotalApproved(res?.totalApprovedAmount || 0);
+      setTotalPaid(res?.totalPaidAmount || 0);
+      setTotalPages(res?.totalPages || 1);
+      setTotalRecords(res?.totalRecords || 0);
+      setPage(res?.currentPage || 0);
+    } catch (err) {
+      console.error('Fetch operator commissions error:', err);
+      setError(err.message || 'Failed to load commissions');
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    loadCommissions(page, statusFilter);
+  }, [page, statusFilter, loadCommissions]);
+
+  const handleApprove = async (entryId, notes = '') => {
+    setActionLoadingId(entryId);
+    try {
+      const res = await approveCommissionEntry(entryId, notes);
       setToast({ message: res?.message || `Commission Entry #${entryId} approved (PENDING → APPROVED)!`, type: 'success' });
-      setEntryId(''); setReviewNotes('');
+      setReviewNotes('');
+      setSelectedNotesId(null);
+      setManualEntryId('');
+      loadCommissions(page, statusFilter);
     } catch (err) {
       setToast({ message: err.message || 'Failed to approve commission entry', type: 'error' });
-    } finally { setActionLoading(null); }
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
-  const handleMarkPaid = async () => {
-    if (!entryId) {
-      setToast({ message: 'commissionLedgerEntryId is required.', type: 'error' }); return;
-    }
-    setActionLoading('PAID');
+  const handleMarkPaid = async (entryId, notes = '') => {
+    setActionLoadingId(entryId);
     try {
-      const res = await authenticatedFetch(`${BASE_URL}/cs-network/franchise-operator`, {
-        method: 'POST',
-        body: JSON.stringify({
-          franchiseOperatorRequestType: 'MARK_COMMISSION_ENTRY_PAID',
-          commissionLedgerEntryId: Number(entryId),
-          ...(reviewNotes.trim() && { reviewNotes: reviewNotes.trim() }),
-        }),
-      });
+      const res = await markCommissionEntryPaid(entryId, notes);
       setToast({ message: res?.message || `Commission Entry #${entryId} marked as PAID (APPROVED → PAID)!`, type: 'success' });
-      setEntryId(''); setReviewNotes('');
+      setReviewNotes('');
+      setSelectedNotesId(null);
+      setManualEntryId('');
+      loadCommissions(page, statusFilter);
     } catch (err) {
       setToast({ message: err.message || 'Failed to mark commission entry paid', type: 'error' });
-    } finally { setActionLoading(null); }
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const fmtAmt = (amt) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 2,
+    }).format(amt || 0);
   };
 
   return (
     <div>
       <AnimatePresence>{toast && <Toast {...toast} onClose={() => setToast(null)} />}</AnimatePresence>
 
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text.primary, margin: '0 0 4px', fontFamily: T.font }}>
-          Franchise Commission Payouts & Approvals
-        </h2>
-        <p style={{ fontSize: 12, color: T.text.muted, margin: 0, fontFamily: T.font }}>
-          Approve pending Business Partner commission entries and record external payout settlements.
-        </p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: T.text.primary, margin: '0 0 4px', fontFamily: T.font }}>
+            Franchise Commission Payouts & Approvals
+          </h2>
+          <p style={{ fontSize: 12, color: T.text.muted, margin: 0, fontFamily: T.font }}>
+            Review and manage Business Partner commission ledger entries with 1-click approvals and payout settlements.
+          </p>
+        </div>
+        <button
+          onClick={() => loadCommissions(page, statusFilter)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: T.radius.md,
+            border: `1px solid ${T.border.light}`, background: '#fff', fontSize: 12, fontWeight: 700,
+            color: T.text.primary, cursor: 'pointer', fontFamily: T.font,
+          }}
+        >
+          🔄 Refresh
+        </button>
       </div>
 
-      <div style={{ ...glass({ bg: '#fff' }), padding: 24, borderRadius: T.radius.xl, marginBottom: 24 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: T.text.primary, marginBottom: 12 }}>
-          🔄 Commission Entry Lifecycle
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div style={{ ...glass({ bg: '#FFFBEB' }), border: '1px solid #FDE68A', padding: 20, borderRadius: T.radius.xl }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#B45309', textTransform: 'uppercase' }}>Pending Approvals</span>
+            <span style={{ fontSize: 18 }}>🟡</span>
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#92400E' }}>{fmtAmt(totalPending)}</div>
+          <div style={{ fontSize: 11, color: '#B45309', marginTop: 4, fontWeight: 600 }}>Auto-generated on deal closure</div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-          <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 12, padding: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#92400E' }}>1. PENDING 🟡</div>
-            <div style={{ fontSize: 11, color: '#B45309', marginTop: 4 }}>Auto-generated on brokered deal closure.</div>
+
+        <div style={{ ...glass({ bg: '#EFF6FF' }), border: '1px solid #BFDBFE', padding: 20, borderRadius: T.radius.xl }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#1D4ED8', textTransform: 'uppercase' }}>Approved for Payout</span>
+            <span style={{ fontSize: 18 }}>🟢</span>
           </div>
-          <div style={{ background: '#DBEAFE', border: '1px solid #BFDBFE', borderRadius: 12, padding: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#1E40AF' }}>2. APPROVED 🟢</div>
-            <div style={{ fontSize: 11, color: '#1D4ED8', marginTop: 4 }}>Franchise Operator runs APPROVE_COMMISSION_ENTRY.</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#1E40AF' }}>{fmtAmt(totalApproved)}</div>
+          <div style={{ fontSize: 11, color: '#1D4ED8', marginTop: 4, fontWeight: 600 }}>Ready for payment settlement</div>
+        </div>
+
+        <div style={{ ...glass({ bg: '#F0FDF4' }), border: '1px solid #BBF7D0', padding: 20, borderRadius: T.radius.xl }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#15803D', textTransform: 'uppercase' }}>Total Paid Out</span>
+            <span style={{ fontSize: 18 }}>✅</span>
           </div>
-          <div style={{ background: '#DCFCE7', border: '1px solid #BBF7D0', borderRadius: 12, padding: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#166534' }}>3. PAID ✅</div>
-            <div style={{ fontSize: 11, color: '#15803D', marginTop: 4 }}>Franchise Operator runs MARK_COMMISSION_ENTRY_PAID.</div>
-          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#166534' }}>{fmtAmt(totalPaid)}</div>
+          <div style={{ fontSize: 11, color: '#15803D', marginTop: 4, fontWeight: 600 }}>Disbursed settlements</div>
         </div>
       </div>
 
-      <div style={{ ...glass({ bg: '#fff' }), padding: 28, borderRadius: T.radius.xl, maxWidth: 600 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 800, color: T.text.primary, marginBottom: 16 }}>
-          Review & Update Commission Entry Status
-        </h3>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.text.secondary, marginBottom: 6 }}>
-            Commission Ledger Entry ID *
-          </label>
-          <input
-            type="number"
-            placeholder="e.g. 25"
-            value={entryId}
-            onChange={(e) => setEntryId(e.target.value)}
-            style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: `1px solid ${T.border.light}`, fontSize: 14, fontWeight: 600, outline: 'none', fontFamily: T.font }}
-          />
+      {/* Filter Tabs */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {['ALL', 'PENDING', 'APPROVED', 'PAID'].map((st) => (
+            <button
+              key={st}
+              onClick={() => { setStatusFilter(st); setPage(0); }}
+              style={{
+                padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                border: statusFilter === st ? 'none' : `1px solid ${T.border.light}`,
+                background: statusFilter === st ? 'linear-gradient(135deg, #10B981, #059669)' : '#fff',
+                color: statusFilter === st ? '#fff' : T.text.secondary,
+                fontFamily: T.font,
+              }}
+            >
+              {st === 'ALL' ? 'All Entries' : st}
+            </button>
+          ))}
         </div>
-
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.text.secondary, marginBottom: 6 }}>
-            Review Notes / Payout Audit Traceability (Optional)
-          </label>
-          <input
-            type="text"
-            placeholder="e.g. Verified against deal records / Bank transfer ref #TXN-8821"
-            value={reviewNotes}
-            onChange={(e) => setReviewNotes(e.target.value)}
-            style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: `1px solid ${T.border.light}`, fontSize: 13, fontWeight: 600, outline: 'none', fontFamily: T.font }}
-          />
+        <div style={{ fontSize: 12, fontWeight: 600, color: T.text.muted }}>
+          {totalRecords} Record{totalRecords !== 1 ? 's' : ''}
         </div>
+      </div>
 
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <motion.button onClick={handleApprove} disabled={!entryId || actionLoading !== null} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            style={{ flex: 1, padding: '12px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: !entryId ? 'not-allowed' : 'pointer', fontFamily: T.font }}
+      {/* Error alert */}
+      {error && (
+        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', padding: '12px 16px', borderRadius: 12, fontSize: 12, fontWeight: 700, marginBottom: 16 }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* Main List */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: T.text.muted, fontWeight: 600 }}>
+          Loading commission entries...
+        </div>
+      ) : commissions.length === 0 ? (
+        <div style={{ ...glass({ bg: '#fff' }), padding: 40, textAlign: 'center', borderRadius: T.radius.xl }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>💰</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: T.text.primary }}>No commission entries found</div>
+          <div style={{ fontSize: 12, color: T.text.muted, marginTop: 4 }}>
+            {statusFilter === 'ALL'
+              ? 'Commission ledger entries will automatically appear here when deals are brokered.'
+              : `No ${statusFilter.toLowerCase()} commission entries found.`}
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+          {commissions.map((item) => {
+            const entryId = item.commissionLedgerEntryId || item.id;
+            const isPending = item.status === 'PENDING';
+            const isApproved = item.status === 'APPROVED';
+            const isPaid = item.status === 'PAID';
+            const isNotesOpen = selectedNotesId === entryId;
+
+            return (
+              <div
+                key={entryId}
+                style={{
+                  ...glass({ bg: '#fff' }),
+                  padding: 20, borderRadius: T.radius.xl,
+                  borderLeft: `4px solid ${isPending ? '#F59E0B' : isApproved ? '#3B82F6' : '#10B981'}`,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: T.text.primary }}>
+                        Entry #{entryId}
+                      </span>
+                      {item.dealId && (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: T.text.muted, background: '#F3F4F6', padding: '2px 8px', borderRadius: 6 }}>
+                          Deal #{item.dealId}
+                        </span>
+                      )}
+                      <span style={{
+                        fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 12,
+                        background: isPending ? '#FEF3C7' : isApproved ? '#DBEAFE' : '#DCFCE7',
+                        color: isPending ? '#92400E' : isApproved ? '#1E40AF' : '#166534',
+                      }}>
+                        {isPending ? '🟡 PENDING' : isApproved ? '🟢 APPROVED' : '✅ PAID'}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 16, fontSize: 12, color: T.text.muted, flexWrap: 'wrap' }}>
+                      <span>Side: <strong style={{ color: T.text.primary }}>{item.side || 'BUYER_SIDE'}</strong></span>
+                      <span>Level: <strong style={{ color: T.text.primary }}>Level {item.level || 1}</strong></span>
+                      <span>Date: <strong style={{ color: T.text.primary }}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '—'}</strong></span>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: T.text.primary }}>
+                      {fmtAmt(item.amount)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inline Notes Field (if opened) */}
+                {isNotesOpen && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border.light}` }}>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.text.secondary, marginBottom: 4 }}>
+                      Review Notes / Audit Ref (Optional):
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Bank Ref #TXN-9981 or Verified against deal records"
+                      value={reviewNotes}
+                      onChange={(e) => setReviewNotes(e.target.value)}
+                      style={{
+                        width: '100%', padding: '8px 12px', borderRadius: 8,
+                        border: `1px solid ${T.border.light}`, fontSize: 12, outline: 'none',
+                        marginBottom: 10,
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Action Buttons (1-Click Approve / Mark Paid) */}
+                {(isPending || isApproved) && (
+                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border.light}`, display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    {!isNotesOpen && (
+                      <button
+                        onClick={() => setSelectedNotesId(entryId)}
+                        style={{
+                          padding: '6px 12px', borderRadius: 8, border: `1px solid ${T.border.light}`,
+                          background: '#F9FAFB', fontSize: 11, fontWeight: 600, color: T.text.secondary, cursor: 'pointer',
+                        }}
+                      >
+                        ✏️ Add Audit Note
+                      </button>
+                    )}
+
+                    {isPending && (
+                      <button
+                        disabled={actionLoadingId === entryId}
+                        onClick={() => handleApprove(entryId, reviewNotes)}
+                        style={{
+                          padding: '8px 18px', borderRadius: 10, border: 'none',
+                          background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', color: '#fff',
+                          fontSize: 12, fontWeight: 800, cursor: 'pointer', boxShadow: T.shadow.button,
+                        }}
+                      >
+                        {actionLoadingId === entryId ? 'Approving...' : '🟢 Approve (PENDING → APPROVED)'}
+                      </button>
+                    )}
+
+                    {isApproved && (
+                      <button
+                        disabled={actionLoadingId === entryId}
+                        onClick={() => handleMarkPaid(entryId, reviewNotes)}
+                        style={{
+                          padding: '8px 18px', borderRadius: 10, border: 'none',
+                          background: 'linear-gradient(135deg, #10B981, #059669)', color: '#fff',
+                          fontSize: 12, fontWeight: 800, cursor: 'pointer', boxShadow: T.shadow.button,
+                        }}
+                      >
+                        {actionLoadingId === entryId ? 'Processing...' : '✅ Mark Paid (APPROVED → PAID)'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
+          <button
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+            style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${T.border.light}`, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
           >
-            {actionLoading === 'APPROVE' ? 'Approving...' : '🟢 Approve (PENDING → APPROVED)'}
-          </motion.button>
-          <motion.button onClick={handleMarkPaid} disabled={!entryId || actionLoading !== null} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            style={{ flex: 1, padding: '12px 20px', borderRadius: 12, background: 'linear-gradient(135deg, #16A34A, #15803D)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: !entryId ? 'not-allowed' : 'pointer', fontFamily: T.font }}
+            Previous
+          </button>
+          <span style={{ fontSize: 12, fontWeight: 600, color: T.text.muted, alignSelf: 'center' }}>
+            Page {page + 1} of {totalPages}
+          </span>
+          <button
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage((p) => p + 1)}
+            style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${T.border.light}`, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
           >
-            {actionLoading === 'PAID' ? 'Processing...' : '✅ Mark Paid (APPROVED → PAID)'}
-          </motion.button>
+            Next
+          </button>
         </div>
+      )}
+
+      {/* Collapsible Manual ID Override Section */}
+      <div style={{ marginTop: 24 }}>
+        <button
+          onClick={() => setShowManual(!showManual)}
+          style={{ background: 'none', border: 'none', color: T.text.muted, fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          <span>{showManual ? '▼' : '▶'}</span>
+          <span>Manual Entry ID Override (Advanced)</span>
+        </button>
+
+        {showManual && (
+          <div style={{ ...glass({ bg: '#fff' }), padding: 20, borderRadius: T.radius.lg, marginTop: 10, maxWidth: 500 }}>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.text.secondary, marginBottom: 4 }}>
+                Commission Ledger Entry ID
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 21"
+                value={manualEntryId}
+                onChange={(e) => setManualEntryId(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border.light}`, fontSize: 13, outline: 'none' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                disabled={!manualEntryId}
+                onClick={() => handleApprove(Number(manualEntryId), reviewNotes)}
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', background: '#2563EB', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Approve ID #{manualEntryId || '—'}
+              </button>
+              <button
+                disabled={!manualEntryId}
+                onClick={() => handleMarkPaid(Number(manualEntryId), reviewNotes)}
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', background: '#10B981', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Mark Paid ID #{manualEntryId || '—'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1695,16 +1991,17 @@ export default function FranchiseOperatorContent({ activeNav, onNavigate, franch
   const cfg = franchiseConfig;
   return (
     <>
-      {activeNav === 'overview'     && <OverviewTab onNavigate={onNavigate} cfg={cfg} />}
-      {activeNav === 'bp_approvals'  && <ApplicationsTab initialFilter={initialFilter} key={initialFilter} />}
-      {activeNav === 'commissions'   && <OperatorCommissionsTab />}
-      {activeNav === 'general'      && <GeneralFranchiseTab cfg={cfg} />}
-      {activeNav === 'sector'       && <SectorFranchiseTab cfg={cfg} />}
-      {activeNav === 'members'      && <DirectoryTab />}
-      {activeNav === 'invite'       && <InviteTab cfg={cfg} />}
-      {activeNav === 'marketplace'  && <PlaceholderTab name="marketplace" />}
-      {activeNav === 'meetings'     && <MeetingsTab />}
-      {activeNav === 'settings'     && <PlaceholderTab name="settings" />}
+      {activeNav === 'overview' && <OverviewTab onNavigate={onNavigate} cfg={cfg} />}
+      {activeNav === 'bp_approvals' && <ApplicationsTab initialFilter={initialFilter} key={initialFilter} />}
+      {activeNav === 'commissions' && <OperatorCommissionsTab />}
+      {activeNav === 'general' && <GeneralFranchiseTab cfg={cfg} />}
+      {activeNav === 'sector' && <SectorFranchiseTab cfg={cfg} />}
+      {activeNav === 'members' && <DirectoryTab />}
+      {activeNav === 'invite' && <InviteTab cfg={cfg} />}
+      {activeNav === 'events' && <RoleEventsTab userRole={cfg.isMaster ? 'MASTER_OPERATOR' : 'FRANCHISE_OPERATOR'} />}
+      {activeNav === 'marketplace' && <PlaceholderTab name="marketplace" />}
+      {activeNav === 'meetings' && <MeetingsTab />}
+      {activeNav === 'settings' && <PlaceholderTab name="settings" />}
     </>
   );
 }

@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createMasterFranchise, inviteMasterOperator } from '../../../api/adminApi';
 import Toast from '../ui/Toast';
 import Modal from '../ui/Modal';
-import { InputField, GreenButton } from '../FormFields';
+import { InputField, SelectField, GreenButton } from '../FormFields';
+import { getCountries } from '../../../utils/locationData';
 
 export default function FranchisesTab() {
   const [showCreate, setShowCreate]           = useState(false);
@@ -218,8 +219,15 @@ export default function FranchisesTab() {
               <>
                 <InputField label="Franchise Name" value={name} onChange={setName}
                   placeholder="e.g. India Master" />
-                <InputField label="Country" value={country} onChange={setCountry}
-                  placeholder="e.g. India" />
+                <SelectField
+                  label="Country"
+                  value={country}
+                  onChange={setCountry}
+                  options={[
+                    { value: '', label: 'Select Country' },
+                    ...getCountries().map((c) => ({ value: c, label: c })),
+                  ]}
+                />
                 <div style={{ marginTop: 8 }}>
                   <GreenButton fullWidth onClick={handleCreate} loading={loading}>
                     {loading ? 'Creating...' : '🏢 Create Master Franchise'}

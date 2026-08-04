@@ -141,9 +141,15 @@ export default function BusinessPartnerStatusModal({
   const handleRefresh = useCallback(async () => {
     if (!onRefreshStatus || refreshing) return;
     setRefreshing(true);
-    try { await onRefreshStatus(); }
-    finally { setTimeout(() => setRefreshing(false), 800); }
-  }, [onRefreshStatus, refreshing]);
+    try {
+      const res = await onRefreshStatus();
+      if (res && String(res).toUpperCase() === 'APPROVED') {
+        onGoToDashboard?.();
+      }
+    } finally {
+      setTimeout(() => setRefreshing(false), 800);
+    }
+  }, [onRefreshStatus, refreshing, onGoToDashboard]);
 
   return (
     <AnimatePresence>
@@ -339,7 +345,7 @@ export default function BusinessPartnerStatusModal({
                               ? <Loader2 className="h-4 w-4 animate-spin" />
                               : <RefreshCw className="h-4 w-4" />
                             }
-                            {refreshing ? 'Checking…' : 'Check Status'}
+                            {refreshing ? 'Checking Status…' : 'Refresh & Check Status'}
                           </button>
                         )}
 

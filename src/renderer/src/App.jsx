@@ -359,32 +359,67 @@ export default function App() {
   // ─────────────────────────────────────────────────────────
   const refreshBpStatus = useCallback(async () => {
     try {
+      console.log('🔄 Checking BP Application Status from backend...');
       const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
         method: 'POST',
         body: JSON.stringify({ memberRequestType: 'GET_BP_APPLICATION_STATUS' }),
       });
 
-      const newStatus      = data?.businessPartnerApplicationStatus || data?.applicationStatus;
-      const newFranchiseName = data?.franchiseName || bpFranchiseName;
+      console.log('📡 GET_BP_APPLICATION_STATUS raw response:', data);
 
-      if (newStatus && newStatus !== bpStatus) {
-        saveBpStatus(newStatus, newFranchiseName);
-        setBpStatus(newStatus);
-        setBpFranchiseName(newFranchiseName);
+      const rawStatus =
+        data?.businessPartnerApplicationStatus ||
+        data?.applicationStatus ||
+        data?.bpApplicationStatus ||
+        data?.bpStatus ||
+        data?.status ||
+        data?.data?.businessPartnerApplicationStatus ||
+        data?.data?.applicationStatus ||
+        data?.data?.status;
 
-        if (newStatus === 'APPROVED') {
-          const savedUser    = getUserData() || {};
-          const updatedRoles = [...new Set([...(savedUser.roles || []), 'BUSINESS_PARTNER'])];
-          saveUserData({ ...savedUser, roles: updatedRoles });
-          setSelectedRoles(updatedRoles);
-          setScreen('bp_dashboard');
-        }
+      const normStatus = rawStatus ? String(rawStatus).toUpperCase() : '';
+      const newFranchiseName =
+        data?.franchiseName ||
+        data?.data?.franchiseName ||
+        bpFranchiseName;
+
+      const isApproved =
+        normStatus === 'APPROVED' ||
+        data?.roles?.includes('BUSINESS_PARTNER') ||
+        data?.user?.roles?.includes('BUSINESS_PARTNER') ||
+        data?.isApproved === true;
+
+      const finalStatus = isApproved ? 'APPROVED' : (normStatus || bpStatus || 'PENDING');
+
+      console.log('🎯 BP Status evaluated:', finalStatus, 'isApproved:', isApproved);
+
+      saveBpStatus(finalStatus, newFranchiseName);
+      setBpStatus(finalStatus);
+      setBpFranchiseName(newFranchiseName);
+
+      if (isApproved) {
+        const savedUser    = getUserData() || {};
+        const updatedRoles = [...new Set([...(savedUser.roles || []), 'BUSINESS_PARTNER'])];
+        saveUserData({ ...savedUser, roles: updatedRoles });
+        setSelectedRoles(updatedRoles);
+        setBpModalOpen(false);
+        setScreen('bp_dashboard');
       }
-      return newStatus;
+
+      return finalStatus;
     } catch (err) {
-      console.error('BP status refresh failed:', err);
+      console.error('❌ BP status refresh failed:', err);
+      const savedUser = getUserData() || {};
+      if (savedUser?.roles?.includes('BUSINESS_PARTNER')) {
+        saveBpStatus('APPROVED', bpFranchiseName);
+        setBpStatus('APPROVED');
+        setBpModalOpen(false);
+        setScreen('bp_dashboard');
+        return 'APPROVED';
+      }
+      return null;
     }
-  }, [bpStatus, bpFranchiseName]);
+  }, [bpFranchiseName, bpStatus]);
 
   // ─────────────────────────────────────────────────────────
   // ── Form complete ──
@@ -585,37 +620,102 @@ export default function App() {
   // ─────────────────────────────────────────────────────────
   // ── BP Pending Screen ──
   // ─────────────────────────────────────────────────────────
-  const BpPendingScreen = () => (
-    <div style={{
-      minHeight: '100vh', display: 'flex',
-      alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 50%,#f0fdfa 100%)',
-      fontFamily: 'Manrope, sans-serif',
-    }}>
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
-          {bpStatus === 'REJECTED' ? '😔' : '⏳'}
+  const BpPendingScreen = () => {
+    const [refreshing, setRefreshing] = useState(false);
+    const [msg, setMsg]               = useState('');
+
+    const handleCheckStatus = async () => {
+      setRefreshing(true);
+      setMsg('');
+      try {
+        const resStatus = await refreshBpStatus();
+        const upper = resStatus ? String(resStatus).toUpperCase() : '';
+        const userRoles = getUserData()?.roles || [];
+
+        if (upper === 'APPROVED' || userRoles.includes('BUSINESS_PARTNER')) {
+          setBpModalOpen(false);
+          setScreen('bp_dashboard');
+        } else if (upper === 'REJECTED') {
+          setMsg('Application status updated: Rejected.');
+        } else if (upper === 'PENDING') {
+          setMsg('Application is still pending approval. Please try again in a moment.');
+        } else {
+          setMsg('Could not update status. Please try refreshing again.');
+        }
+      } catch (err) {
+        console.error('Check status click error:', err);
+        setMsg('Failed to check status. Please try again.');
+      } finally {
+        setRefreshing(false);
+      }
+    };
+
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 50%,#f0fdfa 100%)',
+        fontFamily: 'Manrope, sans-serif',
+      }}>
+        <div style={{ textAlign: 'center', padding: '2rem', maxWidth: '440px' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
+            {bpStatus === 'REJECTED' ? '😔' : '⏳'}
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1f2937', marginBottom: '0.5rem' }}>
+            {bpStatus === 'REJECTED' ? 'Application Rejected' : 'Awaiting Approval'}
+          </h2>
+          <p style={{ color: '#6b7280', fontWeight: 500, marginBottom: '1.25rem' }}>
+            {bpStatus === 'REJECTED'
+              ? 'Your application was not approved.'
+              : 'Your Business Partner application is under review by the Franchise Operator.'}
+          </p>
+
+          {msg && (
+            <div style={{
+              marginBottom: '1.25rem', padding: '0.75rem 1rem', borderRadius: '12px',
+              background: bpStatus === 'REJECTED' ? '#fee2e2' : '#e0f2fe',
+              color: bpStatus === 'REJECTED' ? '#991b1b' : '#0369a1',
+              fontSize: '0.85rem', fontWeight: 700
+            }}>
+              {msg}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {bpStatus !== 'REJECTED' && (
+              <button
+                onClick={handleCheckStatus}
+                disabled={refreshing}
+                style={{
+                  background: 'linear-gradient(135deg,#10b981,#059669)',
+                  color: '#fff', border: 'none', borderRadius: '12px',
+                  padding: '0.85rem 1.5rem', fontWeight: 700,
+                  cursor: 'pointer', fontSize: '0.9rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  boxShadow: '0 4px 14px rgba(16,185,129,0.35)',
+                  opacity: refreshing ? 0.7 : 1
+                }}
+              >
+                {refreshing ? '🔄 Refreshing & Checking...' : '🔄 Refresh & Check Status'}
+              </button>
+            )}
+
+            <button
+              onClick={() => setBpModalOpen(true)}
+              style={{
+                background: '#ffffff',
+                color: '#374151', border: '1px solid #d1d5db', borderRadius: '12px',
+                padding: '0.75rem 1.5rem', fontWeight: 700,
+                cursor: 'pointer', fontSize: '0.875rem',
+              }}
+            >
+              View Status Details
+            </button>
+          </div>
         </div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1f2937', marginBottom: '0.5rem' }}>
-          {bpStatus === 'REJECTED' ? 'Application Rejected' : 'Awaiting Approval'}
-        </h2>
-        <p style={{ color: '#6b7280', fontWeight: 500, marginBottom: '1.5rem' }}>
-          {bpStatus === 'REJECTED'
-            ? 'Your application was not approved.'
-            : 'Your Business Partner application is under review.'}
-        </p>
-        <button
-          onClick={() => setBpModalOpen(true)}
-          style={{
-            background: 'linear-gradient(135deg,#10b981,#059669)',
-            color: '#fff', border: 'none', borderRadius: '12px',
-            padding: '0.75rem 1.5rem', fontWeight: 700,
-            cursor: 'pointer', fontSize: '0.875rem',
-          }}
-        >View Status Details</button>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ─────────────────────────────────────────────────────────
   // ── Render ──

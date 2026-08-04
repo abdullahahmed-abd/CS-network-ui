@@ -1,43 +1,83 @@
-// components/globalAdmin/events/CreateEventModal.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { createEvent } from '../../../api/adminApi';
+import {
+  createGlobalAdminEvent,
+  createMasterOperatorEvent,
+  createFranchiseOperatorEvent,
+  updateFranchiseOperatorEvent,
+  updateMasterOperatorEvent,
+} from '../../../api/eventsApi';
 import {
   InputField, TextareaField, SelectField,
   DateTimeField, CheckboxField, GreenButton,
   SectionTitle, sectionAddBtnStyle, removeBtnStyle,
 } from '../FormFields';
+import { getCountries, getStates, getCities } from '../../../utils/locationData';
 
-export default function CreateEventModal({ onClose, onCreated, onError }) {
+export default function CreateEventModal({
+  onClose,
+  onCreated,
+  onError,
+  userRole = 'GLOBAL_ADMIN',
+  editEvent = null,
+}) {
+  const isOperator = userRole === 'FRANCHISE_OPERATOR';
+  const isMaster = userRole === 'MASTER_OPERATOR';
+  const isEditing = Boolean(editEvent);
+
   const [loading, setLoading]           = useState(false);
-  const [title, setTitle]               = useState('');
-  const [description, setDescription]   = useState('');
-  const [eventType, setEventType]       = useState('ONLINE');
-  const [startDateTime, setStartDateTime] = useState('');
-  const [endDateTime, setEndDateTime]   = useState('');
-  const [timezone, setTimezone]         = useState('Asia/Kolkata');
-  const [capacity, setCapacity]         = useState(100);
-  const [onlineJoinLink, setOnlineJoinLink] = useState('');
-  const [venueName, setVenueName]       = useState('');
-  const [venueAddress, setVenueAddress] = useState('');
-  const [city, setCity]                 = useState('');
-  const [state, setState]               = useState('');
-  const [country, setCountry]           = useState('');
-  const [coverImageUrl, setCoverImageUrl] = useState('');
-  const [isPaid, setIsPaid]             = useState(false);
-  const [price, setPrice]               = useState('');
-  const [currency, setCurrency]         = useState('INR');
-  const [speakers, setSpeakers]         = useState([
-    { name: '', designation: '', bio: '', photoUrl: '', displayOrder: 1 },
-  ]);
-  const [agenda, setAgenda]             = useState([
-    { title: '', description: '', startTime: '', endTime: '', displayOrder: 1 },
-  ]);
+  const [title, setTitle]               = useState(editEvent?.title || '');
+  const [description, setDescription]   = useState(editEvent?.description || '');
+  const [eventType, setEventType]       = useState(editEvent?.eventType || 'ONLINE');
+  const [startDateTime, setStartDateTime] = useState(
+    editEvent?.startDateTime ? editEvent.startDateTime.slice(0, 16) : ''
+  );
+  const [endDateTime, setEndDateTime]   = useState(
+    editEvent?.endDateTime ? editEvent.endDateTime.slice(0, 16) : ''
+  );
+  const [timezone, setTimezone]         = useState(editEvent?.timezone || 'Asia/Kolkata');
+  const [capacity, setCapacity]         = useState(editEvent?.capacity || 100);
+  const [onlineJoinLink, setOnlineJoinLink] = useState(editEvent?.onlineJoinLink || '');
+  const [venueName, setVenueName]       = useState(editEvent?.venueName || '');
+  const [venueAddress, setVenueAddress] = useState(editEvent?.venueAddress || '');
+  const [city, setCity]                 = useState(editEvent?.city || editEvent?.eventCity || '');
+  const [state, setState]               = useState(editEvent?.state || editEvent?.eventState || '');
+  const [country, setCountry]           = useState(editEvent?.country || '');
+  const [coverImageUrl, setCoverImageUrl] = useState(editEvent?.coverImageUrl || '');
+  
+  // Paid option only available for Global Admin
+  const [isPaid, setIsPaid]             = useState(isOperator || isMaster ? false : Boolean(editEvent?.isPaid || editEvent?.paid));
+  const [price, setPrice]               = useState(editEvent?.price || '');
+  const [currency, setCurrency]         = useState(editEvent?.currency || 'INR');
+
+  // Speakers (photoUrl field completely removed per user request)
+  const [speakers, setSpeakers]         = useState(
+    editEvent?.speakers?.length
+      ? editEvent.speakers.map((s, i) => ({
+          name: s.name || '',
+          designation: s.designation || '',
+          bio: s.bio || '',
+          displayOrder: i + 1,
+        }))
+      : [{ name: '', designation: '', bio: '', displayOrder: 1 }]
+  );
+
+  const [agenda, setAgenda]             = useState(
+    editEvent?.agenda?.length
+      ? editEvent.agenda.map((a, i) => ({
+          title: a.title || '',
+          description: a.description || '',
+          startTime: a.startTime ? a.startTime.slice(0, 16) : '',
+          endTime: a.endTime ? a.endTime.slice(0, 16) : '',
+          displayOrder: i + 1,
+        }))
+      : [{ title: '', description: '', startTime: '', endTime: '', displayOrder: 1 }]
+  );
 
   const isOnline = eventType === 'ONLINE';
   const toISO = (local) => local ? new Date(local).toISOString() : '';
 
-  const addSpeaker    = () => setSpeakers([...speakers, { name: '', designation: '', bio: '', photoUrl: '', displayOrder: speakers.length + 1 }]);
+  const addSpeaker    = () => setSpeakers([...speakers, { name: '', designation: '', bio: '', displayOrder: speakers.length + 1 }]);
   const removeSpeaker = (idx) => setSpeakers(speakers.filter((_, i) => i !== idx));
   const updateSpeaker = (idx, key, val) => {
     const u = [...speakers]; u[idx][key] = val; setSpeakers(u);
@@ -50,24 +90,33 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
   };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !description.trim()) { onError('Please fill title and description'); return; }
-    if (!startDateTime || !endDateTime)        { onError('Please select start and end date/time'); return; }
-    if (isOnline && !onlineJoinLink.trim())    { onError('Online events need a join link'); return; }
+    if (!title.trim() || !description.trim()) { onError?.('Please fill title and description'); return; }
+    if (!startDateTime || !endDateTime)        { onError?.('Please select start and end date/time'); return; }
+    if (isOnline && !onlineJoinLink.trim())    { onError?.('Online events need a join link'); return; }
     if (!isOnline && (!venueName.trim() || !city.trim() || !country.trim())) {
-      onError('In-person events need venue, city and country'); return;
+      onError?.('In-person events need venue, city and country'); return;
     }
-    if (isPaid && (!price || Number(price) <= 0)) { onError('Please enter a valid price for paid event'); return; }
 
     const payload = {
-      title: title.trim(), description: description.trim(),
-      eventType, startDateTime: toISO(startDateTime),
-      endDateTime: toISO(endDateTime), timezone,
-      paid: Boolean(isPaid),
-      isPaid: Boolean(isPaid),
+      title: title.trim(),
+      description: description.trim(),
+      eventType,
+      startDateTime: toISO(startDateTime),
+      endDateTime: toISO(endDateTime),
+      timezone,
       capacity: Number(capacity),
-      speakers: speakers.filter(s => s.name.trim()).map((s, i) => ({ ...s, displayOrder: i + 1 })),
+      speakers: speakers.filter(s => s.name.trim()).map((s, i) => ({
+        name: s.name.trim(),
+        designation: s.designation.trim(),
+        bio: s.bio.trim(),
+        displayOrder: i + 1,
+      })),
       agenda: agenda.filter(a => a.title.trim()).map((a, i) => ({
-        ...a, startTime: toISO(a.startTime), endTime: toISO(a.endTime), displayOrder: i + 1,
+        title: a.title.trim(),
+        description: a.description.trim(),
+        startTime: toISO(a.startTime),
+        endTime: toISO(a.endTime),
+        displayOrder: i + 1,
       })),
     };
 
@@ -76,25 +125,54 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
     } else {
       payload.venueName    = venueName.trim();
       payload.venueAddress = venueAddress.trim();
-      payload.city         = city.trim();
-      payload.state        = state.trim();
       payload.country      = country.trim();
       if (coverImageUrl.trim()) payload.coverImageUrl = coverImageUrl.trim();
+
+      // Master Operator uses eventCity / eventState
+      if (isMaster) {
+        payload.eventCity  = city.trim();
+        payload.eventState = state.trim();
+      } else {
+        payload.city       = city.trim();
+        payload.state      = state.trim();
+      }
     }
 
-    if (isPaid) {
+    if (!isOperator && !isMaster && isPaid) {
+      payload.isPaid   = true;
+      payload.paid     = true;
       payload.price    = Number(price);
       payload.currency = currency;
     } else {
-      payload.price    = 0;
+      payload.isPaid   = false;
+      payload.paid     = false;
+      payload.price    = null;
+      payload.currency = null;
     }
 
     setLoading(true);
     try {
-      const res = await createEvent(payload);
-      onCreated(res.event);
+      let res;
+      if (isEditing) {
+        if (isOperator) {
+          res = await updateFranchiseOperatorEvent(editEvent.id, payload);
+        } else if (isMaster) {
+          res = await updateMasterOperatorEvent(editEvent.id, payload);
+        }
+      } else {
+        if (isOperator) {
+          res = await createFranchiseOperatorEvent(payload);
+        } else if (isMaster) {
+          res = await createMasterOperatorEvent(payload);
+        } else {
+          res = await createGlobalAdminEvent(payload);
+        }
+      }
+      onCreated?.(res?.event || res);
+      onClose();
     } catch (err) {
-      onError(err.message || 'Failed to create event');
+      console.error('Event save error:', err);
+      onError?.(err.message || 'Failed to save event');
     } finally {
       setLoading(false);
     }
@@ -121,20 +199,26 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
           maxWidth: 720, width: '100%',
           boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
           maxHeight: '90vh', overflowY: 'auto',
+          fontFamily: 'Manrope, sans-serif',
         }}
       >
         {/* Modal Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 24, position: 'sticky', top: 0,
-          background: '#fff', zIndex: 2,
+          marginBottom: 20, position: 'sticky', top: 0,
+          background: '#fff', zIndex: 2, paddingBottom: 10,
+          borderBottom: '1px solid #F0F0F0',
         }}>
           <div>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1A3A1A', margin: 0 }}>
-              🎉 Create Event
+              🎉 {isEditing ? 'Edit Event' : 'Create Event'}
             </h3>
             <p style={{ fontSize: 11, color: '#6B8F71', margin: '4px 0 0', fontWeight: 500 }}>
-              Fill in details to create and publish a new event
+              {isOperator
+                ? 'Submitted for approval. Your Master Operator will review first.'
+                : isMaster
+                ? 'Submitted for approval. Global Admin will review.'
+                : 'Create & publish a new event'}
             </p>
           </div>
           <motion.button
@@ -151,10 +235,23 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
           >×</motion.button>
         </div>
 
+        {/* Warning banner when editing an operator event */}
+        {isEditing && isOperator && (
+          <div style={{
+            padding: '10px 14px', borderRadius: 10, marginBottom: 16,
+            background: '#FFFBEB', border: '1px solid #FCD34D',
+            fontSize: 11, fontWeight: 600, color: '#92400E',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <span>⚠️</span>
+            <span>Editing this event will reset its approval stage back to Master Review.</span>
+          </div>
+        )}
+
         {/* Basic Info */}
         <SectionTitle>📋 Basic Information</SectionTitle>
         <InputField label="Event Title *" value={title} onChange={setTitle}
-          placeholder="e.g. Connect Souq Meetup 2026" />
+          placeholder="e.g. Export Documentation Workshop" />
         <TextareaField label="Description *" value={description} onChange={setDescription}
           placeholder="Describe your event..." rows={3} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -187,37 +284,65 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
           <>
             <SectionTitle>📍 Venue Details</SectionTitle>
             <InputField label="Venue Name *" value={venueName} onChange={setVenueName}
-              placeholder="e.g. Dubai World Trade Centre" />
+              placeholder="e.g. City Business Hub" />
             <InputField label="Venue Address" value={venueAddress} onChange={setVenueAddress}
               placeholder="Street address" />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-              <InputField label="City *"    value={city}    onChange={setCity}    placeholder="Dubai" />
-              <InputField label="State"     value={state}   onChange={setState}   placeholder="Dubai" />
-              <InputField label="Country *" value={country} onChange={setCountry} placeholder="UAE" />
+              <SelectField
+                label="Country *"
+                value={country}
+                onChange={(val) => { setCountry(val); setState(''); setCity(''); }}
+                options={[
+                  { value: '', label: 'Select Country' },
+                  ...getCountries().map(c => ({ value: c, label: c })),
+                ]}
+              />
+              <SelectField
+                label="State"
+                value={state}
+                onChange={(val) => { setState(val); setCity(''); }}
+                options={[
+                  { value: '', label: country ? 'Select State' : '—' },
+                  ...getStates(country).map(s => ({ value: s, label: s })),
+                ]}
+              />
+              <SelectField
+                label="City *"
+                value={city}
+                onChange={setCity}
+                options={[
+                  { value: '', label: state ? 'Select City' : '—' },
+                  ...getCities(country, state).map(ci => ({ value: ci, label: ci })),
+                ]}
+              />
             </div>
             <InputField label="Cover Image URL" value={coverImageUrl} onChange={setCoverImageUrl}
               placeholder="https://example.com/image.jpg" />
           </>
         )}
 
-        {/* Pricing */}
-        <SectionTitle>💰 Pricing</SectionTitle>
-        <CheckboxField label="This is a paid event" checked={isPaid} onChange={setIsPaid} />
-        {isPaid && (
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
-            <InputField label="Price *" value={price} onChange={setPrice} placeholder="199.99" />
-            <SelectField label="Currency *" value={currency} onChange={setCurrency}
-              options={[
-                { value: 'INR', label: 'INR ₹' },
-                { value: 'AED', label: 'AED د.إ' },
-                { value: 'USD', label: 'USD $' },
-                { value: 'EUR', label: 'EUR €' },
-                { value: 'GBP', label: 'GBP £' },
-              ]} />
-          </div>
+        {/* Pricing (Global Admin Only) */}
+        {!isOperator && !isMaster && (
+          <>
+            <SectionTitle>💰 Pricing</SectionTitle>
+            <CheckboxField label="This is a paid event" checked={isPaid} onChange={setIsPaid} />
+            {isPaid && (
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+                <InputField label="Price *" value={price} onChange={setPrice} placeholder="199.99" />
+                <SelectField label="Currency *" value={currency} onChange={setCurrency}
+                  options={[
+                    { value: 'INR', label: 'INR ₹' },
+                    { value: 'AED', label: 'AED د.إ' },
+                    { value: 'USD', label: 'USD $' },
+                    { value: 'EUR', label: 'EUR €' },
+                    { value: 'GBP', label: 'GBP £' },
+                  ]} />
+              </div>
+            )}
+          </>
         )}
 
-        {/* Speakers */}
+        {/* Speakers (photoUrl removed) */}
         <SectionTitle>
           🎤 Speakers
           <button onClick={addSpeaker} style={sectionAddBtnStyle}>+ Add</button>
@@ -239,11 +364,10 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
               )}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <InputField label="Name"        value={s.name}        onChange={(v) => updateSpeaker(idx, 'name', v)}        placeholder="Full name" />
+              <InputField label="Name *"       value={s.name}        onChange={(v) => updateSpeaker(idx, 'name', v)}        placeholder="Full name" />
               <InputField label="Designation" value={s.designation} onChange={(v) => updateSpeaker(idx, 'designation', v)} placeholder="Role/Title" />
             </div>
             <TextareaField label="Bio" value={s.bio} onChange={(v) => updateSpeaker(idx, 'bio', v)} placeholder="Short bio..." rows={2} />
-            <InputField label="Photo URL" value={s.photoUrl} onChange={(v) => updateSpeaker(idx, 'photoUrl', v)} placeholder="https://..." />
           </div>
         ))}
 
@@ -268,7 +392,7 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
                 <button onClick={() => removeAgenda(idx)} style={removeBtnStyle}>× Remove</button>
               )}
             </div>
-            <InputField label="Title"       value={a.title}       onChange={(v) => updateAgenda(idx, 'title', v)}       placeholder="Session title" />
+            <InputField label="Title *"      value={a.title}       onChange={(v) => updateAgenda(idx, 'title', v)}       placeholder="Session title" />
             <TextareaField label="Description" value={a.description} onChange={(v) => updateAgenda(idx, 'description', v)} placeholder="Details..." rows={2} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <DateTimeField label="Start Time" value={a.startTime} onChange={(v) => updateAgenda(idx, 'startTime', v)} />
@@ -282,7 +406,13 @@ export default function CreateEventModal({ onClose, onCreated, onError }) {
           <GreenButton variant="outline" onClick={onClose}>Cancel</GreenButton>
           <div style={{ flex: 1 }}>
             <GreenButton fullWidth onClick={handleSubmit} loading={loading}>
-              {loading ? 'Creating Event...' : '🚀 Create & Publish Event'}
+              {loading
+                ? 'Saving Event...'
+                : isEditing
+                ? '💾 Update Event'
+                : isOperator || isMaster
+                ? '📨 Submit for Approval'
+                : '🚀 Create & Publish Event'}
             </GreenButton>
           </div>
         </div>

@@ -30,8 +30,10 @@ export const inviteMasterOperator = (franchiseId) =>
   });
 
 // ══════════════════════════════════════
-// EVENTS APIs (GLOBAL ADMIN)
+// EVENTS APIs
 // ══════════════════════════════════════
+
+export * from './eventsApi';
 
 export const createEvent = (eventData) =>
   apiCall('/global-admin', {
@@ -198,6 +200,16 @@ export const rejectApplication = (applicationId, reviewNotes) => {
   });
 };
 
+export const fetchFranchiseCommissions = ({ page = 0, size = 10, commissionStatusFilter } = {}) =>
+  apiCall('/franchise-operator', {
+    body: {
+      franchiseOperatorRequestType: 'FETCH_COMMISSION_ENTRIES',
+      page: Number(page),
+      size: Number(size),
+      ...(commissionStatusFilter && commissionStatusFilter !== 'ALL' && { commissionStatusFilter }),
+    },
+  });
+
 export const approveCommissionEntry = (commissionLedgerEntryId, reviewNotes = '') =>
   apiCall('/franchise-operator', {
     body: {
@@ -345,4 +357,4 @@ export const deleteMediaVideo = (videoId) =>
       requestType: 'DELETE_MEDIA_VIDEO',
       videoId: Number(videoId),
     },
-  });
+  });
