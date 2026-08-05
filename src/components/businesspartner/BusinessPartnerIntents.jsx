@@ -259,11 +259,13 @@ export default function BusinessPartnerIntents({
             <div className="empty-state-desc">
               {searchQuery
                 ? 'Try a different search'
-                : 'Be the first to post a trade intent!'}
+                : 'No trade intents found.'}
             </div>
-            <button className="add-btn" onClick={onCreateIntent}>
-              <Plus size={15} /> Create Intent
-            </button>
+            {onCreateIntent && (
+              <button className="add-btn" onClick={onCreateIntent}>
+                <Plus size={15} /> Create Intent
+              </button>
+            )}
           </div>
 
         /* Grid */

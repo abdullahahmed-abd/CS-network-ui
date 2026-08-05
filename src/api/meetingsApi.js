@@ -252,7 +252,7 @@ export const scheduleMeeting = async (formPayload) => {
  * 1. FETCH_ELIGIBLE_FRANCHISES
  * Fetches hierarchy-ordered eligible franchises for the franchise picker UI.
  */
-export const fetchEligibleFranchises = async ({ search = '', page = 0, size = 20 } = {}) => {
+export const fetchEligibleFranchises = async ({ search = '', page = 0, size = 100 } = {}) => {
   const body = {
     requestType: 'FETCH_ELIGIBLE_FRANCHISES',
     ...(search?.trim() && { search: search.trim() }),
@@ -275,7 +275,7 @@ export const fetchEligibleFranchises = async ({ search = '', page = 0, size = 20
  * Fetches eligible users across the organizer's hierarchy with membershipType & depth.
  * Handles HTTP 400 hierarchy errors by retrying without franchise narrowing.
  */
-export const fetchEligibleUsers = async ({ search = '', franchiseIds, page = 0, size = 20 } = {}) => {
+export const fetchEligibleUsers = async ({ search = '', franchiseIds, page = 0, size = 100 } = {}) => {
   const buildBody = (fIds) => ({
     requestType: 'FETCH_ELIGIBLE_USERS',
     ...(search?.trim() && { search: search.trim() }),
@@ -308,7 +308,7 @@ export const fetchEligibleUsers = async ({ search = '', franchiseIds, page = 0, 
  * for confirmation preview prior to submitting FRANCHISE_DOWNLINE or ALL.
  * Supports optional franchiseId (used by Global Admin targeting specific franchise downlines).
  */
-export const fetchDownlinePreview = async ({ franchiseId, page = 0, size = 20 } = {}) => {
+export const fetchDownlinePreview = async ({ franchiseId, page = 0, size = 100 } = {}) => {
   const body = {
     requestType: 'FETCH_DOWNLINE_PREVIEW',
     ...(franchiseId && { franchiseId: Number(franchiseId) }),

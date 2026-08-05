@@ -107,7 +107,7 @@ export function AddLeadModal({ onClose, onSuccess, showToast }) {
       const res = await fetchFranchiseMembers({
         search: query.trim(),
         page: pageNum,
-        size: 10,
+        size: 100,
       });
       setMemberSearchResults(res?.franchiseMembers || []);
       setMemberSearchPage(res?.currentPage || 0);

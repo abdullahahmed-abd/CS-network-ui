@@ -194,7 +194,7 @@ export const fetchPartnershipHierarchy = async () => {
 export const fetchPartnerships = async ({
   filter = PARTNERSHIP_FILTERS.MY_PENDING,
   page = 0,
-  size = 20,
+  size = 100,
   search = '',
   franchiseId = null,
 } = {}) => {

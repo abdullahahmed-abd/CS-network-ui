@@ -4,7 +4,7 @@ import {
   Sparkles, Target, Rocket, Users, Handshake,
   Wallet, CalendarClock, BarChart3, ArrowUpRight,
   Loader2, AlertCircle, Trophy, Package, Ticket,
-  FileText, Inbox, MessageSquare,
+  FileText, Inbox, MessageSquare, Building2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authenticatedFetch, getUserData } from '../../api/auth';
@@ -15,10 +15,10 @@ import BusinessPartnerPipeline from '../businesspartner/BusinessPartnerPipeline'
 import BusinessPartnerIntents  from '../businesspartner/BusinessPartnerIntents';
 import DirectoryTab            from '../directory/DirectoryTab';
 import MeetingsTab             from '../meetings/MeetingsTab';
+import PartnershipsTab         from '../partnerships/PartnershipsTab';
 import { EventsTab }           from '../../screens/EventsComponents';
 import MyRegistrationsTab      from '../../screens/MyRegistrationsTab';
 import { AddLeadModal }        from '../businesspartner/modals/AddLeadModal';
-import { CreateIntentModal }   from '../businesspartner/modals/CreateIntentModal';
 import { Toast }               from '../businesspartner/common/Toast';
 import { ProposalsTab, InboxTab, TradeChatScreen } from '../../screens/BuyerSellerDashboard';
 import { BusinessPartnerCommissions } from './BusinessPartnerCommissions';
@@ -38,6 +38,7 @@ import {
 const navItems = [
   { id: 'pipeline',         label: 'Pipeline',      icon: LayoutGrid    },
   { id: 'trade_intents',    label: 'Trade Intents', icon: BarChart3     },
+  { id: 'partnerships',     label: 'Partnerships',  icon: Building2     },
   { id: 'proposals',        label: 'Proposals',     icon: FileText      },
   { id: 'inbox',            label: 'Inbox',         icon: MessageSquare },
   { id: 'deals',            label: 'Deals',         icon: HandshakeIcon },
@@ -72,7 +73,6 @@ export default function BusinessPartnerDashboard({ onLogout }) {
 
   /* ── Modals / UI ── */
   const [showAddLead,      setShowAddLead]      = useState(false);
-  const [showCreateIntent, setShowCreateIntent] = useState(false);
   const [searchQuery,      setSearchQuery]      = useState('');
   const [toast,            setToast]            = useState(null);
 
@@ -323,11 +323,6 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                 <Plus size={15} /> Add Lead
               </button>
             )}
-            {['trade_intents','my_intents'].includes(activeNav) && (
-              <button className="add-btn" onClick={() => setShowCreateIntent(true)}>
-                <Plus size={15} /> New Intent
-              </button>
-            )}
 
             <div className="icon-btn"><Filter size={16} /></div>
             <div className="icon-btn">
@@ -433,7 +428,6 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               setIntentFilter={setIntentFilter}
               searchQuery={searchQuery}
               onRefresh={() => fetchIntents(intentPage)}
-              onCreateIntent={() => setShowCreateIntent(true)}
               showToast={showToast}
               activeProposalLead={activeProposalLead}
               onClearProposalLead={() => setActiveProposalLead(null)}
@@ -458,8 +452,12 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               setIntentFilter={() => {}}
               searchQuery={searchQuery}
               onRefresh={fetchMyIntents}
-              onCreateIntent={() => setShowCreateIntent(true)}
             />
+          )}
+
+          {/* ══ Tab: Partnerships ══ */}
+          {activeNav === 'partnerships' && (
+            <PartnershipsTab />
           )}
 
           {/* ══ Tab: Proposals ══ */}
@@ -533,16 +531,6 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           <AddLeadModal
             onClose={() => setShowAddLead(false)}
             onSuccess={handleLeadCreated}
-            showToast={showToast}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showCreateIntent && (
-          <CreateIntentModal
-            onClose={() => setShowCreateIntent(false)}
-            onSuccess={handleIntentCreated}
             showToast={showToast}
           />
         )}

@@ -264,7 +264,7 @@ export const fetchPipelineByStage = async (stage) => {
  * Fetches/Searches members in the Business Partner's franchise.
  * Searchable by name, whatsapp number, email, or user id.
  */
-export const fetchFranchiseMembers = async ({ search = '', page = 0, size = 10 } = {}) => {
+export const fetchFranchiseMembers = async ({ search = '', page = 0, size = 100 } = {}) => {
   const body = {
     businessPartnerRequestType: 'FETCH_FRANCHISE_MEMBERS',
     search,
