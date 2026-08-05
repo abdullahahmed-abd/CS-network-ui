@@ -73,6 +73,7 @@ const getFranchiseConfig = (type) => {
           { id: 'invite',      label: 'Invite Link',         icon: '🔗' },
           { id: 'events',      label: 'Events',              icon: '🎉' },
           { id: 'meetings',    label: 'Meetings',            icon: '📅' },
+          { id: 'partnerships',label: 'Partnerships',        icon: '🤝' },
           { id: 'settings',    label: 'Settings',            icon: '⚙️' },
         ]
       : [
@@ -84,6 +85,7 @@ const getFranchiseConfig = (type) => {
           { id: 'events',       label: 'Events',         icon: '🎉' },
           { id: 'marketplace',  label: 'Marketplace',    icon: '🛒' },
           { id: 'meetings',     label: 'Meetings',       icon: '📅' },
+          { id: 'partnerships', label: 'Partnerships',   icon: '🤝' },
           { id: 'settings',     label: 'Settings',       icon: '⚙️' },
         ],
   };

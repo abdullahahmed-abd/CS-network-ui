@@ -47,15 +47,18 @@ export default function BusinessPartnerSidebar({
       {/* Main Navigation */}
       <nav className="nav">
         <div className="nav-label">Main Menu</div>
-        {navItems.map((item) => (
-          <div
-            key={item.id}
-            className={`nav-item ${activeNav === item.id ? 'active' : ''}`}
-            onClick={() => setActiveNav(item.id)}
-          >
-            <item.icon /> <span>{item.label}</span>
-          </div>
-        ))}
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div
+              key={item.id}
+              className={`nav-item ${activeNav === item.id ? 'active' : ''}`}
+              onClick={() => setActiveNav(item.id)}
+            >
+              {Icon && <Icon size={16} style={{ flexShrink: 0 }} />} <span>{item.label}</span>
+            </div>
+          );
+        })}
       </nav>
 
       {/* Pipeline Stages (shown when pipeline active) */}

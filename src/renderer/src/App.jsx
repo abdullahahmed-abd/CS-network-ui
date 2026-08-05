@@ -498,7 +498,22 @@ export default function App() {
   // ─────────────────────────────────────────────────────────
   // ── Payment handlers ──
   // ─────────────────────────────────────────────────────────
-  const handlePlanSelect = (planId) => setItem('selectedPlanId', planId);
+  const handlePlanSelect = (planId) => {
+    setItem('selectedPlanId', String(planId));
+    setItem('planPurchased', 'true');
+    setItem('formFilled', 'true');
+
+    const savedUser  = getUserData() || {};
+    const savedRoles = savedUser?.roles || selectedRoles;
+    setSelectedRoles(savedRoles);
+
+    const targetScreen = getScreenFromRoles(savedRoles, savedUser);
+    console.log('🚀 Plan selected, transitioning to target screen:', targetScreen);
+    setScreen(targetScreen);
+
+    // Auto reload to clear loading state and land directly on Dashboard
+    window.location.reload();
+  };
 
   const handlePaymentSuccess = () => {
     setItem('planPurchased', 'true');

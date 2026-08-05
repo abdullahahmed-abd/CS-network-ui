@@ -12,33 +12,6 @@ const BASE_URL =
 
 const PLANS = [
   {
-    id: '1',
-    name: 'Basic',
-    price: 2.00,
-    period: 'MONTHLY',
-    badge: null,
-    icon: Zap,
-    trialText: '30 days free, then $2/mo',
-    color: {
-      gradient: 'from-slate-50 to-gray-50',
-      border: 'border-gray-200',
-      iconBg: 'from-gray-100 to-slate-100',
-      iconColor: 'text-gray-600',
-      button: 'from-gray-700 via-slate-700 to-gray-700',
-      shadow: 'shadow-gray-500/20',
-      badge: '',
-      check: 'text-gray-600',
-      checkBg: 'bg-gray-100',
-    },
-    features: [
-      'Up to 40 connections/month',
-      '20 deal inquiries/month',
-      'Basic member directory access',
-      'Standard support',
-      '30-day free trial included',
-    ],
-  },
-  {
     id: '2',
     name: 'Growth',
     price: 5.00,
@@ -125,9 +98,13 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
 
       console.log('✅ Plan response:', data);
 
-      // ✅ Ignore Stripe URL completely
-      // Backend handles 30-day free trial validation
-      // Payment will be enforced by backend after trial expires
+      // ✅ Store flags locally before navigating
+      try {
+        localStorage.setItem('cs_selectedPlanId', String(planId));
+        localStorage.setItem('cs_planPurchased', 'true');
+        localStorage.setItem('cs_formFilled', 'true');
+      } catch (e) {}
+
       // Directly go to dashboard via onPlanSelect
       onPlanSelect?.(planId);
 

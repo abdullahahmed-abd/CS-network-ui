@@ -23,6 +23,7 @@ import { T } from '../masterOperator/MasterOperatorDashboard';
 import MeetingsTab from '../meetings/MeetingsTab';
 import DirectoryTab from '../directory/DirectoryTab';
 import RoleEventsTab from '../events/RoleEventsTab';
+import PartnershipsTab from '../partnerships/PartnershipsTab';
 import { getStates, getCities } from '../../utils/locationData';
 
 const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
@@ -2001,6 +2002,7 @@ export default function FranchiseOperatorContent({ activeNav, onNavigate, franch
       {activeNav === 'events' && <RoleEventsTab userRole={cfg.isMaster ? 'MASTER_OPERATOR' : 'FRANCHISE_OPERATOR'} />}
       {activeNav === 'marketplace' && <PlaceholderTab name="marketplace" />}
       {activeNav === 'meetings' && <MeetingsTab />}
+      {activeNav === 'partnerships' && <PartnershipsTab />}
       {activeNav === 'settings' && <PlaceholderTab name="settings" />}
     </>
   );

@@ -12,7 +12,7 @@ import {
   Menu, FileText, Send, Clock, CheckCheck,
   Users, ArrowRight, BadgeCheck,
   Calendar, DollarSign, MessageCircle, Paperclip,
-  Inbox, Ticket, Video,
+  Inbox, Ticket, Video, Building2,
 } from 'lucide-react';
 import { Client } from '@stomp/stompjs';
 import {
@@ -27,6 +27,7 @@ import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
 import MeetingsTab from '../components/meetings/MeetingsTab';
 import ScheduleMeetingModal from '../components/meetings/ScheduleMeetingModal';
 import DirectoryTab from '../components/directory/DirectoryTab';
+import PartnershipsTab from '../components/partnerships/PartnershipsTab';
 import { BusinessPartnerDeals as DealsTab } from '../components/businesspartner/BusinessPartnerDeals';
 
 const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
@@ -2443,6 +2444,7 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
     { id: 'events',           label: 'Events',       icon: Calendar,  badge: 0           },
     { id: 'my_registrations', label: 'My Tickets',   icon: Ticket,    badge: 0           },
     { id: 'meetings',         label: 'Meetings',     icon: Video,     badge: 0           },
+    { id: 'partnerships',     label: 'Partnerships', icon: Building2, badge: 0           },
     { id: 'inbox',            label: 'Inbox',        icon: Inbox,     badge: inboxUnread },
   ];
 
@@ -2700,6 +2702,9 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
 
         {/* ══ MEETINGS TAB ══ */}
         {activeTab === 'meetings' && <MeetingsTab />}
+
+        {/* ══ PARTNERSHIPS TAB ══ */}
+        {activeTab === 'partnerships' && <PartnershipsTab />}
 
         {/* ══ INBOX TAB ══ */}
         {activeTab === 'inbox' && <InboxTab />}

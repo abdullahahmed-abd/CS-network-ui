@@ -19,6 +19,7 @@ import { CreateProposalModal } from '../components/businesspartner/modals/Create
 import { EventsTab } from './EventsComponents';
 import MyRegistrationsTab from './MyRegistrationsTab';
 import MeetingsTab from '../components/meetings/MeetingsTab';
+import PartnershipsTab from '../components/partnerships/PartnershipsTab';
 import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
 
 const BASE_URL =
@@ -26,41 +27,41 @@ const BASE_URL =
 
 /* ═══════════════════ 🎨 GREEN THEME SYSTEM (like BuyerSellerDashboard) ═══════════════════ */
 const THEME = {
-  primary:        '#A2CB8B',
-  primaryDark:    '#7aab65',
-  primaryBright:  '#b8d9a4',
-  primaryLight:   '#c5e3b3',
-  primarySoft:    '#d4ecc5',
-  primaryMist:    '#e8f5e2',
-  primaryCloud:   '#f0f9eb',
-  primarySky:     '#f7fcf4',
+  primary: '#A2CB8B',
+  primaryDark: '#7aab65',
+  primaryBright: '#b8d9a4',
+  primaryLight: '#c5e3b3',
+  primarySoft: '#d4ecc5',
+  primaryMist: '#e8f5e2',
+  primaryCloud: '#f0f9eb',
+  primarySky: '#f7fcf4',
 
-  primaryRgb:     '162, 203, 139',
-  primaryLightRgb:'197, 227, 179',
+  primaryRgb: '162, 203, 139',
+  primaryLightRgb: '197, 227, 179',
   primaryDarkRgb: '122, 171, 101',
 
-  white:          '#FFFFFF',
-  offWhite:       '#FAFCFF',
+  white: '#FFFFFF',
+  offWhite: '#FAFCFF',
 
-  textDark:       '#1a3a1a',
-  textMed:        '#2d5a2d',
-  textLight:      '#4a7a4a',
-  textMuted:      '#7a9a7a',
+  textDark: '#1a3a1a',
+  textMed: '#2d5a2d',
+  textLight: '#4a7a4a',
+  textMuted: '#7a9a7a',
 
-  success:        '#66BB6A',
-  successDark:    '#43A047',
-  warning:        '#FFA726',
-  warningDark:    '#FB8C00',
-  danger:         '#EF5350',
-  dangerDark:     '#E53935',
+  success: '#66BB6A',
+  successDark: '#43A047',
+  warning: '#FFA726',
+  warningDark: '#FB8C00',
+  danger: '#EF5350',
+  dangerDark: '#E53935',
 
-  stageNew:       '#b8d9a4',
-  stageContact:   '#26A69A',
+  stageNew: '#b8d9a4',
+  stageContact: '#26A69A',
   stageQualified: '#66BB6A',
-  stageIntro:     '#7E57C2',
+  stageIntro: '#7E57C2',
   stageNegotiate: '#FFA726',
-  stageWon:       '#43A047',
-  stageLost:      '#EF5350',
+  stageWon: '#43A047',
+  stageLost: '#EF5350',
 };
 
 const generateCSSVars = (theme) => {
@@ -70,13 +71,13 @@ const generateCSSVars = (theme) => {
 };
 
 const PIPELINE_STAGES = [
-  { id: 'NEW_LEAD',     label: 'New Lead',     color: THEME.stageNew,       colorDark: THEME.primaryDark, IconComp: Sprout       },
-  { id: 'CONTACTED',    label: 'Contacted',    color: THEME.stageContact,   colorDark: '#00897B',         IconComp: PhoneCall    },
-  { id: 'QUALIFIED',    label: 'Qualified',    color: THEME.stageQualified, colorDark: '#43A047',         IconComp: BadgeCheck   },
-  { id: 'INTRODUCED',   label: 'Introduced',   color: THEME.stageIntro,     colorDark: '#5E35B1',         IconComp: UserPlus     },
-  { id: 'NEGOTIATION',  label: 'Negotiation',  color: THEME.stageNegotiate, colorDark: '#FB8C00',         IconComp: Scale        },
-  { id: 'CLOSED_WON',   label: 'Closed Won',   color: THEME.stageWon,       colorDark: '#2E7D32',         IconComp: Trophy       },
-  { id: 'CLOSED_LOST',  label: 'Closed Lost',  color: THEME.stageLost,      colorDark: '#C62828',         IconComp: XCircle      },
+  { id: 'NEW_LEAD', label: 'New Lead', color: THEME.stageNew, colorDark: THEME.primaryDark, IconComp: Sprout },
+  { id: 'CONTACTED', label: 'Contacted', color: THEME.stageContact, colorDark: '#00897B', IconComp: PhoneCall },
+  { id: 'QUALIFIED', label: 'Qualified', color: THEME.stageQualified, colorDark: '#43A047', IconComp: BadgeCheck },
+  { id: 'INTRODUCED', label: 'Introduced', color: THEME.stageIntro, colorDark: '#5E35B1', IconComp: UserPlus },
+  { id: 'NEGOTIATION', label: 'Negotiation', color: THEME.stageNegotiate, colorDark: '#FB8C00', IconComp: Scale },
+  { id: 'CLOSED_WON', label: 'Closed Won', color: THEME.stageWon, colorDark: '#2E7D32', IconComp: Trophy },
+  { id: 'CLOSED_LOST', label: 'Closed Lost', color: THEME.stageLost, colorDark: '#C62828', IconComp: XCircle },
 ];
 
 const LEAD_TYPES = [
@@ -114,20 +115,21 @@ const CATEGORIES = [
 const UNITS = ['KG', 'TON', 'QUINTAL', 'POUND', 'LITER', 'BARREL'];
 
 const INTENT_STATUS = {
-  OPEN:    { color: '#43A047', bg: '#E8F5E9', label: 'Open' },
-  CLOSED:  { color: '#616161', bg: '#F5F5F5', label: 'Closed' },
+  OPEN: { color: '#43A047', bg: '#E8F5E9', label: 'Open' },
+  CLOSED: { color: '#616161', bg: '#F5F5F5', label: 'Closed' },
   EXPIRED: { color: '#E53935', bg: '#FFEBEE', label: 'Expired' },
   MATCHED: { color: '#7aab65', bg: '#e8f5e2', label: 'Matched' },
 };
 
 const navItems = [
-  { id: 'pipeline',         label: 'Pipeline',      icon: LayoutGrid   },
-  { id: 'trade_intents',    label: 'Trade Intents', icon: BarChart3    },
-  { id: 'deals',            label: 'Deals',         icon: Handshake    },
-  { id: 'commissions',      label: 'Commissions',   icon: Wallet       },
-  { id: 'meetings',         label: 'Meetings',      icon: CalendarClock},
-  { id: 'events',           label: 'Events',        icon: Calendar     },
-  { id: 'my_registrations', label: 'My Tickets',    icon: Ticket       },
+  { id: 'partnerships', label: 'Partnerships', icon: Building2 },
+  { id: 'pipeline', label: 'Pipeline', icon: LayoutGrid },
+  { id: 'trade_intents', label: 'Trade Intents', icon: BarChart3 },
+  { id: 'deals', label: 'Deals', icon: Handshake },
+  { id: 'commissions', label: 'Commissions', icon: Wallet },
+  { id: 'meetings', label: 'Meetings', icon: CalendarClock },
+  { id: 'events', label: 'Events', icon: Calendar },
+  { id: 'my_registrations', label: 'My Tickets', icon: Ticket },
 ];
 
 /* ═══════════════════ GREEN-THEMED CSS (Updated) ═══════════════════ */
@@ -1831,8 +1833,8 @@ const formatFollowUp = (dateStr) => {
   if (!dateStr) return null;
   try {
     const d = new Date(dateStr);
-    const now = new Date(); now.setHours(0,0,0,0);
-    const target = new Date(d); target.setHours(0,0,0,0);
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const target = new Date(d); target.setHours(0, 0, 0, 0);
     const diff = Math.floor((target - now) / (1000 * 60 * 60 * 24));
     if (diff < 0) return { text: `${Math.abs(diff)}d overdue`, overdue: true };
     if (diff === 0) return { text: 'Today', overdue: false };
@@ -1960,18 +1962,18 @@ function IntentCard({ intent, onView }) {
 /* Create Intent Modal */
 function CreateIntentModal({ onClose, onSuccess, showToast }) {
   const [form, setForm] = useState({
-    intentType:   'BUY',
-    category:     'Wheat',
-    title:        '',
-    description:  '',
-    quantity:     '',
-    unit:         'KG',
+    intentType: 'BUY',
+    category: 'Wheat',
+    title: '',
+    description: '',
+    quantity: '',
+    unit: 'KG',
     pricePerUnit: '',
-    currency:     'INR',
-    expiresAt:    '',
+    currency: 'INR',
+    expiresAt: '',
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
 
   const update = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -1979,25 +1981,25 @@ function CreateIntentModal({ onClose, onSuccess, showToast }) {
     e.preventDefault();
     setError('');
 
-    if (!form.title.trim())    return setError('Title is required');
-    if (!form.quantity)        return setError('Quantity is required');
-    if (!form.pricePerUnit)    return setError('Price per unit is required');
-    if (!form.expiresAt)       return setError('Expiry date is required');
+    if (!form.title.trim()) return setError('Title is required');
+    if (!form.quantity) return setError('Quantity is required');
+    if (!form.pricePerUnit) return setError('Price per unit is required');
+    if (!form.expiresAt) return setError('Expiry date is required');
 
     setLoading(true);
     try {
       const payload = {
         businessPartnerRequestType: 'CREATE_INTENT',
         franchiseId: 2,
-        intentType:   form.intentType,
-        category:     form.category,
-        title:        form.title,
-        description:  form.description,
-        quantity:     Number(form.quantity),
-        unit:         form.unit,
+        intentType: form.intentType,
+        category: form.category,
+        title: form.title,
+        description: form.description,
+        quantity: Number(form.quantity),
+        unit: form.unit,
         pricePerUnit: Number(form.pricePerUnit),
-        currency:     form.currency,
-        expiresAt:    new Date(form.expiresAt).toISOString(),
+        currency: form.currency,
+        expiresAt: new Date(form.expiresAt).toISOString(),
       };
 
       await authenticatedFetch(
@@ -2163,7 +2165,7 @@ function CreateIntentModal({ onClose, onSuccess, showToast }) {
 
             <button type="submit" className="form-submit-btn" disabled={loading}>
               {loading
-                ? <><Loader2 size={15} style={{ animation:'spin 1s linear infinite' }} /> Creating…</>
+                ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Creating…</>
                 : <><CheckCircle2 size={15} /> Create Intent</>
               }
             </button>
@@ -2200,7 +2202,7 @@ function IntentDetailModal({ intent, onClose, onRaiseProposal }) {
       >
         <div className="modal-header">
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, flexWrap:'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
               <span className={`intent-badge ${isBuy ? 'type-buy' : 'type-sell'}`}>
                 {isBuy ? <ShoppingCart size={10} /> : <Store size={10} />}
                 {intent.intentType}
@@ -2228,14 +2230,14 @@ function IntentDetailModal({ intent, onClose, onRaiseProposal }) {
 
           <div className="modal-section">
             <div className="modal-section-title">Details</div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
-                { label: 'Quantity',    value: `${fmtNumber(intent.quantity)} ${intent.unit}` },
-                { label: 'Price/Unit',  value: fmtCurrency(intent.pricePerUnit, intent.currency) },
+                { label: 'Quantity', value: `${fmtNumber(intent.quantity)} ${intent.unit}` },
+                { label: 'Price/Unit', value: fmtCurrency(intent.pricePerUnit, intent.currency) },
                 { label: 'Total Value', value: fmtCurrency(intent.totalValue, intent.currency) },
-                { label: 'Expires',     value: formatFullDate(intent.expiresAt) },
-                { label: 'Created',     value: formatFullDate(intent.createdAt) },
-                { label: 'Currency',    value: intent.currency || 'INR' },
+                { label: 'Expires', value: formatFullDate(intent.expiresAt) },
+                { label: 'Created', value: formatFullDate(intent.createdAt) },
+                { label: 'Currency', value: intent.currency || 'INR' },
               ].map((item) => (
                 <div key={item.label} className="intent-detail-box">
                   <div className="intent-detail-label">{item.label}</div>
@@ -2288,8 +2290,8 @@ function IntentDetailModal({ intent, onClose, onRaiseProposal }) {
 /* Lead Modal */
 function LeadModal({ lead, currentStageId, stages, onClose }) {
   if (!lead) return null;
-  const stage     = stages.find(s => s.id === currentStageId);
-  const followUp  = formatFollowUp(lead.followUpDate);
+  const stage = stages.find(s => s.id === currentStageId);
+  const followUp = formatFollowUp(lead.followUpDate);
   const isInternal = lead.leadType === 'INTERNAL';
   const StageIcon = stage?.IconComp;
 
@@ -2308,7 +2310,7 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
       >
         <div className="modal-header">
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
               <h2>{lead.companyName || lead.contactPerson}</h2>
               <span className={`chip ${isInternal ? 'internal' : 'external'}`}>
                 {isInternal ? <Link2 /> : <Globe />}
@@ -2316,23 +2318,23 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
               </span>
             </div>
             <p>{lead.contactPerson}</p>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:8, flexWrap:'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
               <span style={{
-                display:'inline-flex', alignItems:'center', gap:5,
-                padding:'5px 12px', borderRadius:999,
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '5px 12px', borderRadius: 999,
                 background: 'linear-gradient(135deg, var(--primary-cloud), var(--primary-mist))',
                 border: '1px solid rgba(var(--primary-rgb), 0.2)',
-                fontFamily:"'DM Sans',sans-serif",
-                fontSize:10, fontWeight:700,
+                fontFamily: "'DM Sans',sans-serif",
+                fontSize: 10, fontWeight: 700,
                 color: stage?.color || 'var(--primary)',
               }}>
                 {StageIcon && <StageIcon size={11} />}
                 {stage?.label}
               </span>
               <span style={{
-                fontFamily:"'JetBrains Mono',monospace",
-                fontSize:10, color: 'var(--text-light)', fontWeight:600,
-                display:'flex', alignItems:'center', gap:3,
+                fontFamily: "'JetBrains Mono',monospace",
+                fontSize: 10, color: 'var(--text-light)', fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 3,
               }}>
                 <Hash size={10} /> {lead.id}
               </span>
@@ -2346,23 +2348,23 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
             <div className="modal-section">
               <div className="modal-section-title">Trade Intent</div>
               <div style={{
-                background:'linear-gradient(135deg, var(--primary-sky), var(--primary-cloud))',
-                border:'1px solid rgba(var(--primary-rgb), 0.2)',
-                borderRadius:14, padding:16,
-                display:'flex', alignItems:'center', gap:12,
+                background: 'linear-gradient(135deg, var(--primary-sky), var(--primary-cloud))',
+                border: '1px solid rgba(var(--primary-rgb), 0.2)',
+                borderRadius: 14, padding: 16,
+                display: 'flex', alignItems: 'center', gap: 12,
               }}>
                 <div style={{
-                  width:44, height:44, borderRadius:12,
-                  background:'linear-gradient(135deg, var(--primary), var(--primary-dark))',
-                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+                  width: 44, height: 44, borderRadius: 12,
+                  background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
                   <Briefcase size={18} color="#FFF" />
                 </div>
-                <div style={{ minWidth:0 }}>
-                  <div style={{ fontFamily:"'Inter',sans-serif", fontSize:14, fontWeight:700, color:'var(--text-dark)' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 700, color: 'var(--text-dark)' }}>
                     {lead.tradeIntentTitle}
                   </div>
-                  <div style={{ fontFamily:"'DM Sans',sans-serif", fontSize:11, color:'var(--text-light)', marginTop:2 }}>
+                  <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11, color: 'var(--text-light)', marginTop: 2 }}>
                     Member: {lead.memberName || '—'}
                   </div>
                 </div>
@@ -2373,14 +2375,14 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
           <div className="modal-section">
             <div className="modal-section-title">Contact Information</div>
             {[
-              { icon: <Users />,     label: 'Contact Person', value: lead.contactPerson || '—' },
-              { icon: <Phone />,     label: 'Phone',          value: lead.phone         || '—' },
-              { icon: <Mail />,      label: 'Email',          value: lead.email         || '—' },
-              { icon: <Building2 />, label: 'Company',        value: lead.companyName   || '—' },
+              { icon: <Users />, label: 'Contact Person', value: lead.contactPerson || '—' },
+              { icon: <Phone />, label: 'Phone', value: lead.phone || '—' },
+              { icon: <Mail />, label: 'Email', value: lead.email || '—' },
+              { icon: <Building2 />, label: 'Company', value: lead.companyName || '—' },
             ].map((f, i) => (
               <div className="modal-field" key={i}>
                 <div className="modal-field-icon">{f.icon}</div>
-                <div style={{ minWidth:0 }}>
+                <div style={{ minWidth: 0 }}>
                   <div className="modal-field-label">{f.label}</div>
                   <div className="modal-field-value">{f.value}</div>
                 </div>
@@ -2392,15 +2394,15 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
             <div className="modal-section">
               <div className="modal-section-title">Follow-up</div>
               <div style={{
-                display:'flex', alignItems:'center', gap:10, padding:'12px 16px',
-                borderRadius:12,
+                display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
+                borderRadius: 12,
                 background: followUp.overdue ? 'linear-gradient(135deg, #FFEBEE, #FFCDD2)' : 'linear-gradient(135deg, var(--primary-sky), var(--primary-cloud))',
                 border: `1px solid ${followUp.overdue ? 'rgba(239,83,80,0.25)' : 'rgba(var(--primary-rgb), 0.2)'}`,
               }}>
-                <Calendar size={15} style={{ color: followUp.overdue ? '#C62828' : 'var(--primary)', flexShrink:0 }} />
+                <Calendar size={15} style={{ color: followUp.overdue ? '#C62828' : 'var(--primary)', flexShrink: 0 }} />
                 <span style={{
-                  fontFamily:"'DM Sans',sans-serif",
-                  fontSize:13, fontWeight:700,
+                  fontFamily: "'DM Sans',sans-serif",
+                  fontSize: 13, fontWeight: 700,
                   color: followUp.overdue ? '#C62828' : 'var(--text-dark)',
                 }}>
                   {followUp.text}
@@ -2418,11 +2420,11 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
 
           <div className="modal-actions">
             {[
-              { href:`tel:${lead.phone}`, icon:<Phone size={13} />, text:'Call', show:!!lead.phone },
-              { href:`mailto:${lead.email}`, icon:<Mail size={13} />, text:'Email', show:!!lead.email },
-              { href:`https://wa.me/${(lead.phone||'').replace(/[^0-9]/g,'')}`, icon:<MessageSquare size={13} />, text:'WhatsApp', target:'_blank', show:!!lead.phone },
+              { href: `tel:${lead.phone}`, icon: <Phone size={13} />, text: 'Call', show: !!lead.phone },
+              { href: `mailto:${lead.email}`, icon: <Mail size={13} />, text: 'Email', show: !!lead.email },
+              { href: `https://wa.me/${(lead.phone || '').replace(/[^0-9]/g, '')}`, icon: <MessageSquare size={13} />, text: 'WhatsApp', target: '_blank', show: !!lead.phone },
             ].filter(a => a.show).map((a, i) => (
-              <a key={i} href={a.href} target={a.target||'_self'} rel="noreferrer" className="modal-action-link">
+              <a key={i} href={a.href} target={a.target || '_self'} rel="noreferrer" className="modal-action-link">
                 {a.icon} {a.text}
               </a>
             ))}
@@ -2436,26 +2438,26 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
 /* ══════════════════════════════════════════════════════════════ */
 /* Add Lead Modal */
 function AddLeadModal({ onClose, onSuccess, showToast }) {
-  const [step, setStep]        = useState('choose');
+  const [step, setStep] = useState('choose');
   const [selectedType, setSelected] = useState(null);
-  const [loading, setLoading]  = useState(false);
-  const [error, setError]      = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const [externalForm, setExternalForm]         = useState({ companyName:'', contactPerson:'', phone:'', email:'', title:'', description:'', quantity:'', unit:'KG', pricePerUnit:'', currency:'INR', intentType:'BUY', category:'AGRICULTURE', expiresAt:'', notes:'', followUpDate:'' });
-  const [memberIntentForm, setMemberIntentForm] = useState({ memberId:'', title:'', description:'', quantity:'', unit:'KG', pricePerUnit:'', currency:'INR', intentType:'SELL', category:'AGRICULTURE', expiresAt:'', notes:'', followUpDate:'' });
-  const [internalForm, setInternalForm]         = useState({ memberId:'', tradeIntentId:'', notes:'', followUpDate:'' });
+  const [externalForm, setExternalForm] = useState({ companyName: '', contactPerson: '', phone: '', email: '', title: '', description: '', quantity: '', unit: 'KG', pricePerUnit: '', currency: 'INR', intentType: 'BUY', category: 'AGRICULTURE', expiresAt: '', notes: '', followUpDate: '' });
+  const [memberIntentForm, setMemberIntentForm] = useState({ memberId: '', title: '', description: '', quantity: '', unit: 'KG', pricePerUnit: '', currency: 'INR', intentType: 'SELL', category: 'AGRICULTURE', expiresAt: '', notes: '', followUpDate: '' });
+  const [internalForm, setInternalForm] = useState({ memberId: '', tradeIntentId: '', notes: '', followUpDate: '' });
 
   // Franchise Member Search State
-  const [memberSearchQuery, setMemberSearchQuery]             = useState('');
-  const [memberSearchResults, setMemberSearchResults]         = useState([]);
-  const [searchingMembers, setSearchingMembers]               = useState(false);
-  const [selectedMember, setSelectedMember]                   = useState(null);
-  const [memberSearchPage, setMemberSearchPage]               = useState(0);
-  const [memberSearchTotalPages, setMemberSearchTotalPages]   = useState(1);
-  const [memberSearchMessage, setMemberSearchMessage]         = useState('');
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [memberSearchResults, setMemberSearchResults] = useState([]);
+  const [searchingMembers, setSearchingMembers] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [memberSearchPage, setMemberSearchPage] = useState(0);
+  const [memberSearchTotalPages, setMemberSearchTotalPages] = useState(1);
+  const [memberSearchMessage, setMemberSearchMessage] = useState('');
 
   // Member Trade Intents State
-  const [memberIntents, setMemberIntents]   = useState([]);
+  const [memberIntents, setMemberIntents] = useState([]);
   const [loadingIntents, setLoadingIntents] = useState(false);
 
   const loadMemberIntents = async (mId) => {
@@ -2591,20 +2593,20 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
   const validate = () => {
     const rt = selectedType.id;
     if (rt === 'CREATE_EXTERNAL_LEAD') {
-      if (!externalForm.companyName.trim())     return 'Company Name is required';
+      if (!externalForm.companyName.trim()) return 'Company Name is required';
       if (!externalForm.phone.trim() && !externalForm.email.trim()) return 'Phone or Email is required';
-      if (!externalForm.title.trim())           return 'Title is required';
+      if (!externalForm.title.trim()) return 'Title is required';
       if (!externalForm.quantity || Number(externalForm.quantity) <= 0) return 'Valid Quantity is required';
       if (!externalForm.pricePerUnit || Number(externalForm.pricePerUnit) <= 0) return 'Valid Price Per Unit is required';
     }
     if (rt === 'CREATE_TRADE_INTENT_FOR_MEMBER') {
-      if (!memberIntentForm.memberId)           return 'Member ID is required';
-      if (!memberIntentForm.title.trim())       return 'Title is required';
+      if (!memberIntentForm.memberId) return 'Member ID is required';
+      if (!memberIntentForm.title.trim()) return 'Title is required';
       if (!memberIntentForm.quantity || Number(memberIntentForm.quantity) <= 0) return 'Valid Quantity is required';
       if (!memberIntentForm.pricePerUnit || Number(memberIntentForm.pricePerUnit) <= 0) return 'Valid Price Per Unit is required';
     }
     if (rt === 'CREATE_INTERNAL_LEAD') {
-      if (!internalForm.memberId)    return 'Member ID is required';
+      if (!internalForm.memberId) return 'Member ID is required';
     }
     return null;
   };
@@ -2615,7 +2617,7 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
     setLoading(true);
     try {
       const payload = buildPayload();
-      const data = await authenticatedFetch(`${BASE_URL}/cs-network/business-partner`, { method:'POST', body: JSON.stringify(payload) });
+      const data = await authenticatedFetch(`${BASE_URL}/cs-network/business-partner`, { method: 'POST', body: JSON.stringify(payload) });
       showToast(data?.message || 'Lead created successfully!', 'success');
       onSuccess?.(data?.lead); onClose();
     } catch (err) { setError(err.message || 'Failed to create lead'); }
@@ -2625,14 +2627,14 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
   return (
     <div className="modal-overlay">
       <motion.div className="modal-backdrop"
-        initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose}
       />
       <motion.div className="modal-content"
-        initial={{ opacity:0, scale:0.95, y:16 }}
-        animate={{ opacity:1, scale:1, y:0 }}
-        exit={{ opacity:0, scale:0.95, y:16 }}
-        transition={{ duration:0.25 }}
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ duration: 0.25 }}
         onClick={e => e.stopPropagation()}
       >
         <div className="modal-header">
@@ -2676,75 +2678,75 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label form-label-required">Company Name</label>
-                    <input className="form-input" placeholder="Noor Enterprises" value={externalForm.companyName} onChange={e => setExternalForm({...externalForm, companyName:e.target.value})} />
+                    <input className="form-input" placeholder="Noor Enterprises" value={externalForm.companyName} onChange={e => setExternalForm({ ...externalForm, companyName: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Contact Person</label>
-                    <input className="form-input" placeholder="John Smith" value={externalForm.contactPerson} onChange={e => setExternalForm({...externalForm, contactPerson:e.target.value})} />
+                    <input className="form-input" placeholder="John Smith" value={externalForm.contactPerson} onChange={e => setExternalForm({ ...externalForm, contactPerson: e.target.value })} />
                   </div>
                 </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Phone</label>
-                    <input className="form-input" placeholder="+919876543210" value={externalForm.phone} onChange={e => setExternalForm({...externalForm, phone:e.target.value})} />
+                    <input className="form-input" placeholder="+919876543210" value={externalForm.phone} onChange={e => setExternalForm({ ...externalForm, phone: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Email</label>
-                    <input className="form-input" type="email" placeholder="john@abctrading.com" value={externalForm.email} onChange={e => setExternalForm({...externalForm, email:e.target.value})} />
+                    <input className="form-input" type="email" placeholder="john@abctrading.com" value={externalForm.email} onChange={e => setExternalForm({ ...externalForm, email: e.target.value })} />
                   </div>
                 </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label form-label-required">Intent Type</label>
-                    <select className="form-input" value={externalForm.intentType} onChange={e => setExternalForm({...externalForm, intentType:e.target.value})}>
+                    <select className="form-input" value={externalForm.intentType} onChange={e => setExternalForm({ ...externalForm, intentType: e.target.value })}>
                       <option value="BUY">BUY</option>
                       <option value="SELL">SELL</option>
                     </select>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Category</label>
-                    <select className="form-input" value={externalForm.category} onChange={e => setExternalForm({...externalForm, category:e.target.value})}>
+                    <select className="form-input" value={externalForm.category} onChange={e => setExternalForm({ ...externalForm, category: e.target.value })}>
                       {CATEGORIES.map(c => <option key={c} value={c.toUpperCase()}>{c}</option>)}
                     </select>
                   </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label form-label-required">Title</label>
-                  <input className="form-input" placeholder="Buy Premium Basmati Rice" value={externalForm.title} onChange={e => setExternalForm({...externalForm, title:e.target.value})} />
+                  <input className="form-input" placeholder="Buy Premium Basmati Rice" value={externalForm.title} onChange={e => setExternalForm({ ...externalForm, title: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>
-                  <textarea className="form-textarea" placeholder="Looking to purchase 1000 kg of premium basmati rice..." value={externalForm.description} onChange={e => setExternalForm({...externalForm, description:e.target.value})} />
+                  <textarea className="form-textarea" placeholder="Looking to purchase 1000 kg of premium basmati rice..." value={externalForm.description} onChange={e => setExternalForm({ ...externalForm, description: e.target.value })} />
                 </div>
-                <div className="form-row" style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'8px' }}>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
                   <div className="form-group">
                     <label className="form-label form-label-required">Quantity</label>
-                    <input className="form-input" type="number" placeholder="1000" value={externalForm.quantity} onChange={e => setExternalForm({...externalForm, quantity:e.target.value})} />
+                    <input className="form-input" type="number" placeholder="1000" value={externalForm.quantity} onChange={e => setExternalForm({ ...externalForm, quantity: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label form-label-required">Price/Unit</label>
-                    <input className="form-input" type="number" step="0.01" placeholder="85.50" value={externalForm.pricePerUnit} onChange={e => setExternalForm({...externalForm, pricePerUnit:e.target.value})} />
+                    <input className="form-input" type="number" step="0.01" placeholder="85.50" value={externalForm.pricePerUnit} onChange={e => setExternalForm({ ...externalForm, pricePerUnit: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Unit</label>
-                    <input className="form-input" placeholder="KG" value={externalForm.unit} onChange={e => setExternalForm({...externalForm, unit:e.target.value})} />
+                    <input className="form-input" placeholder="KG" value={externalForm.unit} onChange={e => setExternalForm({ ...externalForm, unit: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Currency</label>
-                    <input className="form-input" placeholder="INR" value={externalForm.currency} onChange={e => setExternalForm({...externalForm, currency:e.target.value})} />
+                    <input className="form-input" placeholder="INR" value={externalForm.currency} onChange={e => setExternalForm({ ...externalForm, currency: e.target.value })} />
                   </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Expiry Date (expiresAt)</label>
-                  <input className="form-input" type="date" min={getTodayDateString()} value={externalForm.expiresAt} onChange={e => setExternalForm({...externalForm, expiresAt:e.target.value})} />
+                  <input className="form-input" type="date" min={getTodayDateString()} value={externalForm.expiresAt} onChange={e => setExternalForm({ ...externalForm, expiresAt: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Notes</label>
-                  <textarea className="form-textarea" placeholder="Interested in purchasing rice in bulk." value={externalForm.notes} onChange={e => setExternalForm({...externalForm, notes:e.target.value})} />
+                  <textarea className="form-textarea" placeholder="Interested in purchasing rice in bulk." value={externalForm.notes} onChange={e => setExternalForm({ ...externalForm, notes: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Follow-up Date</label>
-                  <input className="form-input" type="date" min={getTodayDateString()} value={externalForm.followUpDate} onChange={e => setExternalForm({...externalForm, followUpDate:e.target.value})} />
+                  <input className="form-input" type="date" min={getTodayDateString()} value={externalForm.followUpDate} onChange={e => setExternalForm({ ...externalForm, followUpDate: e.target.value })} />
                 </div>
               </>)}
 
@@ -2800,47 +2802,47 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label form-label-required">Intent Type</label>
-                    <select className="form-input" value={memberIntentForm.intentType} onChange={e => setMemberIntentForm({...memberIntentForm, intentType:e.target.value})}>
+                    <select className="form-input" value={memberIntentForm.intentType} onChange={e => setMemberIntentForm({ ...memberIntentForm, intentType: e.target.value })}>
                       <option value="SELL">SELL</option>
                       <option value="BUY">BUY</option>
                     </select>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Category</label>
-                    <select className="form-input" value={memberIntentForm.category} onChange={e => setMemberIntentForm({...memberIntentForm, category:e.target.value})}>
+                    <select className="form-input" value={memberIntentForm.category} onChange={e => setMemberIntentForm({ ...memberIntentForm, category: e.target.value })}>
                       {CATEGORIES.map(c => <option key={c} value={c.toUpperCase()}>{c}</option>)}
                     </select>
                   </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label form-label-required">Title</label>
-                  <input className="form-input" placeholder="Premium Basmati Rice" value={memberIntentForm.title} onChange={e => setMemberIntentForm({...memberIntentForm, title:e.target.value})} />
+                  <input className="form-input" placeholder="Premium Basmati Rice" value={memberIntentForm.title} onChange={e => setMemberIntentForm({ ...memberIntentForm, title: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Description</label>
-                  <textarea className="form-textarea" placeholder="High-quality basmati rice available for bulk orders." value={memberIntentForm.description} onChange={e => setMemberIntentForm({...memberIntentForm, description:e.target.value})} />
+                  <textarea className="form-textarea" placeholder="High-quality basmati rice available for bulk orders." value={memberIntentForm.description} onChange={e => setMemberIntentForm({ ...memberIntentForm, description: e.target.value })} />
                 </div>
-                <div className="form-row" style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'8px' }}>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
                   <div className="form-group">
                     <label className="form-label form-label-required">Quantity</label>
-                    <input className="form-input" type="number" placeholder="1000" value={memberIntentForm.quantity} onChange={e => setMemberIntentForm({...memberIntentForm, quantity:e.target.value})} />
+                    <input className="form-input" type="number" placeholder="1000" value={memberIntentForm.quantity} onChange={e => setMemberIntentForm({ ...memberIntentForm, quantity: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label form-label-required">Price/Unit</label>
-                    <input className="form-input" type="number" step="0.01" placeholder="75.50" value={memberIntentForm.pricePerUnit} onChange={e => setMemberIntentForm({...memberIntentForm, pricePerUnit:e.target.value})} />
+                    <input className="form-input" type="number" step="0.01" placeholder="75.50" value={memberIntentForm.pricePerUnit} onChange={e => setMemberIntentForm({ ...memberIntentForm, pricePerUnit: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Unit</label>
-                    <input className="form-input" placeholder="KG" value={memberIntentForm.unit} onChange={e => setMemberIntentForm({...memberIntentForm, unit:e.target.value})} />
+                    <input className="form-input" placeholder="KG" value={memberIntentForm.unit} onChange={e => setMemberIntentForm({ ...memberIntentForm, unit: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Currency</label>
-                    <input className="form-input" placeholder="INR" value={memberIntentForm.currency} onChange={e => setMemberIntentForm({...memberIntentForm, currency:e.target.value})} />
+                    <input className="form-input" placeholder="INR" value={memberIntentForm.currency} onChange={e => setMemberIntentForm({ ...memberIntentForm, currency: e.target.value })} />
                   </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Expiry Date (expiresAt)</label>
-                  <input className="form-input" type="date" min={getTodayDateString()} value={memberIntentForm.expiresAt} onChange={e => setMemberIntentForm({...memberIntentForm, expiresAt:e.target.value})} />
+                  <input className="form-input" type="date" min={getTodayDateString()} value={memberIntentForm.expiresAt} onChange={e => setMemberIntentForm({ ...memberIntentForm, expiresAt: e.target.value })} />
                 </div>
               </>)}
 
@@ -2962,17 +2964,17 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Notes</label>
-                  <textarea className="form-textarea" placeholder="Notes..." value={internalForm.notes} onChange={e => setInternalForm({...internalForm, notes:e.target.value})} />
+                  <textarea className="form-textarea" placeholder="Notes..." value={internalForm.notes} onChange={e => setInternalForm({ ...internalForm, notes: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Follow-up Date</label>
-                  <input className="form-input" type="date" min={getTodayDateString()} value={internalForm.followUpDate} onChange={e => setInternalForm({...internalForm, followUpDate:e.target.value})} />
+                  <input className="form-input" type="date" min={getTodayDateString()} value={internalForm.followUpDate} onChange={e => setInternalForm({ ...internalForm, followUpDate: e.target.value })} />
                 </div>
               </>)}
 
               <button type="submit" className="form-submit-btn" disabled={loading}>
                 {loading
-                  ? <><Loader2 size={15} style={{ animation:'spin 1s linear infinite' }} /> Creating…</>
+                  ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Creating…</>
                   : <><CheckCircle2 size={15} /> Create Lead</>
                 }
               </button>
@@ -2994,9 +2996,9 @@ function Toast({ message, type, onDismiss }) {
   return (
     <motion.div
       className={`bp-toast bp-toast-${type}`}
-      initial={{ opacity:0, x:80 }}
-      animate={{ opacity:1, x:0 }}
-      exit={{ opacity:0, x:80 }}
+      initial={{ opacity: 0, x: 80 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 80 }}
     >
       {type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
       {message}
@@ -3008,23 +3010,23 @@ function Toast({ message, type, onDismiss }) {
 /* MAIN DASHBOARD COMPONENT */
 /* ══════════════════════════════════════════════════════════════ */
 export default function BusinessPartnerDashboard({ onLogout }) {
-  const [activeNav, setActiveNav]       = useState('pipeline');
-  const [activeStage, setActiveStage]   = useState('all');
+  const [activeNav, setActiveNav] = useState('pipeline');
+  const [activeStage, setActiveStage] = useState('all');
 
   // Pipeline state
-  const [leads, setLeads]               = useState({});
-  const [stageCounts, setStageCounts]   = useState({});
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState('');
-  const [refreshing, setRefreshing]     = useState(false);
+  const [leads, setLeads] = useState({});
+  const [stageCounts, setStageCounts] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   // Intents state
-  const [intents, setIntents]           = useState([]);
-  const [myIntents, setMyIntents]       = useState([]);
+  const [intents, setIntents] = useState([]);
+  const [myIntents, setMyIntents] = useState([]);
   const [intentsLoading, setIntentsLoading] = useState(false);
   const [myIntentsLoading, setMyIntentsLoading] = useState(false);
   const [intentsError, setIntentsError] = useState('');
-  const [intentPage, setIntentPage]     = useState(0);
+  const [intentPage, setIntentPage] = useState(0);
   const [intentTotalPages, setIntentTotalPages] = useState(1);
   const [intentFilter, setIntentFilter] = useState('ALL');
   const [selectedIntent, setSelectedIntent] = useState(null);
@@ -3033,14 +3035,14 @@ export default function BusinessPartnerDashboard({ onLogout }) {
   // Lead state
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedStage, setSelectedStage] = useState(null);
-  const [searchQuery, setSearchQuery]   = useState('');
-  const [showAddLead, setShowAddLead]   = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAddLead, setShowAddLead] = useState(false);
   const [proposalIntent, setProposalIntent] = useState(null);
-  const [toast, setToast]               = useState(null);
+  const [toast, setToast] = useState(null);
 
-  const scrollBtnRef  = useRef(null);
-  const didFetchRef   = useRef(false);
-  const requestRef    = useRef(false);
+  const scrollBtnRef = useRef(null);
+  const didFetchRef = useRef(false);
+  const requestRef = useRef(false);
   const loadedOnceRef = useRef(false);
 
   const userData = getUserData() || {};
@@ -3164,12 +3166,12 @@ export default function BusinessPartnerDashboard({ onLogout }) {
     if (!searchQuery.trim()) return stageLeads;
     const q = searchQuery.toLowerCase();
     return stageLeads.filter(l =>
-      (l.companyName    || '').toLowerCase().includes(q) ||
-      (l.contactPerson  || '').toLowerCase().includes(q) ||
-      (l.email          || '').toLowerCase().includes(q) ||
-      (l.phone          || '').includes(searchQuery)     ||
+      (l.companyName || '').toLowerCase().includes(q) ||
+      (l.contactPerson || '').toLowerCase().includes(q) ||
+      (l.email || '').toLowerCase().includes(q) ||
+      (l.phone || '').includes(searchQuery) ||
       (l.tradeIntentTitle || '').toLowerCase().includes(q) ||
-      (l.notes          || '').toLowerCase().includes(q)
+      (l.notes || '').toLowerCase().includes(q)
     );
   };
 
@@ -3177,16 +3179,16 @@ export default function BusinessPartnerDashboard({ onLogout }) {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
-      (intent.title    || '').toLowerCase().includes(q) ||
+      (intent.title || '').toLowerCase().includes(q) ||
       (intent.category || '').toLowerCase().includes(q)
     );
   });
 
   const kpiData = [
-    { label:'Total Leads',   value: getTotalLeads(), delta:`${PIPELINE_STAGES.length} stages`, icon: Users,     color: THEME.primary,      colorDark: THEME.primaryDark },
-    { label:'Active Deals',  value: (stageCounts['CONTACTED']||0)+(stageCounts['QUALIFIED']||0)+(stageCounts['NEGOTIATION']||0), delta:'In progress', icon: Handshake, color: THEME.stageContact, colorDark: '#00897B' },
-    { label:'Deals Won',     value: stageCounts['CLOSED_WON'] || 0, delta:'Closed successfully', icon: Trophy,    color: THEME.success,      colorDark: THEME.successDark },
-    { label:'Market Intents',value: intents.length,  delta:'Available now',                 icon: BarChart3, color: THEME.warning,      colorDark: THEME.warningDark },
+    { label: 'Total Leads', value: getTotalLeads(), delta: `${PIPELINE_STAGES.length} stages`, icon: Users, color: THEME.primary, colorDark: THEME.primaryDark },
+    { label: 'Active Deals', value: (stageCounts['CONTACTED'] || 0) + (stageCounts['QUALIFIED'] || 0) + (stageCounts['NEGOTIATION'] || 0), delta: 'In progress', icon: Handshake, color: THEME.stageContact, colorDark: '#00897B' },
+    { label: 'Deals Won', value: stageCounts['CLOSED_WON'] || 0, delta: 'Closed successfully', icon: Trophy, color: THEME.success, colorDark: THEME.successDark },
+    { label: 'Market Intents', value: intents.length, delta: 'Available now', icon: BarChart3, color: THEME.warning, colorDark: THEME.warningDark },
   ];
 
   const getPageTitle = () => {
@@ -3198,30 +3200,113 @@ export default function BusinessPartnerDashboard({ onLogout }) {
     <div className="bp-app">
       <style>{STYLES}</style>
 
-      {/* Sidebar Component */}
-      <BusinessPartnerSidebar
-        navItems={navItems}
-        activeNav={activeNav}
-        setActiveNav={setActiveNav}
-        activeStage={activeStage}
-        setActiveStage={setActiveStage}
-        stageCounts={stageCounts}
-        getTotalLeads={getTotalLeads}
-        userData={userData}
-        onLogout={onLogout}
-      />
+      {/* Sidebar — inlined so CSS from STYLES applies with no issues */}
+      <aside className="sidebar">
+        {/* Brand */}
+        <div className="brand">
+          <div className="brand-diamond" />
+          <div>
+            <div className="brand-text">CONNECT SOUQ</div>
+            <div className="brand-sub">Business Partner</div>
+          </div>
+        </div>
+
+        {/* Main Navigation */}
+        <nav className="nav">
+          <div className="nav-label">Main Menu</div>
+          {navItems.map((item) => {
+            const NavIcon = item.icon;
+            return (
+              <div
+                key={item.id}
+                className={`nav-item ${activeNav === item.id ? 'active' : ''}`}
+                onClick={() => setActiveNav(item.id)}
+              >
+                {NavIcon && <NavIcon size={16} />}
+                <span>{item.label}</span>
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Pipeline Stages (shown when pipeline active) */}
+        {activeNav === 'pipeline' && (
+          <>
+            <div className="nav-divider" />
+            <div>
+              <div className="nav-label">Pipeline Stages</div>
+              <div
+                className={`nav-stage ${activeStage === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveStage('all')}
+              >
+                <div className="nav-stage-icon-box" style={{ background: `${THEME.primary}20` }}>
+                  <List style={{ color: THEME.primary }} size={14} />
+                </div>
+                <span style={{ flex: 1 }}>All Stages</span>
+                <span className="nav-stage-count">{getTotalLeads()}</span>
+              </div>
+              {PIPELINE_STAGES.map((stage) => {
+                const StageIcon = stage.IconComp;
+                return (
+                  <div
+                    key={stage.id}
+                    className={`nav-stage ${activeStage === stage.id ? 'active' : ''}`}
+                    onClick={() => setActiveStage(stage.id)}
+                  >
+                    <div className="nav-stage-icon-box" style={{ background: `${stage.color}20` }}>
+                      <StageIcon style={{ color: stage.color }} />
+                    </div>
+                    <span style={{ flex: 1 }}>{stage.label}</span>
+                    <span className="nav-stage-count">{stageCounts[stage.id] || 0}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Profile Card */}
+        <div className="sidebar-foot" style={{ marginTop: 'auto', paddingTop: 12 }}>
+          <div className="profile-card">
+            <div className="profile-header">
+              <div className="profile-avatar">{(userData?.fullName || 'BP').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2)}</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div className="profile-name">{(userData?.fullName || 'PARTNER').toUpperCase()}</div>
+                <div className="profile-role">
+                  <ShieldCheck size={10} /> Verified Partner
+                </div>
+              </div>
+            </div>
+            <div className="profile-stats">
+              <div className="profile-stat">
+                <div className="profile-stat-val">{stageCounts['CLOSED_WON'] || 0}</div>
+                <div className="profile-stat-label">Won</div>
+              </div>
+              <div className="profile-stat">
+                <div className="profile-stat-val">{getTotalLeads()}</div>
+                <div className="profile-stat-label">Leads</div>
+              </div>
+            </div>
+            {onLogout && (
+              <button className="logout-btn" onClick={onLogout}>
+                <LogOut size={12} /> Logout
+              </button>
+            )}
+          </div>
+        </div>
+      </aside>
 
       <main className="main">
         {/* Topbar */}
         <div className="topbar">
           <div className="topbar-left">
             <div className="search">
-              <Search size={16} style={{ color: 'var(--text-muted)', flexShrink:0 }} />
+              <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               <input
                 placeholder={
                   activeNav === 'pipeline' ? 'Search leads…' :
-                  activeNav === 'trade_intents' || activeNav === 'my_intents' ? 'Search intents by title or category…' :
-                  'Search…'
+                    activeNav === 'trade_intents' || activeNav === 'my_intents' ? 'Search intents by title or category…' :
+                      'Search…'
                 }
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -3229,7 +3314,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  style={{ background:'none', border:'none', cursor:'pointer', color: 'var(--text-muted)', padding:0, flexShrink:0 }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, flexShrink: 0 }}
                 >
                   <X size={14} />
                 </button>
@@ -3240,13 +3325,13 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           <div className="topbar-right">
             {activeNav === 'pipeline' && (
               <button className="refresh-btn" onClick={() => fetchPipeline(true)} disabled={refreshing}>
-                <RefreshCw size={13} style={refreshing ? { animation:'spin 1s linear infinite' } : {}} />
+                <RefreshCw size={13} style={refreshing ? { animation: 'spin 1s linear infinite' } : {}} />
                 {refreshing ? 'Refreshing…' : 'Refresh'}
               </button>
             )}
             {activeNav === 'trade_intents' && (
               <button className="refresh-btn" onClick={() => fetchIntents(intentPage)} disabled={intentsLoading}>
-                <RefreshCw size={13} style={intentsLoading ? { animation:'spin 1s linear infinite' } : {}} />
+                <RefreshCw size={13} style={intentsLoading ? { animation: 'spin 1s linear infinite' } : {}} />
                 Refresh
               </button>
             )}
@@ -3256,11 +3341,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                 <Plus size={15} /> Add Lead
               </button>
             )}
-            {(activeNav === 'trade_intents' || activeNav === 'my_intents') && (
-              <button className="add-btn" onClick={() => setShowCreateIntent(true)}>
-                <Plus size={15} /> New Intent
-              </button>
-            )}
+
 
             <div className="icon-btn"><Filter size={16} /></div>
 
@@ -3269,7 +3350,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               <span className="dot" />
             </div>
 
-            <div className="profile-avatar" style={{ width:40, height:40, borderRadius:12 }}>
+            <div className="profile-avatar" style={{ width: 40, height: 40, borderRadius: 12 }}>
               {getInitials(userData?.fullName || 'BP')}
             </div>
           </div>
@@ -3287,50 +3368,53 @@ export default function BusinessPartnerDashboard({ onLogout }) {
             }
           }}
         >
-          {/* Greeting Hero */}
-          <div className="greeting-hero">
-            <div className="greeting-inner">
-              <div className="greeting-diamond" />
-              <div className="greeting-text">
-                <h1>{getPageTitle()} <Sparkles size={20} style={{ color: 'var(--primary)' }} /></h1>
-                <p>
-                  <Target size={13} />
-                  {activeNav === 'pipeline' && `${getTotalLeads()} leads across ${PIPELINE_STAGES.length} stages`}
-                  {activeNav === 'trade_intents' && `Browse ${intents.length} live trade intents in the market`}
-                  {activeNav === 'my_intents' && `${myIntents.length} intents you created`}
-                  {!['pipeline','trade_intents','my_intents'].includes(activeNav) && 'Manage your business efficiently'}
-                  <Rocket size={13} />
-                </p>
+          {/* Greeting Hero & KPI Cards (only for pipeline & intents tabs) */}
+          {['pipeline', 'trade_intents', 'my_intents'].includes(activeNav) && (
+            <>
+              <div className="greeting-hero">
+                <div className="greeting-inner">
+                  <div className="greeting-diamond" />
+                  <div className="greeting-text">
+                    <h1>{getPageTitle()} <Sparkles size={20} style={{ color: 'var(--primary)' }} /></h1>
+                    <p>
+                      <Target size={13} />
+                      {activeNav === 'pipeline' && `${getTotalLeads()} leads across ${PIPELINE_STAGES.length} stages`}
+                      {activeNav === 'trade_intents' && `Browse ${intents.length} live trade intents in the market`}
+                      {activeNav === 'my_intents' && `${myIntents.length} intents you created`}
+                      <Rocket size={13} />
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* KPI Cards */}
-          <div className="kpi-row">
-            {kpiData.map(k => (
-              <div
-                className="kpi-card"
-                key={k.label}
-                style={{ '--kpi-color': k.color, '--kpi-color-dark': k.colorDark }}
-              >
-                <div className="kpi-icon">
-                  <k.icon />
-                </div>
-                <div className="kpi-label">{k.label}</div>
-                <div className="kpi-value">{k.value}</div>
-                <div className="kpi-delta">
-                  <ArrowUpRight size={12} /> {k.delta}
-                </div>
+              {/* KPI Cards */}
+              <div className="kpi-row">
+                {kpiData.map(k => (
+                  <div
+                    className="kpi-card"
+                    key={k.label}
+                    style={{ '--kpi-color': k.color, '--kpi-color-dark': k.colorDark }}
+                  >
+                    <div className="kpi-icon">
+                      <k.icon />
+                    </div>
+                    <div className="kpi-label">{k.label}</div>
+                    <div className="kpi-value">{k.value}</div>
+                    <div className="kpi-delta">
+                      <ArrowUpRight size={12} /> {k.delta}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
           {/* Pipeline Tab */}
           {activeNav === 'pipeline' && (
             <>
               {loading && (
                 <div className="bp-loading">
-                  <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:'linear' }}>
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
                     <Loader2 size={32} style={{ color: 'var(--primary)' }} />
                   </motion.div>
                   <div className="bp-loading-text">Loading your pipeline…</div>
@@ -3390,16 +3474,16 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                             <AnimatePresence>
                               {stageLeads.map((lead, li) => {
                                 const isInternal = lead.leadType === 'INTERNAL';
-                                const followUp   = formatFollowUp(lead.followUpDate);
+                                const followUp = formatFollowUp(lead.followUpDate);
                                 const companyInitials = getInitials(lead.companyName || lead.contactPerson);
                                 return (
                                   <motion.div
                                     key={lead.id}
                                     className="lead-card"
                                     layout
-                                    initial={{ opacity:0, y:12 }}
-                                    animate={{ opacity:1, y:0 }}
-                                    exit={{ opacity:0, scale:0.95 }}
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ delay: li * 0.05, duration: 0.35 }}
                                     onClick={() => { setSelectedLead(lead); setSelectedStage(stage.id); }}
                                     style={{
@@ -3489,7 +3573,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                                         )}
                                         {lead.phone && (
                                           <button className="lead-action-btn whatsapp" title="WhatsApp"
-                                            onClick={e => { e.stopPropagation(); window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g,'')}`, '_blank'); }}>
+                                            onClick={e => { e.stopPropagation(); window.open(`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`, '_blank'); }}>
                                             <MessageSquare size={13} />
                                           </button>
                                         )}
@@ -3546,7 +3630,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
 
               {intentsLoading ? (
                 <div className="bp-loading">
-                  <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:'linear' }}>
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
                     <Loader2 size={32} style={{ color: 'var(--primary)' }} />
                   </motion.div>
                   <div className="bp-loading-text">Loading market intents…</div>
@@ -3568,9 +3652,6 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                   <div className="empty-state-desc">
                     {searchQuery ? 'Try a different search' : 'Be the first to post a trade intent!'}
                   </div>
-                  <button className="add-btn" onClick={() => setShowCreateIntent(true)}>
-                    <Plus size={15} /> Create Intent
-                  </button>
                 </div>
               ) : (
                 <>
@@ -3613,52 +3694,13 @@ export default function BusinessPartnerDashboard({ onLogout }) {
             </div>
           )}
 
-          {/* My Intents Tab */}
-          {activeNav === 'my_intents' && (
-            <div className="panel">
-              <div className="panel-head">
-                <div>
-                  <div className="panel-title">My Trade Intents</div>
-                  <div className="panel-subtitle">Intents you have created</div>
-                </div>
-              </div>
 
-              {myIntentsLoading ? (
-                <div className="bp-loading">
-                  <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:'linear' }}>
-                    <Loader2 size={32} style={{ color: 'var(--primary)' }} />
-                  </motion.div>
-                  <div className="bp-loading-text">Loading your intents…</div>
-                </div>
-              ) : myIntents.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-state-icon-box"><Package /></div>
-                  <div className="empty-state-title">No intents yet</div>
-                  <div className="empty-state-desc">
-                    Create your first trade intent to get started
-                  </div>
-                  <button className="add-btn" onClick={() => setShowCreateIntent(true)}>
-                    <Plus size={15} /> Create Intent
-                  </button>
-                </div>
-              ) : (
-                <div className="intents-grid">
-                  <AnimatePresence mode="popLayout">
-                    {myIntents.map((intent) => (
-                      <IntentCard
-                        key={intent.id}
-                        intent={intent}
-                        onView={setSelectedIntent}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Meetings Tab */}
           {activeNav === 'meetings' && <MeetingsTab />}
+
+          {/* Strategic Partnerships Tab */}
+          {activeNav === 'partnerships' && <PartnershipsTab />}
 
           {/* Events Tab */}
           {activeNav === 'events' && <EventsTab />}
@@ -3670,8 +3712,8 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           {['my_leads', 'deals', 'commissions'].includes(activeNav) && (
             <div className="coming-soon">
               <div className="coming-soon-icon">
-                {activeNav === 'my_leads'    && <Users />}
-                {activeNav === 'deals'       && <Handshake />}
+                {activeNav === 'my_leads' && <Users />}
+                {activeNav === 'deals' && <Handshake />}
                 {activeNav === 'commissions' && <Wallet />}
               </div>
               <div className="coming-soon-title">{getPageTitle()} — Coming Soon</div>
@@ -3729,15 +3771,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showCreateIntent && (
-          <CreateIntentModal
-            onClose={() => setShowCreateIntent(false)}
-            onSuccess={handleIntentCreated}
-            showToast={showToast}
-          />
-        )}
-      </AnimatePresence>
+
 
       <AnimatePresence>
         {toast && (
@@ -3752,7 +3786,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
       <button
         ref={scrollBtnRef}
         className="scroll-top-btn"
-        onClick={() => document.getElementById('bp-main-scroll')?.scrollTo({ top:0, behavior:'smooth' })}
+        onClick={() => document.getElementById('bp-main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' })}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="18 15 12 9 6 15" />

@@ -120,17 +120,11 @@ export const validateMeetingPayload = (payload = {}, user = {}) => {
   // Role permissions check (§1 & §2)
   if (roleCategory === 'MEMBER') {
     if (payload.requestType !== MEETING_REQUEST_TYPES.DIRECT) {
-      errors.push('Plain members can only schedule 1-to-1 direct meetings inside active deal room chats.');
-    }
-  } else if (roleCategory === 'GENERAL_SECTOR_OPERATOR') {
-    if (payload.requestType === MEETING_REQUEST_TYPES.FRANCHISE_DOWNLINE) {
-      errors.push('FRANCHISE_DOWNLINE is not available for General/Sector Operators as there are no downline franchises.');
-    } else if (payload.requestType === MEETING_REQUEST_TYPES.ALL) {
-      errors.push('The ALL scenario is reserved for Master Operators and Global Admins. Use "Hold Your Franchise Meeting" (SPECIFIC_FRANCHISE) instead.');
+      errors.push('Members can only schedule direct meetings.');
     }
   }
 
-  // Scenario specific fields
+  // Scenario specific fields (§7 Payload Checklist)
   switch (payload.requestType) {
     case MEETING_REQUEST_TYPES.DIRECT:
       if (!payload.conversationId) {
@@ -146,18 +140,13 @@ export const validateMeetingPayload = (payload = {}, user = {}) => {
 
     case MEETING_REQUEST_TYPES.SPECIFIC_FRANCHISE:
       if (!Array.isArray(payload.franchiseIds) || payload.franchiseIds.length === 0) {
-        errors.push('At least one franchise must be selected.');
+        errors.push('Please select at least one franchise.');
       }
       break;
 
     case MEETING_REQUEST_TYPES.FRANCHISE_DOWNLINE:
-      if (roleCategory === 'GLOBAL_ADMIN' && !payload.franchiseId) {
-        errors.push('Global Admin must select a target franchise to inspect and invite its downline network.');
-      }
-      break;
-
     case MEETING_REQUEST_TYPES.ALL:
-      // No extra fields required
+      // No extra fields required per §7 Payload Checklist
       break;
 
     default:
@@ -213,11 +202,6 @@ export const buildMeetingPayload = (form = {}) => {
       };
 
     case MEETING_REQUEST_TYPES.FRANCHISE_DOWNLINE:
-      return {
-        ...basePayload,
-        ...(form.franchiseId && { franchiseId: Number(form.franchiseId) }),
-      };
-
     case MEETING_REQUEST_TYPES.ALL:
     default:
       return basePayload;

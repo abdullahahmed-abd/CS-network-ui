@@ -9,6 +9,7 @@ const navItems = [
   { id: 'directory',   label: 'Directory',   icon: '📖' },
   { id: 'events',      label: 'Events',      icon: '🎉' },
   { id: 'meetings',    label: 'Meetings',    icon: '📅' },
+  { id: 'partnerships',label: 'Partnerships',icon: '🤝' },
   { id: 'users',       label: 'Users',       icon: '👥' },
   { id: 'settings',    label: 'Settings',    icon: '⚙️' },
 ];

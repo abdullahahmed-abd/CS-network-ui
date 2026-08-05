@@ -12,6 +12,7 @@ import InvitationsTab from './tabs/InvitationsTab';
 import EventsTab      from './tabs/EventsTab';
 import MeetingsTab    from '../meetings/MeetingsTab';
 import DirectoryTab   from '../directory/DirectoryTab';
+import PartnershipsTab from '../partnerships/PartnershipsTab';
 
 // ── Placeholder Tab ───────────────────────
 function PlaceholderTab({ name }) {
@@ -102,6 +103,7 @@ export default function GlobalAdminDashboard({ onLogout }) {
               {activeNav === 'directory'   && <DirectoryTab />}
               {activeNav === 'events'      && <EventsTab />}
               {activeNav === 'meetings'    && <MeetingsTab />}
+              {activeNav === 'partnerships'&& <PartnershipsTab />}
               {activeNav === 'users'       && <PlaceholderTab name="users" />}
               {activeNav === 'settings'    && <PlaceholderTab name="settings" />}
             </motion.div>
