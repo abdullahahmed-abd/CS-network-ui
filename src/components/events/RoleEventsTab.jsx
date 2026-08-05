@@ -45,14 +45,14 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
     try {
       let res;
       if (activeSubTab === 'MY_EVENTS') {
-        if (isOperator) res = await fetchFranchiseOperatorEvents(pg, 10);
-        else if (isMaster) res = await fetchMasterOperatorEvents(pg, 10);
-        else if (isAdmin) res = await fetchGlobalAdminMyEvents(pg, 10);
+        if (isOperator) res = await fetchFranchiseOperatorEvents(pg, 100);
+        else if (isMaster) res = await fetchMasterOperatorEvents(pg, 100);
+        else if (isAdmin) res = await fetchGlobalAdminMyEvents(pg, 100);
       } else if (activeSubTab === 'ALL_EVENTS' && isAdmin) {
-        res = await fetchAllGlobalEvents(pg, 10);
+        res = await fetchAllGlobalEvents(pg, 100);
       } else if (activeSubTab === 'PENDING_APPROVALS') {
-        if (isMaster) res = await fetchMasterPendingEventRequests(pg, 10);
-        else if (isAdmin) res = await fetchGlobalAdminPendingEventRequests(pg, 10);
+        if (isMaster) res = await fetchMasterPendingEventRequests(pg, 100);
+        else if (isAdmin) res = await fetchGlobalAdminPendingEventRequests(pg, 100);
       }
 
       setEvents(res?.events || []);

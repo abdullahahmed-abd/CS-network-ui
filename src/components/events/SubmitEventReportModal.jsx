@@ -97,9 +97,9 @@ export default function SubmitEventReportModal({
           <button onClick={onClose} style={{ border: 'none', background: 'transparent', fontSize: 20, cursor: 'pointer', color: '#94A3B8' }}>×</button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, color: '#000000' }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#000000', marginBottom: 6 }}>
               Total Attendees *
             </label>
             <input
@@ -111,13 +111,14 @@ export default function SubmitEventReportModal({
               style={{
                 width: '100%', padding: '10px 14px', borderRadius: 12,
                 border: '1px solid #CBD5E1', outline: 'none', fontSize: 13,
+                color: '#000000', fontWeight: 700, background: '#FFFFFF', boxSizing: 'border-box'
               }}
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#000000', marginBottom: 6 }}>
                 Total Expense *
               </label>
               <input
@@ -129,11 +130,12 @@ export default function SubmitEventReportModal({
                 style={{
                   width: '100%', padding: '10px 14px', borderRadius: 12,
                   border: '1px solid #CBD5E1', outline: 'none', fontSize: 13,
+                  color: '#000000', fontWeight: 700, background: '#FFFFFF', boxSizing: 'border-box'
                 }}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#000000', marginBottom: 6 }}>
                 Currency
               </label>
               <select
@@ -141,20 +143,21 @@ export default function SubmitEventReportModal({
                 onChange={(e) => setExpenseCurrency(e.target.value)}
                 style={{
                   width: '100%', padding: '10px 14px', borderRadius: 12,
-                  border: '1px solid #CBD5E1', outline: 'none', fontSize: 13, background: '#fff',
+                  border: '1px solid #CBD5E1', outline: 'none', fontSize: 13,
+                  color: '#000000', fontWeight: 700, background: '#FFFFFF', boxSizing: 'border-box'
                 }}
               >
-                <option value="INR">INR ₹</option>
-                <option value="AED">AED د.إ</option>
-                <option value="USD">USD $</option>
-                <option value="EUR">EUR €</option>
-                <option value="GBP">GBP £</option>
+                <option value="INR" style={{ color: '#000000', fontWeight: 700 }}>INR ₹</option>
+                <option value="AED" style={{ color: '#000000', fontWeight: 700 }}>AED د.إ</option>
+                <option value="USD" style={{ color: '#000000', fontWeight: 700 }}>USD $</option>
+                <option value="EUR" style={{ color: '#000000', fontWeight: 700 }}>EUR €</option>
+                <option value="GBP" style={{ color: '#000000', fontWeight: 700 }}>GBP £</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#000000', marginBottom: 6 }}>
               Report Notes *
             </label>
             <textarea
@@ -165,6 +168,7 @@ export default function SubmitEventReportModal({
               style={{
                 width: '100%', padding: '10px 14px', borderRadius: 12,
                 border: '1px solid #CBD5E1', outline: 'none', fontSize: 13, resize: 'none',
+                color: '#000000', fontWeight: 700, background: '#FFFFFF', boxSizing: 'border-box'
               }}
             />
           </div>

@@ -412,7 +412,7 @@ function InviteLinkCard({ inviteData, onRefresh, refreshLoading, onCopy, accent 
           style={{
             flex: 1, padding: '12px 14px', borderRadius: T.radius.md,
             border: `1px solid ${T.border.light}`, background: '#F9FAFB',
-            fontSize: 13, fontFamily: 'monospace', fontWeight: 600, color: T.text.primary,
+            fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color: '#000000',
           }}
         />
         <Btn onClick={() => onCopy(inviteLink)} accent={accent}>📋 Copy</Btn>
@@ -833,7 +833,7 @@ function GeneralFranchiseTab({ cfg }) {
               </div>
               {f.inviteLink && (
                 <div style={{ marginBottom: 12, background: '#F8FAFC', padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#334155', wordBreak: 'break-all' }}>{f.inviteLink}</div>
+                  <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#0f172a', fontWeight: 700, wordBreak: 'break-all' }}>{f.inviteLink}</div>
                   <motion.button onClick={() => copyLink(f.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     style={{ padding: '4px 10px', borderRadius: 6, background: '#2563EB', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}
                   >📋 Copy</motion.button>
@@ -888,7 +888,7 @@ function GeneralFranchiseTab({ cfg }) {
                       General Operator Invite Link:
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '10px 12px', borderRadius: 10, border: '1px solid #BBF7D0' }}>
-                      <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#166534', wordBreak: 'break-all' }}>
+                      <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#000000', fontWeight: 700, wordBreak: 'break-all' }}>
                         {createResult.inviteLink}
                       </div>
                       <motion.button onClick={() => copyLink(createResult.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -935,7 +935,7 @@ function GeneralFranchiseTab({ cfg }) {
                 <p style={{ fontSize: 14, fontWeight: 800, color: '#166534', margin: '0 0 12px' }}>✅ General Operator Invite Link Ready!</p>
                 {inviteResult.inviteLink ? (
                   <>
-                    <div style={{ fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all', background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #BBF7D0', color: '#1A3A1A', marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all', background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #BBF7D0', color: '#000000', fontWeight: 700, marginBottom: 14 }}>
                       {inviteResult.inviteLink}
                     </div>
                     <Btn fullWidth onClick={() => copyLink(inviteResult.inviteLink)} accent="#10B981">
@@ -1094,7 +1094,7 @@ function SectorFranchiseTab({ cfg }) {
               </div>
               {f.inviteLink && (
                 <div style={{ marginBottom: 12, background: '#F8FAFC', padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#334155', wordBreak: 'break-all' }}>{f.inviteLink}</div>
+                  <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#000000', fontWeight: 700, wordBreak: 'break-all' }}>{f.inviteLink}</div>
                   <motion.button onClick={() => copyLink(f.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     style={{ padding: '4px 10px', borderRadius: 6, background: '#059669', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}
                   >📋 Copy</motion.button>
@@ -1137,7 +1137,7 @@ function SectorFranchiseTab({ cfg }) {
                       Sector Operator Invite Link:
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '10px 12px', borderRadius: 10, border: '1px solid #BBF7D0' }}>
-                      <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#166534', wordBreak: 'break-all' }}>
+                      <div style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', color: '#000000', fontWeight: 700, wordBreak: 'break-all' }}>
                         {createResult.inviteLink}
                       </div>
                       <motion.button onClick={() => copyLink(createResult.inviteLink)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -1184,7 +1184,7 @@ function SectorFranchiseTab({ cfg }) {
                 <p style={{ fontSize: 14, fontWeight: 800, color: '#166534', margin: '0 0 12px' }}>✅ Sector Operator Invite Link Ready!</p>
                 {inviteResult.inviteLink ? (
                   <>
-                    <div style={{ fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all', background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #BBF7D0', color: '#1A3A1A', marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all', background: '#fff', padding: 12, borderRadius: 10, border: '1px solid #BBF7D0', color: '#000000', fontWeight: 700, marginBottom: 14 }}>
                       {inviteResult.inviteLink}
                     </div>
                     <Btn fullWidth onClick={() => copyLink(inviteResult.inviteLink)} accent="#10B981">

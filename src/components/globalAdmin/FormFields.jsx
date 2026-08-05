@@ -7,8 +7,8 @@ export function InputField({ label, value, onChange, placeholder, disabled }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <label style={{
-        display: 'block', fontSize: 12, fontWeight: 700,
-        color: '#1A3A1A', marginBottom: 6,
+        display: 'block', fontSize: 12, fontWeight: 800,
+        color: '#000000', marginBottom: 6,
       }}>{label}</label>
       <input
         type="text"
@@ -18,15 +18,15 @@ export function InputField({ label, value, onChange, placeholder, disabled }) {
         disabled={disabled}
         style={{
           width: '100%', padding: '12px 16px', borderRadius: 12,
-          border: '1px solid #E8F0E0',
+          border: '1px solid #CBD5E1',
           background: disabled ? '#F7FAF4' : '#fff',
-          fontSize: 14, fontWeight: 500, color: '#1A3A1A',
+          fontSize: 14, fontWeight: 700, color: '#000000',
           fontFamily: 'Manrope, sans-serif', outline: 'none',
           transition: 'border 0.2s', boxSizing: 'border-box',
           opacity: disabled ? 0.7 : 1,
         }}
         onFocus={(e) => { if (!disabled) e.target.style.borderColor = '#16A34A'; }}
-        onBlur={(e)  => { e.target.style.borderColor = '#E8F0E0'; }}
+        onBlur={(e)  => { e.target.style.borderColor = '#CBD5E1'; }}
       />
     </div>
   );
@@ -37,8 +37,8 @@ export function TextareaField({ label, value, onChange, placeholder, rows = 3 })
   return (
     <div style={{ marginBottom: 16 }}>
       <label style={{
-        display: 'block', fontSize: 12, fontWeight: 700,
-        color: '#1A3A1A', marginBottom: 6,
+        display: 'block', fontSize: 12, fontWeight: 800,
+        color: '#000000', marginBottom: 6,
       }}>{label}</label>
       <textarea
         value={value}
@@ -47,14 +47,14 @@ export function TextareaField({ label, value, onChange, placeholder, rows = 3 })
         rows={rows}
         style={{
           width: '100%', padding: '12px 16px', borderRadius: 12,
-          border: '1px solid #E8F0E0', background: '#fff',
-          fontSize: 14, fontWeight: 500, color: '#1A3A1A',
+          border: '1px solid #CBD5E1', background: '#fff',
+          fontSize: 14, fontWeight: 700, color: '#000000',
           fontFamily: 'Manrope, sans-serif', outline: 'none',
           transition: 'border 0.2s', resize: 'vertical',
           boxSizing: 'border-box',
         }}
         onFocus={(e) => { e.target.style.borderColor = '#16A34A'; }}
-        onBlur={(e)  => { e.target.style.borderColor = '#E8F0E0'; }}
+        onBlur={(e)  => { e.target.style.borderColor = '#CBD5E1'; }}
       />
     </div>
   );
@@ -65,23 +65,25 @@ export function SelectField({ label, value, onChange, options }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <label style={{
-        display: 'block', fontSize: 12, fontWeight: 700,
-        color: '#1A3A1A', marginBottom: 6,
+        display: 'block', fontSize: 12, fontWeight: 800,
+        color: '#000000', marginBottom: 6,
       }}>{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{
           width: '100%', padding: '12px 16px', borderRadius: 12,
-          border: '1px solid #E8F0E0', background: '#fff',
-          fontSize: 14, fontWeight: 500, color: '#1A3A1A',
+          border: '1px solid #CBD5E1', background: '#fff',
+          fontSize: 14, fontWeight: 700, color: '#000000',
           fontFamily: 'Manrope, sans-serif', outline: 'none',
           cursor: 'pointer', boxSizing: 'border-box',
         }}
       >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
+        {options.map((opt) => {
+          const val = typeof opt === 'string' ? opt : opt.value;
+          const lbl = typeof opt === 'string' ? opt : opt.label;
+          return <option key={val} value={val} style={{ color: '#000000', fontWeight: 700 }}>{lbl}</option>;
+        })}
       </select>
     </div>
   );
@@ -92,8 +94,8 @@ export function DateTimeField({ label, value, onChange }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <label style={{
-        display: 'block', fontSize: 12, fontWeight: 700,
-        color: '#1A3A1A', marginBottom: 6,
+        display: 'block', fontSize: 12, fontWeight: 800,
+        color: '#000000', marginBottom: 6,
       }}>{label}</label>
       <input
         type="datetime-local"
@@ -102,8 +104,8 @@ export function DateTimeField({ label, value, onChange }) {
         onChange={(e) => onChange(e.target.value)}
         style={{
           width: '100%', padding: '12px 16px', borderRadius: 12,
-          border: '1px solid #E8F0E0', background: '#fff',
-          fontSize: 14, fontWeight: 500, color: '#1A3A1A',
+          border: '1px solid #CBD5E1', background: '#fff',
+          fontSize: 14, fontWeight: 700, color: '#000000',
           fontFamily: 'Manrope, sans-serif', outline: 'none',
           boxSizing: 'border-box',
         }}
@@ -118,7 +120,7 @@ export function CheckboxField({ label, checked, onChange }) {
     <label style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '12px 16px', borderRadius: 12,
-      border: '1px solid #E8F0E0', background: '#fff',
+      border: '1px solid #CBD5E1', background: '#fff',
       cursor: 'pointer', marginBottom: 16,
     }}>
       <input
@@ -127,7 +129,7 @@ export function CheckboxField({ label, checked, onChange }) {
         onChange={(e) => onChange(e.target.checked)}
         style={{ width: 18, height: 18, accentColor: '#16A34A', cursor: 'pointer' }}
       />
-      <span style={{ fontSize: 13, fontWeight: 700, color: '#1A3A1A' }}>
+      <span style={{ fontSize: 13, fontWeight: 800, color: '#000000' }}>
         {label}
       </span>
     </label>

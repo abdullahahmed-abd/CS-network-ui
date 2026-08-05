@@ -152,7 +152,7 @@ export default function OverviewTab({ onNavigate }) {
   }, []);
 
   const quickActions = [
-    { label: 'Media Hub',        icon: '🎬', desc: 'Manage YouTube videos & sections',     nav: 'media_hub' },
+    { label: 'Media Hub',        icon: '🎬', desc: 'Manage YouTube videos',            nav: 'media_hub' },
     { label: 'Create Franchise', icon: '🏢', desc: 'Create master franchise for a country', nav: 'franchises' },
     { label: 'Send Invitation',  icon: '📨', desc: 'Invite operator for a franchise',       nav: 'invitations' },
     { label: 'Manage Events',    icon: '🎉', desc: 'Create events & manage registrations',  nav: 'events' },

@@ -77,7 +77,7 @@ export default function RejectEventModal({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#000000', marginBottom: 6 }}>
               Reason for Rejection (Mandatory) *
             </label>
             <textarea
@@ -88,7 +88,7 @@ export default function RejectEventModal({
               style={{
                 width: '100%', padding: '10px 14px', borderRadius: 12,
                 border: '1px solid #FCA5A5', outline: 'none', fontSize: 13, resize: 'none',
-                background: '#FEF2F2',
+                background: '#FEF2F2', color: '#000000', fontWeight: 700,
               }}
             />
           </div>
