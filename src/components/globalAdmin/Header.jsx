@@ -8,8 +8,18 @@ import { resolvePhotoUrl } from '../../api/profileOperationsApi';
 
 export default function Header({ activeNav, sidebarOpen, onToggleSidebar }) {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const user = getUserData() || {};
-  const photoUrl = resolvePhotoUrl(user.profilePhotoUrl);
+
+  // Store photoUrl in state so it updates after upload without page reload
+  const [photoUrl, setPhotoUrl] = useState(() => {
+    const user = getUserData() || {};
+    return resolvePhotoUrl(user.profilePhotoUrl);
+  });
+
+  const handleProfileUpdated = (updatedProfile) => {
+    if (updatedProfile?.profilePhotoUrl) {
+      setPhotoUrl(resolvePhotoUrl(updatedProfile.profilePhotoUrl));
+    }
+  };
 
   return (
     <>
@@ -72,6 +82,7 @@ export default function Header({ activeNav, sidebarOpen, onToggleSidebar }) {
                 src={photoUrl}
                 alt="Profile"
                 style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+                onError={(e) => { e.target.style.display = 'none'; }}
               />
             ) : (
               <div style={{
@@ -108,6 +119,7 @@ export default function Header({ activeNav, sidebarOpen, onToggleSidebar }) {
       <MyProfileModal
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
+        onProfileUpdated={handleProfileUpdated}
       />
     </>
   );

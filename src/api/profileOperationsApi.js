@@ -135,17 +135,44 @@ export const fetchMyProfile = async () => {
 };
 
 /**
- * Helper to construct full, cache-busted image URLs
+ * Helper to construct image URLs for display.
+ *
+ * WHY THIS MATTERS:
+ * Browsers cannot send custom headers (like ngrok-skip-browser-warning)
+ * on <img src> or CSS background-image requests.
+ * ngrok returns its HTML warning page instead of the actual image.
+ *
+ * SOLUTION:
+ * Strip the ngrok domain from /uploads paths → use local Vite proxy path.
+ * Vite proxy adds the ngrok header server-side → ngrok serves the real image.
+ *
+ * e.g. https://ngrok-xyz.ngrok-free.app/uploads/photo.jpg
+ *       → /uploads/photo.jpg  (proxied via Vite with ngrok header)
  */
 export const resolvePhotoUrl = (rawUrl) => {
   if (!rawUrl) return null;
 
-  let fullUrl = rawUrl;
-  if (rawUrl.startsWith('/')) {
-    fullUrl = `${BASE_URL}${rawUrl}`;
+  // Already a local proxy path — just add cache buster
+  if (rawUrl.startsWith('/uploads/')) {
+    return `${rawUrl}?t=${Date.now()}`;
   }
 
-  // Cache buster to prevent stale image caching
-  const separator = fullUrl.includes('?') ? '&' : '?';
-  return `${fullUrl}${separator}t=${Date.now()}`;
+  // Full ngrok URL with /uploads path → strip domain, use Vite proxy
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.pathname.startsWith('/uploads/')) {
+      return `${parsed.pathname}?t=${Date.now()}`;
+    }
+  } catch {
+    // Not a valid URL, fall through
+  }
+
+  // Relative path without /uploads prefix
+  if (rawUrl.startsWith('/')) {
+    return `${BASE_URL}${rawUrl}?t=${Date.now()}`;
+  }
+
+  // Absolute URL (non-ngrok CDN etc.) — use as-is with cache buster
+  const separator = rawUrl.includes('?') ? '&' : '?';
+  return `${rawUrl}${separator}t=${Date.now()}`;
 };

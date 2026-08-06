@@ -11,7 +11,18 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       // Proxy /profile-operations → ngrok backend (bypasses CORS preflight)
-      'cs-network/profile-operations': {
+      '/cs-network/profile-operations': {
+        target: BACKEND,
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('ngrok-skip-browser-warning', 'true');
+          });
+        },
+      },
+      // Proxy /uploads → ngrok backend (for images — browsers can't send custom headers)
+      '/uploads': {
         target: BACKEND,
         changeOrigin: true,
         secure: false,
