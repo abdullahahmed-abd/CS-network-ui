@@ -14,6 +14,7 @@ import {
 import CreateEventModal from '../globalAdmin/events/CreateEventModal';
 import SubmitEventReportModal from './SubmitEventReportModal';
 import RejectEventModal from './RejectEventModal';
+import EventCoverUploadModal from './EventCoverUploadModal';
 
 export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
   const isOperator = userRole === 'FRANCHISE_OPERATOR';
@@ -34,6 +35,7 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
   const [editingEvent, setEditingEvent] = useState(null);
   const [reportingEvent, setReportingEvent] = useState(null);
   const [rejectingEvent, setRejectingEvent] = useState(null);
+  const [uploadCoverEvent, setUploadCoverEvent] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -282,6 +284,18 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
                         </button>
                       )}
 
+                      {isAdmin && (
+                        <button
+                          onClick={() => setUploadCoverEvent(ev)}
+                          style={{
+                            flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #16A34A',
+                            background: '#F0FDF4', color: '#15803D', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                          }}
+                        >
+                          📷 Upload Cover
+                        </button>
+                      )}
+
                       {canReport && (
                         <button
                           onClick={() => setReportingEvent(ev)}
@@ -364,6 +378,22 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
             loadData(page);
           }}
           onError={(err) => showToast(err, 'error')}
+        />
+      )}
+
+      {/* Event Cover Photo Upload Modal */}
+      {uploadCoverEvent && (
+        <EventCoverUploadModal
+          eventId={uploadCoverEvent.id}
+          eventTitle={uploadCoverEvent.title}
+          currentCoverUrl={uploadCoverEvent.coverImageUrl}
+          isOpen={Boolean(uploadCoverEvent)}
+          onClose={() => setUploadCoverEvent(null)}
+          onUploadSuccess={() => {
+            showToast('Event cover photo updated successfully!');
+            loadData(page);
+            setUploadCoverEvent(null);
+          }}
         />
       )}
     </div>

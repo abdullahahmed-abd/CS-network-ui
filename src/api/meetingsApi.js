@@ -234,7 +234,7 @@ export const scheduleMeeting = async (formPayload) => {
     console.warn('⚠️ apiCall /meetings failed, retrying direct endpoint...', err.message);
     // Fallback attempt directly to /meetings if cs-network prefix differs
     try {
-      return await authenticatedFetch(`${BASE_URL}/meetings`, {
+      return await authenticatedFetch('/meetings', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -263,7 +263,7 @@ export const fetchEligibleFranchises = async ({ search = '', page = 0, size = 10
   try {
     return await apiCall('/meetings', { method: 'POST', body });
   } catch (err) {
-    return await authenticatedFetch(`${BASE_URL}/meetings`, {
+    return await authenticatedFetch('/meetings', {
       method: 'POST',
       body: JSON.stringify(body),
     });
@@ -292,7 +292,7 @@ export const fetchEligibleUsers = async ({ search = '', franchiseIds, page = 0, 
       return await apiCall('/meetings', { method: 'POST', body: buildBody(undefined) });
     }
     try {
-      return await authenticatedFetch(`${BASE_URL}/meetings`, {
+      return await authenticatedFetch('/meetings', {
         method: 'POST',
         body: JSON.stringify(buildBody(franchiseIds)),
       });
@@ -319,7 +319,7 @@ export const fetchDownlinePreview = async ({ franchiseId, page = 0, size = 100 }
   try {
     return await apiCall('/meetings', { method: 'POST', body });
   } catch (err) {
-    return await authenticatedFetch(`${BASE_URL}/meetings`, {
+    return await authenticatedFetch('/meetings', {
       method: 'POST',
       body: JSON.stringify(body),
     });

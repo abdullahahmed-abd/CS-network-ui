@@ -7,6 +7,7 @@ import {
   updateFranchiseOperatorEvent,
   updateMasterOperatorEvent,
 } from '../../../api/eventsApi';
+import { uploadEventCoverPhoto, resolvePhotoUrl } from '../../../api/profileOperationsApi';
 import {
   InputField, TextareaField, SelectField,
   DateTimeField, CheckboxField, GreenButton,
@@ -26,6 +27,10 @@ export default function CreateEventModal({
   const isEditing = Boolean(editEvent);
 
   const [loading, setLoading]           = useState(false);
+  const [createdEvent, setCreatedEvent]   = useState(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverError, setCoverError]     = useState(null);
+  const [coverSuccess, setCoverSuccess] = useState('');
   const [title, setTitle]               = useState(editEvent?.title || '');
   const [description, setDescription]   = useState(editEvent?.description || '');
   const [eventType, setEventType]       = useState(editEvent?.eventType || 'ONLINE');
@@ -168,13 +173,48 @@ export default function CreateEventModal({
           res = await createGlobalAdminEvent(payload);
         }
       }
-      onCreated?.(res?.event || res);
-      onClose();
+      const savedEvent = res?.event || res;
+      onCreated?.(savedEvent);
+
+      const savedId = savedEvent?.id || savedEvent?.eventId;
+      if (!isEditing && savedId) {
+        setCreatedEvent({
+          id: savedId,
+          title: title.trim(),
+          coverImageUrl: coverImageUrl,
+        });
+      } else {
+        onClose();
+      }
     } catch (err) {
       console.error('Event save error:', err);
       onError?.(err.message || 'Failed to save event');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !createdEvent?.id) return;
+
+    setCoverUploading(true);
+    setCoverError(null);
+    setCoverSuccess('');
+
+    try {
+      const res = await uploadEventCoverPhoto(createdEvent.id, file);
+      const formattedUrl = res?.fileUrl ? resolvePhotoUrl(res.fileUrl) : null;
+      setCoverSuccess(res?.message || 'Event photo updated successfully.');
+      setCreatedEvent((prev) => ({
+        ...prev,
+        coverImageUrl: formattedUrl || prev.coverImageUrl,
+      }));
+    } catch (err) {
+      console.error('Failed to upload event cover photo:', err);
+      setCoverError(err.message || 'Failed to upload cover photo.');
+    } finally {
+      setCoverUploading(false);
     }
   };
 
@@ -202,38 +242,124 @@ export default function CreateEventModal({
           fontFamily: 'Manrope, sans-serif',
         }}
       >
-        {/* Modal Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: 20, position: 'sticky', top: 0,
-          background: '#fff', zIndex: 2, paddingBottom: 10,
-          borderBottom: '1px solid #F0F0F0',
-        }}>
-          <div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1A3A1A', margin: 0 }}>
-              🎉 {isEditing ? 'Edit Event' : 'Create Event'}
+        {/* Post-Creation Cover Upload View */}
+        {createdEvent ? (
+          <div style={{ textAlign: 'center', padding: '10px 0' }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%', background: '#DCFCE7',
+              color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 28, margin: '0 auto 16px', border: '1px solid #BBF7D0',
+            }}>
+              🎉
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: '#1A3A1A', margin: '0 0 6px' }}>
+              Event #{createdEvent.id} Created!
             </h3>
-            <p style={{ fontSize: 11, color: '#6B8F71', margin: '4px 0 0', fontWeight: 500 }}>
-              {isOperator
-                ? 'Submitted for approval. Your Master Operator will review first.'
-                : isMaster
-                ? 'Submitted for approval. Global Admin will review.'
-                : 'Create & publish a new event'}
+            <p style={{ fontSize: 13, color: '#6B8F71', margin: '0 0 20px', fontWeight: 600 }}>
+              {createdEvent.title}
             </p>
+
+            {coverError && (
+              <div style={{
+                padding: '10px 14px', borderRadius: 12, background: '#FEE2E2',
+                border: '1px solid #FCA5A5', color: '#991B1B', fontSize: 12,
+                fontWeight: 700, marginBottom: 16,
+              }}>
+                ⚠️ {coverError}
+              </div>
+            )}
+            {coverSuccess && (
+              <div style={{
+                padding: '10px 14px', borderRadius: 12, background: '#DCFCE7',
+                border: '1px solid #86EFAC', color: '#166534', fontSize: 12,
+                fontWeight: 700, marginBottom: 16,
+              }}>
+                ✅ {coverSuccess}
+              </div>
+            )}
+
+            {/* Upload Area / Cover Preview */}
+            <div style={{
+              background: createdEvent.coverImageUrl
+                ? `url(${resolvePhotoUrl(createdEvent.coverImageUrl)}) center/cover`
+                : '#F8FAFC',
+              height: 180, borderRadius: 16, border: '2px dashed #CBD5E1',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              position: 'relative', overflow: 'hidden', marginBottom: 20,
+            }}>
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: createdEvent.coverImageUrl ? 'rgba(0,0,0,0.35)' : 'transparent',
+              }} />
+
+              <label
+                style={{
+                  position: 'relative', zIndex: 2, cursor: coverUploading ? 'not-allowed' : 'pointer',
+                  padding: '10px 20px', borderRadius: 12,
+                  background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                  color: '#fff', fontSize: 13, fontWeight: 800,
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  boxShadow: '0 4px 14px rgba(22,163,74,0.4)',
+                }}
+              >
+                <span>{coverUploading ? '⏳ Uploading...' : '📷 Upload Cover Image'}</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleCoverUpload}
+                  disabled={coverUploading}
+                  style={{ display: 'none' }}
+                />
+              </label>
+              <p style={{
+                position: 'relative', zIndex: 2, fontSize: 11,
+                color: createdEvent.coverImageUrl ? '#fff' : '#64748B',
+                marginTop: 8, fontWeight: 600,
+              }}>
+                Allowed: JPEG, PNG, WEBP, GIF (Max 5MB)
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <GreenButton onClick={onClose}>
+                ✅ Finish & Close
+              </GreenButton>
+            </div>
           </div>
-          <motion.button
-            onClick={onClose}
-            whileHover={{ scale: 1.1, background: '#FEE2E2' }}
-            whileTap={{ scale: 0.9 }}
-            style={{
-              width: 32, height: 32, borderRadius: 10,
-              border: '1px solid #F0F0F0', background: '#F9FAFB',
-              cursor: 'pointer', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, color: '#6B7280',
-            }}
-          >×</motion.button>
-        </div>
+        ) : (
+          <>
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: 20, position: 'sticky', top: 0,
+              background: '#fff', zIndex: 2, paddingBottom: 10,
+              borderBottom: '1px solid #F0F0F0',
+            }}>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1A3A1A', margin: 0 }}>
+                  🎉 {isEditing ? 'Edit Event' : 'Create Event'}
+                </h3>
+                <p style={{ fontSize: 11, color: '#6B8F71', margin: '4px 0 0', fontWeight: 500 }}>
+                  {isOperator
+                    ? 'Submitted for approval. Your Master Operator will review first.'
+                    : isMaster
+                    ? 'Submitted for approval. Global Admin will review.'
+                    : 'Create & publish a new event'}
+                </p>
+              </div>
+              <motion.button
+                onClick={onClose}
+                whileHover={{ scale: 1.1, background: '#FEE2E2' }}
+                whileTap={{ scale: 0.9 }}
+                style={{
+                  width: 32, height: 32, borderRadius: 10,
+                  border: '1px solid #F0F0F0', background: '#F9FAFB',
+                  cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  fontSize: 16, color: '#6B7280',
+                }}
+              >×</motion.button>
+            </div>
 
         {/* Warning banner when editing an operator event */}
         {isEditing && isOperator && (
@@ -416,6 +542,8 @@ export default function CreateEventModal({
             </GreenButton>
           </div>
         </div>
+        </>
+        )}
       </motion.div>
     </motion.div>
   );

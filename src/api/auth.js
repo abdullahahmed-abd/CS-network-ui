@@ -1,6 +1,6 @@
 // api/auth.js
 
-const BASE_URL =
+export const BASE_URL =
   'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
 
 // ── Storage helpers ───────────────────────────────────────────────────────────

@@ -233,3 +233,14 @@ export const submitGlobalAdminEventReport = ({
     expenseCurrency,
     reportNotes,
   });
+
+// ══════════════════════════════════════════════════════════════
+// 5️⃣ PROFILE & COVER PHOTO UPLOAD APIS
+// ══════════════════════════════════════════════════════════════
+export {
+  uploadProfilePhoto,
+  uploadEventCoverPhoto,
+  fetchMyProfile,
+  resolvePhotoUrl,
+} from './profileOperationsApi';
+
