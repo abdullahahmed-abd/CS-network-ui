@@ -2,16 +2,16 @@
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
-  { id: 'overview',    label: 'Overview',    icon: '🏠' },
-  { id: 'media_hub',   label: 'Media Hub',   icon: '🎬' },
-  { id: 'franchises',  label: 'Franchises',  icon: '🏢' },
+  { id: 'overview', label: 'Overview', icon: '🏠' },
+  { id: 'media_hub', label: 'Media Hub', icon: '🎬' },
+  { id: 'franchises', label: 'Franchises', icon: '🏢' },
   { id: 'invitations', label: 'Invitations', icon: '📨' },
-  { id: 'directory',   label: 'Directory',   icon: '📖' },
-  { id: 'events',      label: 'Events',      icon: '🎉' },
-  { id: 'meetings',    label: 'Meetings',    icon: '📅' },
-  { id: 'partnerships',label: 'Partnerships',icon: '🤝' },
-  { id: 'users',       label: 'Users',       icon: '👥' },
-  { id: 'settings',    label: 'Settings',    icon: '⚙️' },
+  { id: 'directory', label: 'Directory', icon: '📖' },
+  { id: 'events', label: 'Events', icon: '🎉' },
+  { id: 'meetings', label: 'Meetings', icon: '📅' },
+  { id: 'partnerships', label: 'Partnerships', icon: '🤝' },
+  { id: 'users', label: 'Users', icon: '👥' },
+  { id: 'settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export { navItems };

@@ -3,15 +3,15 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clearTokens, getUserData } from '../../api/auth';
 
-import Sidebar        from './Sidebar';
-import Header         from './Header';
-import OverviewTab    from './tabs/OverviewTab';
-import MediaHubTab    from './tabs/MediaHubTab';
-import FranchisesTab  from './tabs/FranchisesTab';
+import Sidebar from './Sidebar';
+import Header from './Header';
+import OverviewTab from './tabs/OverviewTab';
+import MediaHubTab from './tabs/MediaHubTab';
+import FranchisesTab from './tabs/FranchisesTab';
 import InvitationsTab from './tabs/InvitationsTab';
-import EventsTab      from './tabs/EventsTab';
-import MeetingsTab    from '../meetings/MeetingsTab';
-import DirectoryTab   from '../directory/DirectoryTab';
+import EventsTab from './tabs/EventsTab';
+import MeetingsTab from '../meetings/MeetingsTab';
+import DirectoryTab from '../directory/DirectoryTab';
 import PartnershipsTab from '../partnerships/PartnershipsTab';
 
 // ── Placeholder Tab ───────────────────────
@@ -96,16 +96,16 @@ export default function GlobalAdminDashboard({ onLogout }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.22 }}
             >
-              {activeNav === 'overview'    && <OverviewTab onNavigate={setActiveNav} />}
-              {activeNav === 'media_hub'   && <MediaHubTab />}
-              {activeNav === 'franchises'  && <FranchisesTab />}
+              {activeNav === 'overview' && <OverviewTab onNavigate={setActiveNav} />}
+              {activeNav === 'media_hub' && <MediaHubTab />}
+              {activeNav === 'franchises' && <FranchisesTab />}
               {activeNav === 'invitations' && <InvitationsTab />}
-              {activeNav === 'directory'   && <DirectoryTab />}
-              {activeNav === 'events'      && <EventsTab />}
-              {activeNav === 'meetings'    && <MeetingsTab />}
-              {activeNav === 'partnerships'&& <PartnershipsTab />}
-              {activeNav === 'users'       && <PlaceholderTab name="users" />}
-              {activeNav === 'settings'    && <PlaceholderTab name="settings" />}
+              {activeNav === 'directory' && <DirectoryTab />}
+              {activeNav === 'events' && <EventsTab />}
+              {activeNav === 'meetings' && <MeetingsTab />}
+              {activeNav === 'partnerships' && <PartnershipsTab />}
+              {activeNav === 'users' && <PlaceholderTab name="users" />}
+              {activeNav === 'settings' && <PlaceholderTab name="settings" />}
             </motion.div>
           </AnimatePresence>
           <div style={{ height: 40 }} />

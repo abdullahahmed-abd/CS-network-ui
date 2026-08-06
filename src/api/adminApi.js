@@ -60,11 +60,12 @@ export const fetchEventRegistrations = (eventId) =>
     },
   });
 
-export const approveRegistration = (registrationId) =>
+export const approveRegistration = (registrationId, reviewNotes = '') =>
   apiCall('/global-admin', {
     body: {
       requestType: 'APPROVE_REGISTRATION',
       registrationId,
+      ...(reviewNotes && reviewNotes.trim() && { reviewNotes: reviewNotes.trim() }),
     },
   });
 

@@ -15,6 +15,7 @@ import CreateEventModal from '../globalAdmin/events/CreateEventModal';
 import SubmitEventReportModal from './SubmitEventReportModal';
 import RejectEventModal from './RejectEventModal';
 import EventCoverUploadModal from './EventCoverUploadModal';
+import EventRegistrationsModal from '../globalAdmin/events/EventRegistrationsModal';
 
 export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
   const isOperator = userRole === 'FRANCHISE_OPERATOR';
@@ -36,6 +37,7 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
   const [reportingEvent, setReportingEvent] = useState(null);
   const [rejectingEvent, setRejectingEvent] = useState(null);
   const [uploadCoverEvent, setUploadCoverEvent] = useState(null);
+  const [registrationsEvent, setRegistrationsEvent] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -296,6 +298,20 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
                         </button>
                       )}
 
+                      {isAdmin && activeSubTab !== 'PENDING_APPROVALS' && (
+                        <button
+                          onClick={() => setRegistrationsEvent(ev)}
+                          style={{
+                            flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                            background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                            color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
+                          }}
+                        >
+                          👥 Manage Registrations
+                        </button>
+                      )}
+
                       {canReport && (
                         <button
                           onClick={() => setReportingEvent(ev)}
@@ -394,6 +410,15 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
             loadData(page);
             setUploadCoverEvent(null);
           }}
+        />
+      )}
+
+      {/* Event Registrations Modal */}
+      {registrationsEvent && (
+        <EventRegistrationsModal
+          event={registrationsEvent}
+          onClose={() => setRegistrationsEvent(null)}
+          onToast={({ message, type }) => showToast(message, type)}
         />
       )}
     </div>

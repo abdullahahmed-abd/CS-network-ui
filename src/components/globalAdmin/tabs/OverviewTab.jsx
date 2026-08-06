@@ -37,9 +37,9 @@ function FranchiseNode({ node, depth = 0 }) {
   const hasChildren = node.children && node.children.length > 0;
 
   const typeColors = {
-    MASTER:  { bg: '#EDE9FE', color: '#6D28D9', border: '#C4B5FD' },
+    MASTER: { bg: '#EDE9FE', color: '#6D28D9', border: '#C4B5FD' },
     GENERAL: { bg: '#DBEAFE', color: '#1E40AF', border: '#93C5FD' },
-    SECTOR:  { bg: '#FEF3C7', color: '#92400E', border: '#FCD34D' },
+    SECTOR: { bg: '#FEF3C7', color: '#92400E', border: '#FCD34D' },
   };
   const tc = typeColors[node.franchiseType] || typeColors.GENERAL;
 
@@ -131,8 +131,8 @@ function FranchiseNode({ node, depth = 0 }) {
 // ── Main OverviewTab ──────────────────────
 export default function OverviewTab({ onNavigate }) {
   const [dashboard, setDashboard] = useState(null);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -152,12 +152,12 @@ export default function OverviewTab({ onNavigate }) {
   }, []);
 
   const quickActions = [
-    { label: 'Media Hub',        icon: '🎬', desc: 'Manage YouTube videos',            nav: 'media_hub' },
+    { label: 'Media Hub', icon: '🎬', desc: 'Manage YouTube videos', nav: 'media_hub' },
     { label: 'Create Franchise', icon: '🏢', desc: 'Create master franchise for a country', nav: 'franchises' },
-    { label: 'Send Invitation',  icon: '📨', desc: 'Invite operator for a franchise',       nav: 'invitations' },
-    { label: 'Manage Events',    icon: '🎉', desc: 'Create events & manage registrations',  nav: 'events' },
-    { label: 'Manage Users',     icon: '👥', desc: 'View and manage all users',             nav: 'users' },
-    { label: 'Settings',         icon: '⚙️', desc: 'Platform configuration',               nav: 'settings' },
+    { label: 'Send Invitation', icon: '📨', desc: 'Invite operator for a franchise', nav: 'invitations' },
+    { label: 'Manage Events', icon: '🎉', desc: 'Create events & manage registrations', nav: 'events' },
+    { label: 'Manage Users', icon: '👥', desc: 'View and manage all users', nav: 'users' },
+    { label: 'Settings', icon: '⚙️', desc: 'Platform configuration', nav: 'settings' },
   ];
 
   // ── Loading ──
@@ -248,13 +248,13 @@ export default function OverviewTab({ onNavigate }) {
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: 14, marginBottom: 24,
           }}>
-            <StatCard label="Total Users"       value={overview.totalUsers}            icon="👥" bg="#F0FDF4" color="#166534" delay={0.00} />
-            <StatCard label="Total Members"     value={overview.totalMembers}          icon="🙋" bg="#DBEAFE" color="#1E40AF" delay={0.05} />
-            <StatCard label="Total Operators"   value={overview.totalOperators}        icon="🧑‍💼" bg="#FEF3C7" color="#92400E" delay={0.10} />
+            <StatCard label="Total Users" value={overview.totalUsers} icon="👥" bg="#F0FDF4" color="#166534" delay={0.00} />
+            <StatCard label="Total Members" value={overview.totalMembers} icon="🙋" bg="#DBEAFE" color="#1E40AF" delay={0.05} />
+            <StatCard label="Total Operators" value={overview.totalOperators} icon="🧑‍💼" bg="#FEF3C7" color="#92400E" delay={0.10} />
             <StatCard label="Active Franchises" value={overview.totalActiveFranchises} icon="🏢" bg="#EDE9FE" color="#6D28D9" delay={0.15} />
-            <StatCard label="Master"            value={overview.totalMasterFranchises} icon="⭐" bg="#FCE7F3" color="#9F1239" delay={0.20} />
-            <StatCard label="General"           value={overview.totalGeneralFranchises}icon="🏙️" bg="#DCFCE7" color="#15803D" delay={0.25} />
-            <StatCard label="Sector"            value={overview.totalSectorFranchises} icon="🔧" bg="#FFF7ED" color="#C2410C" delay={0.30} />
+            <StatCard label="Master" value={overview.totalMasterFranchises} icon="⭐" bg="#FCE7F3" color="#9F1239" delay={0.20} />
+            <StatCard label="General" value={overview.totalGeneralFranchises} icon="🏙️" bg="#DCFCE7" color="#15803D" delay={0.25} />
+            <StatCard label="Sector" value={overview.totalSectorFranchises} icon="🔧" bg="#FFF7ED" color="#C2410C" delay={0.30} />
           </div>
         </>
       )}
@@ -273,11 +273,11 @@ export default function OverviewTab({ onNavigate }) {
             gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
             gap: 14, marginBottom: 24,
           }}>
-            <StatCard label="New Today"     value={userGrowth.newUsersToday}    icon="🆕" bg="#F0FDF4" color="#166534" delay={0.00} />
-            <StatCard label="This Week"     value={userGrowth.newUsersThisWeek} icon="📅" bg="#DBEAFE" color="#1E40AF" delay={0.05} />
-            <StatCard label="This Month"    value={userGrowth.newUsersThisMonth}icon="📆" bg="#FEF3C7" color="#92400E" delay={0.10} />
-            <StatCard label="New Members"   value={userGrowth.newMembers}       icon="🙋" bg="#EDE9FE" color="#6D28D9" delay={0.15} />
-            <StatCard label="New Operators" value={userGrowth.newOperators}     icon="🧑‍💼" bg="#FCE7F3" color="#9F1239" delay={0.20} />
+            <StatCard label="New Today" value={userGrowth.newUsersToday} icon="🆕" bg="#F0FDF4" color="#166534" delay={0.00} />
+            <StatCard label="This Week" value={userGrowth.newUsersThisWeek} icon="📅" bg="#DBEAFE" color="#1E40AF" delay={0.05} />
+            <StatCard label="This Month" value={userGrowth.newUsersThisMonth} icon="📆" bg="#FEF3C7" color="#92400E" delay={0.10} />
+            <StatCard label="New Members" value={userGrowth.newMembers} icon="🙋" bg="#EDE9FE" color="#6D28D9" delay={0.15} />
+            <StatCard label="New Operators" value={userGrowth.newOperators} icon="🧑‍💼" bg="#FCE7F3" color="#9F1239" delay={0.20} />
           </div>
         </>
       )}
@@ -296,12 +296,12 @@ export default function OverviewTab({ onNavigate }) {
             gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
             gap: 14, marginBottom: 24,
           }}>
-            <StatCard label="New Today"   value={franchiseGrowth.newFranchisesToday}    icon="🆕" bg="#F0FDF4" color="#166534" delay={0.00} />
-            <StatCard label="This Week"   value={franchiseGrowth.newFranchisesThisWeek} icon="📅" bg="#DBEAFE" color="#1E40AF" delay={0.05} />
-            <StatCard label="This Month"  value={franchiseGrowth.newFranchisesThisMonth}icon="📆" bg="#FEF3C7" color="#92400E" delay={0.10} />
-            <StatCard label="New Masters" value={franchiseGrowth.newMasterFranchises}   icon="⭐" bg="#EDE9FE" color="#6D28D9" delay={0.15} />
-            <StatCard label="New General" value={franchiseGrowth.newGeneralFranchises}  icon="🏙️" bg="#FCE7F3" color="#9F1239" delay={0.20} />
-            <StatCard label="New Sector"  value={franchiseGrowth.newSectorFranchises}   icon="🔧" bg="#DCFCE7" color="#15803D" delay={0.25} />
+            <StatCard label="New Today" value={franchiseGrowth.newFranchisesToday} icon="🆕" bg="#F0FDF4" color="#166534" delay={0.00} />
+            <StatCard label="This Week" value={franchiseGrowth.newFranchisesThisWeek} icon="📅" bg="#DBEAFE" color="#1E40AF" delay={0.05} />
+            <StatCard label="This Month" value={franchiseGrowth.newFranchisesThisMonth} icon="📆" bg="#FEF3C7" color="#92400E" delay={0.10} />
+            <StatCard label="New Masters" value={franchiseGrowth.newMasterFranchises} icon="⭐" bg="#EDE9FE" color="#6D28D9" delay={0.15} />
+            <StatCard label="New General" value={franchiseGrowth.newGeneralFranchises} icon="🏙️" bg="#FCE7F3" color="#9F1239" delay={0.20} />
+            <StatCard label="New Sector" value={franchiseGrowth.newSectorFranchises} icon="🔧" bg="#DCFCE7" color="#15803D" delay={0.25} />
           </div>
         </>
       )}
@@ -322,12 +322,12 @@ export default function OverviewTab({ onNavigate }) {
                 🛒 Marketplace
               </div>
               {[
-                { label: 'Active Intents',    value: marketplace.activeTradeIntents },
-                { label: 'Deals Today',       value: marketplace.dealsToday },
-                { label: 'Deals This Week',   value: marketplace.dealsThisWeek },
-                { label: 'Deals This Month',  value: marketplace.dealsThisMonth },
-                { label: 'Completed',         value: marketplace.completedDeals },
-                { label: 'Pending',           value: marketplace.pendingDeals },
+                { label: 'Active Intents', value: marketplace.activeTradeIntents },
+                { label: 'Deals Today', value: marketplace.dealsToday },
+                { label: 'Deals This Week', value: marketplace.dealsThisWeek },
+                { label: 'Deals This Month', value: marketplace.dealsThisMonth },
+                { label: 'Completed', value: marketplace.completedDeals },
+                { label: 'Pending', value: marketplace.pendingDeals },
               ].map((item) => (
                 <div key={item.label} style={{
                   display: 'flex', alignItems: 'center',
@@ -353,8 +353,8 @@ export default function OverviewTab({ onNavigate }) {
                 📅 Meetings
               </div>
               {[
-                { label: 'Today',     value: meetings.meetingsToday },
-                { label: 'Upcoming',  value: meetings.upcomingMeetings },
+                { label: 'Today', value: meetings.meetingsToday },
+                { label: 'Upcoming', value: meetings.upcomingMeetings },
                 { label: 'Completed', value: meetings.completedMeetings },
                 { label: 'Cancelled', value: meetings.cancelledMeetings },
               ].map((item) => (
