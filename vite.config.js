@@ -11,7 +11,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       // Proxy /profile-operations → ngrok backend (bypasses CORS preflight)
-      '/profile-operations': {
+      'cs-network/profile-operations': {
         target: BACKEND,
         changeOrigin: true,
         secure: false,

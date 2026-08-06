@@ -55,7 +55,7 @@ export const uploadProfilePhoto = async (file) => {
   formData.append('profileRequestType', 'UPLOAD_PROFILE_PHOTO');
   formData.append('file', file);
 
-  const data = await authenticatedFetch('/profile-operations', {
+  const data = await authenticatedFetch(`${BASE_URL}/cs-network/profile-operations`, {
     method: 'POST',
     body: formData,
   });
@@ -98,7 +98,7 @@ export const uploadEventCoverPhoto = async (eventId, file) => {
   formData.append('eventId', String(eventId));
   formData.append('file', file);
 
-  const data = await authenticatedFetch('/profile-operations', {
+  const data = await authenticatedFetch(`${BASE_URL}/cs-network/profile-operations`, {
     method: 'POST',
     body: formData,
   });

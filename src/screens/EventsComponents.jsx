@@ -11,6 +11,7 @@ import {
   Copy, Download, Timer,
 } from 'lucide-react';
 import { authenticatedFetch } from '../api/auth';
+import { resolvePhotoUrl } from '../api/profileOperationsApi';
 
 // ─────────────────────────────────────────────
 // ⚠️ IMPORTANT: Match these with your dashboard
@@ -288,8 +289,8 @@ export const EventCard = forwardRef(function EventCard({ event, onView, index = 
         className="relative h-40 overflow-hidden"
         style={{
           background: event.coverImageUrl
-            ? `url(${event.coverImageUrl}) center/cover`
-            : `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)`,
+            ? `url(${resolvePhotoUrl(event.coverImageUrl)}) center/cover`
+            : `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)`,
         }}
       >
         <div className="absolute inset-0"
@@ -467,8 +468,8 @@ export function EventDetailsModal({ eventId, onClose, onRegistered }) {
               className="relative flex-shrink-0 h-48"
               style={{
                 background: event.coverImageUrl
-                  ? `url(${event.coverImageUrl}) center/cover`
-                  : `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)`,
+                  ? `url(${resolvePhotoUrl(event.coverImageUrl)}) center/cover`
+                  : `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)`,
               }}
             >
               <div className="absolute inset-0"
