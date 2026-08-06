@@ -279,7 +279,7 @@ export const downloadPartnershipDocument = async (documentId, fileName = 'docume
     headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
   }
 
-  const downloadUrl = `${BASE_URL}/partnerships/documents/${documentId}/download`;
+  const downloadUrl = `${BASE_URL}/cs-network/partnerships/documents/${documentId}/download`;
 
   try {
     const res = await fetch(downloadUrl, { method: 'GET', headers });
@@ -288,7 +288,7 @@ export const downloadPartnershipDocument = async (documentId, fileName = 'docume
       try {
         const json = await res.json();
         if (json.message) errMsg = json.message;
-      } catch {}
+      } catch { }
       throw new Error(errMsg);
     }
 

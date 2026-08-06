@@ -94,9 +94,12 @@ export default function PartnershipDetailModal({ partnershipId, isOpen, onClose,
   })();
 
   const handleDownload = async (doc) => {
+    const docId = doc.documentId;
+    const docName = doc.documentName ?? doc.originalFileName ?? 'document';
+
     try {
-      setDownloadingId(doc.documentId);
-      await downloadPartnershipDocument(doc.documentId, `${doc.documentName || 'document'}.pdf`);
+      setDownloadingId(docId);
+      await downloadPartnershipDocument(docId, `${docName}.pdf`);
     } catch (err) {
       alert(err.message || 'Failed to download document.');
     } finally {
@@ -262,15 +265,14 @@ export default function PartnershipDetailModal({ partnershipId, isOpen, onClose,
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* Stage 1: Franchise Operator */}
                   <div
-                    className={`p-4 rounded-2xl border ${
-                      details.operatorApproval
+                    className={`p-4 rounded-2xl border ${details.operatorApproval
                         ? 'bg-emerald-50/70 border-emerald-200'
                         : details.status === PARTNERSHIP_STATUSES.PENDING_OPERATOR_APPROVAL
-                        ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20'
-                        : details.status === PARTNERSHIP_STATUSES.REJECTED
-                        ? 'bg-gray-50 border-gray-200 opacity-60'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}
+                          ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20'
+                          : details.status === PARTNERSHIP_STATUSES.REJECTED
+                            ? 'bg-gray-50 border-gray-200 opacity-60'
+                            : 'bg-gray-50 border-gray-200'
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-extrabold uppercase text-gray-500">Stage 1</span>
@@ -285,22 +287,21 @@ export default function PartnershipDetailModal({ partnershipId, isOpen, onClose,
                       {details.operatorApproval
                         ? `Approved by ${details.operatorApproval.userName}`
                         : details.status === PARTNERSHIP_STATUSES.PENDING_OPERATOR_APPROVAL
-                        ? 'Awaiting Operator Approval'
-                        : 'Pending'}
+                          ? 'Awaiting Operator Approval'
+                          : 'Pending'}
                     </p>
                   </div>
 
                   {/* Stage 2: Master Operator */}
                   <div
-                    className={`p-4 rounded-2xl border ${
-                      details.masterApproval
+                    className={`p-4 rounded-2xl border ${details.masterApproval
                         ? 'bg-emerald-50/70 border-emerald-200'
                         : details.status === PARTNERSHIP_STATUSES.PENDING_MASTER_APPROVAL
-                        ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20'
-                        : details.status === PARTNERSHIP_STATUSES.REJECTED
-                        ? 'bg-gray-50 border-gray-200 opacity-60'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}
+                          ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20'
+                          : details.status === PARTNERSHIP_STATUSES.REJECTED
+                            ? 'bg-gray-50 border-gray-200 opacity-60'
+                            : 'bg-gray-50 border-gray-200'
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-extrabold uppercase text-gray-500">Stage 2</span>
@@ -315,22 +316,21 @@ export default function PartnershipDetailModal({ partnershipId, isOpen, onClose,
                       {details.masterApproval
                         ? `Approved by ${details.masterApproval.userName}`
                         : details.status === PARTNERSHIP_STATUSES.PENDING_MASTER_APPROVAL
-                        ? 'Awaiting Master Approval'
-                        : 'Pending'}
+                          ? 'Awaiting Master Approval'
+                          : 'Pending'}
                     </p>
                   </div>
 
                   {/* Stage 3: Global Admin */}
                   <div
-                    className={`p-4 rounded-2xl border ${
-                      details.adminApproval
+                    className={`p-4 rounded-2xl border ${details.adminApproval
                         ? 'bg-emerald-50/70 border-emerald-200'
                         : details.status === PARTNERSHIP_STATUSES.PENDING_ADMIN_APPROVAL
-                        ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20'
-                        : details.status === PARTNERSHIP_STATUSES.REJECTED
-                        ? 'bg-gray-50 border-gray-200 opacity-60'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}
+                          ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20'
+                          : details.status === PARTNERSHIP_STATUSES.REJECTED
+                            ? 'bg-gray-50 border-gray-200 opacity-60'
+                            : 'bg-gray-50 border-gray-200'
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-extrabold uppercase text-gray-500">Stage 3</span>
@@ -345,8 +345,8 @@ export default function PartnershipDetailModal({ partnershipId, isOpen, onClose,
                       {details.adminApproval
                         ? `Approved by ${details.adminApproval.userName}`
                         : details.status === PARTNERSHIP_STATUSES.PENDING_ADMIN_APPROVAL
-                        ? 'Awaiting Global Admin Approval'
-                        : 'Pending'}
+                          ? 'Awaiting Global Admin Approval'
+                          : 'Pending'}
                     </p>
                   </div>
                 </div>
@@ -370,9 +370,11 @@ export default function PartnershipDetailModal({ partnershipId, isOpen, onClose,
                             <FileText className="w-4 h-4" />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-gray-900">{doc.documentName}</p>
+                            <p className="text-xs font-bold text-gray-900">
+                              {doc.documentName ?? doc.originalFileName ?? 'Document'}
+                            </p>
                             <p className="text-[11px] text-gray-500 font-mono">
-                              {doc.fileType || 'application/pdf'} • {Math.round((doc.fileSize || 0) / 1024)} KB
+                              {doc.fileType || 'PDF'} • {doc.fileSize ? `${Math.round(doc.fileSize / 1024)} KB` : 'Ready to download'}
                             </p>
                           </div>
                         </div>
