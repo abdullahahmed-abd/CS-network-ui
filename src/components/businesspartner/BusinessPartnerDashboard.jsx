@@ -165,7 +165,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
         `${BASE_URL}/cs-network/business-partner`,
         {
           method: 'POST',
-          body: JSON.stringify({ businessPartnerRequestType: 'GET_MY_INTENTS' }),
+          body: JSON.stringify({ businessPartnerRequestType: 'FETCH_PROPOSAL_FOR_INTENT' }),
         }
       );
       const content = data?.myIntents?.content || data?.intents?.content || data?.intents || [];

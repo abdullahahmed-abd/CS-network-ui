@@ -3193,14 +3193,17 @@ export default function BusinessPartnerDashboard({ onLogout }) {
     setMyIntentsLoading(true);
     try {
       const data = await authenticatedFetch(
-        `${BASE_URL}/cs-network/business-partner`,
+        `${BASE_URL}/cs-network/member`,
         {
           method: 'POST',
-          body: JSON.stringify({ businessPartnerRequestType: 'FETCH_PROPOSAL_FOR_INTENT' }),
+          body: JSON.stringify({ memberRequestType: 'FETCH_MY_INTENT' }),
         }
       );
-      const content = data?.myIntents?.content || data?.intents?.content || data?.intents || [];
-      setMyIntents(Array.isArray(content) ? content : []);
+      const list =
+        data?.myIntents?.content || data?.myIntents ||
+        data?.intents?.content  || data?.intents   ||
+        data?.content || (Array.isArray(data) ? data : []);
+      setMyIntents(list);
     } catch (err) {
       console.error('My intents error:', err);
     } finally {
@@ -3221,7 +3224,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
   }, [activeNav, intentPage, fetchIntents]);
 
   useEffect(() => {
-    if (activeNav === 'my_intents') fetchMyIntents();
+    if (activeNav === 'my_intents' || activeNav === 'proposals') fetchMyIntents();
   }, [activeNav, fetchMyIntents]);
 
   const handleLeadCreated = (newLead) => {
