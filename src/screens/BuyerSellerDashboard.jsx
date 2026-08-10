@@ -1412,8 +1412,12 @@ const IntentCard = forwardRef(function IntentCard({ intent, onView, onSendPropos
 
 // ── ProposalCard ──
 export const ProposalCard = forwardRef(function ProposalCard(
-  { proposal, onAccept, isOwner, accepting, onOpenChat }, ref
+  { proposal, onAccept, isOwner, accepting, onOpenChat, onMarkCompleted, completingId }, ref
 ) {
+  useEffect(() => {
+    console.log('🔍 [PROPOSAL_CARD] Proposal item rendered:', proposal);
+  }, [proposal]);
+
   const st         = PROPOSAL_STATUS_CONFIG[proposal.status] || PROPOSAL_STATUS_CONFIG.PENDING;
   const StatusIcon = st.icon;
   const canAccept  = isOwner && proposal.status === 'PENDING';
@@ -1426,14 +1430,14 @@ export const ProposalCard = forwardRef(function ProposalCard(
       className="relative overflow-hidden rounded-2xl bg-white border"
       style={{
         boxShadow:   '0 8px 32px rgba(0,0,0,0.07)',
-        borderColor: proposal.status === 'ACCEPTED' ? `${BRAND}40` : 'rgba(229,231,235,0.8)',
+        borderColor: proposal.status === 'ACCEPTED' || proposal.status === 'COMPLETED' ? `${BRAND}40` : 'rgba(229,231,235,0.8)',
       }}>
-      {proposal.status === 'ACCEPTED' && (
+      {(proposal.status === 'ACCEPTED' || proposal.status === 'COMPLETED') && (
         <div className="absolute inset-0 opacity-5 rounded-2xl"
              style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }} />
       )}
       <div className="h-1 w-full" style={{
-        background: proposal.status === 'ACCEPTED'
+        background: proposal.status === 'ACCEPTED' || proposal.status === 'COMPLETED'
           ? `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})`
           : proposal.status === 'PENDING'
           ? 'linear-gradient(90deg, #f59e0b, #d97706)'
@@ -1448,7 +1452,7 @@ export const ProposalCard = forwardRef(function ProposalCard(
             </div>
             <div className="min-w-0">
               <p className="font-bold text-sm text-gray-900 truncate">{proposal.proposerName}</p>
-              <p className="text-xs text-gray-500">Proposal #{proposal.proposalId} · Intent #{proposal.tradeIntentId}</p>
+              <p className="text-xs text-gray-500">Proposal #{proposal.proposalId || proposal.id} · Intent #{proposal.tradeIntentId}</p>
             </div>
           </div>
           <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold flex-shrink-0 ${st.color} ${st.bg} ${st.border}`}>
@@ -1487,10 +1491,13 @@ export const ProposalCard = forwardRef(function ProposalCard(
         </div>
         {canAccept && (
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-            onClick={() => onAccept(proposal.proposalId)} disabled={accepting === proposal.proposalId}
+            onClick={() => {
+              console.log('🔍 [PROPOSAL_CARD] Accept clicked for proposal:', proposal);
+              onAccept(proposal.proposalId || proposal.id);
+            }} disabled={accepting === (proposal.proposalId || proposal.id)}
             className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-all disabled:opacity-60"
             style={brandBtn}>
-            {accepting === proposal.proposalId
+            {accepting === (proposal.proposalId || proposal.id)
               ? <><Loader2 className="h-4 w-4 animate-spin" /> Accepting...</>
               : <><BadgeCheck className="h-4 w-4" /> Accept Proposal</>}
           </motion.button>
@@ -1501,14 +1508,41 @@ export const ProposalCard = forwardRef(function ProposalCard(
                  style={{ background: BRAND_LIGHT, color: BRAND_DARK }}>
               <CheckCheck className="h-4 w-4" /> Proposal Accepted
             </div>
-            {canChat && (
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                onClick={() => onOpenChat(proposal)}
-                className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-all"
-                style={brandBtn}>
-                <MessageCircle className="h-4 w-4" /> Open Chat
-              </motion.button>
-            )}
+            
+            <div className="flex flex-col sm:flex-row gap-2">
+              {canChat && (
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    console.log('🔍 [PROPOSAL_CARD] Open Chat clicked for proposal:', proposal);
+                    onOpenChat(proposal);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-white transition-all shadow-sm"
+                  style={brandBtn}>
+                  <MessageCircle className="h-4 w-4" /> Open Chat
+                </motion.button>
+              )}
+
+              {isOwner && typeof onMarkCompleted === 'function' && (
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    console.log('🔍 [PROPOSAL_CARD] Mark Complete button clicked for proposal:', proposal);
+                    onMarkCompleted(proposal);
+                  }}
+                  disabled={completingId === (proposal.proposalId || proposal.id)}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-sm disabled:opacity-50">
+                  {completingId === (proposal.proposalId || proposal.id)
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <CheckCircle2 className="h-4 w-4" />}
+                  <span>Mark Complete</span>
+                </motion.button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {proposal.status === 'COMPLETED' && (
+          <div className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white bg-emerald-600 shadow-sm">
+            <CheckCircle2 className="h-4 w-4 text-white" /> Deal Completed ✓
           </div>
         )}
       </div>
@@ -1789,6 +1823,45 @@ export function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefres
     finally       { setAccepting(null); }
   };
 
+  const [completingId, setCompletingId] = useState(null);
+
+  const handleMarkProposalCompleted = async (prop) => {
+    console.log('🔍 [RECEIVED_PROPOSALS_CONTENT] Mark Complete clicked for proposal:', prop);
+    const targetId = prop.dealId || prop.tradeDealId || prop.tradeProposalId || prop.proposalId || prop.id || prop.tradeIntentId || selectedIntent?.id;
+    console.log('🔍 [RECEIVED_PROPOSALS_CONTENT] Computed Target ID for completion:', targetId);
+
+    if (!targetId) {
+      setError('Unable to mark complete: Proposal or Deal ID is missing.');
+      return;
+    }
+
+    setCompletingId(prop.proposalId || prop.id);
+    setError('');
+    try {
+      const payload = {
+        memberRequestType: 'MARK_DEAL_COMPLETED',
+        dealId: Number(targetId),
+        ...((prop.tradeProposalId || prop.proposalId || prop.id) && { tradeProposalId: Number(prop.tradeProposalId || prop.proposalId || prop.id) }),
+        ...((prop.tradeIntentId || prop.intentId || selectedIntent?.id) && { tradeIntentId: Number(prop.tradeIntentId || prop.intentId || selectedIntent?.id) }),
+      };
+      console.log('🚀 [RECEIVED_PROPOSALS_CONTENT] Sending payload:', payload);
+
+      const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      console.log('✅ [RECEIVED_PROPOSALS_CONTENT] Success response:', data);
+
+      setSuccessMsg(data?.message || '✓ Deal marked as completed! Commission ledger generated.');
+      await fetchProposals(selectedIntent);
+    } catch (err) {
+      console.error('❌ [RECEIVED_PROPOSALS_CONTENT] Error:', err);
+      setError(err.message || 'Failed to mark deal completed');
+    } finally {
+      setCompletingId(null);
+    }
+  };
+
   const pendingCount  = proposals.filter(p => p.status === 'PENDING').length;
   const acceptedCount = proposals.filter(p => p.status === 'ACCEPTED').length;
 
@@ -1933,9 +2006,11 @@ export function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefres
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <AnimatePresence mode="popLayout">
                     {proposals.map(proposal => (
-                      <ProposalCard key={proposal.proposalId} proposal={proposal}
+                      <ProposalCard key={proposal.proposalId || proposal.id} proposal={proposal}
                         onAccept={handleAccept} isOwner={true} accepting={accepting}
-                        onOpenChat={setChatProposal} />
+                        onOpenChat={setChatProposal}
+                        onMarkCompleted={handleMarkProposalCompleted}
+                        completingId={completingId} />
                     ))}
                   </AnimatePresence>
                 </div>
