@@ -503,8 +503,18 @@ export function TradeChatScreen({
   };
 
   const handleMarkDealCompleted = async () => {
+    console.log('🔍 [MARK_DEAL_COMPLETED] Debugging received IDs:', {
+      dealId,
+      tradeProposalId,
+      tradeIntentId,
+      conversationId,
+    });
+
     const targetDealId = dealId || tradeProposalId || tradeIntentId;
+    console.log('🔍 [MARK_DEAL_COMPLETED] Computed targetDealId:', targetDealId);
+
     if (!targetDealId) {
+      console.warn('⚠️ [MARK_DEAL_COMPLETED] Missing targetDealId!');
       setError('Unable to mark complete: Deal ID or Intent ID is missing for this trade session.');
       return;
     }
@@ -513,18 +523,25 @@ export function TradeChatScreen({
     setCompletingDeal(true);
     setError('');
     try {
+      const payload = {
+        memberRequestType: 'MARK_DEAL_COMPLETED',
+        dealId: Number(targetDealId),
+        ...(tradeProposalId && { tradeProposalId: Number(tradeProposalId) }),
+        ...(tradeIntentId && { tradeIntentId: Number(tradeIntentId) }),
+      };
+      console.log('🚀 [MARK_DEAL_COMPLETED] Sending payload to /cs-network/member:', payload);
+
       const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
         method: 'POST',
-        body: JSON.stringify({
-          memberRequestType: 'MARK_DEAL_COMPLETED',
-          dealId: Number(targetDealId),
-        }),
+        body: JSON.stringify(payload),
       });
 
+      console.log('✅ [MARK_DEAL_COMPLETED] Success response:', data);
       const msg = data?.message || '✓ Deal marked as completed! Commission ledger generated.';
       setDealSuccessMsg(msg);
       onDealCompleted?.(targetDealId);
     } catch (err) {
+      console.error('❌ [MARK_DEAL_COMPLETED] Error response:', err);
       setError(err.message || 'Failed to mark deal completed');
     } finally {
       setCompletingDeal(false);
