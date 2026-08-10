@@ -22,7 +22,7 @@ import { EventsTab } from './EventsComponents';
 import MyRegistrationsTab from './MyRegistrationsTab';
 import MeetingsTab from '../components/meetings/MeetingsTab';
 import PartnershipsTab from '../components/partnerships/PartnershipsTab';
-import { ReceivedProposalsContent } from './BuyerSellerDashboard';
+import { ProposalsTab, ReceivedProposalsContent } from './BuyerSellerDashboard';
 
 const BASE_URL = 'https://connectsouq.sundukpay.com';
 
@@ -126,6 +126,8 @@ const navItems = [
   { id: 'partnerships', label: 'Partnerships', icon: Building2 },
   { id: 'pipeline', label: 'Pipeline', icon: LayoutGrid },
   { id: 'trade_intents', label: 'Trade Intents', icon: BarChart3 },
+  { id: 'my_intents', label: 'My Intents', icon: Package },
+  { id: 'proposals', label: 'Proposals', icon: Send },
   { id: 'deals', label: 'Deals', icon: Handshake },
   { id: 'commissions', label: 'Commissions', icon: Wallet },
   { id: 'meetings', label: 'Meetings', icon: CalendarClock },
@@ -164,7 +166,8 @@ const STYLES = `
     position: fixed;
     top: -50%; right: -20%;
     width: 800px; height: 800px;
-    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15), transparent 70%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(162, 203, 139, 0.15), transparent 70%);
     pointer-events: none;
     z-index: 0;
   }
@@ -174,7 +177,8 @@ const STYLES = `
     position: fixed;
     bottom: -50%; left: -20%;
     width: 800px; height: 800px;
-    background: radial-gradient(circle, rgba(var(--primary-light-rgb), 0.12), transparent 70%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(197, 227, 179, 0.12), transparent 70%);
     pointer-events: none;
     z-index: 0;
   }
@@ -3192,7 +3196,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
         `${BASE_URL}/cs-network/business-partner`,
         {
           method: 'POST',
-          body: JSON.stringify({ businessPartnerRequestType: 'GET_MY_INTENTS' }),
+          body: JSON.stringify({ businessPartnerRequestType: 'FETCH_PROPOSAL_FOR_INTENT' }),
         }
       );
       const content = data?.myIntents?.content || data?.intents?.content || data?.intents || [];
@@ -3793,6 +3797,15 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                 </>
               )}
             </div>
+          {/* Proposals Tab (Received & Sent) */}
+          {activeNav === 'proposals' && (
+            <ProposalsTab
+              myIntents={myIntents}
+              myIntentsLoading={myIntentsLoading}
+              onRefreshMyIntents={fetchMyIntents}
+            />
+          )}
+
           {/* My Intents & Received Proposals Tab */}
           {activeNav === 'my_intents' && (
             <ReceivedProposalsContent
