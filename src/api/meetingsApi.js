@@ -4,9 +4,7 @@
 // Specification: ConnectSouq Backend — Request/Response Specification v2
 // ══════════════════════════════════════════════════════════════════════════════
 
-import { apiCall, authenticatedFetch, getUserData, getItem } from './auth';
-
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+import { apiCall, authenticatedFetch, getUserData, getItem, BASE_URL } from './auth';
 
 // ─────────────────────────────────────────────
 // Enums & Reference Constants
@@ -138,13 +136,23 @@ export const validateMeetingPayload = (payload = {}, user = {}) => {
       }
       break;
 
-    case MEETING_REQUEST_TYPES.SPECIFIC_FRANCHISE:
-      if (!Array.isArray(payload.franchiseIds) || payload.franchiseIds.length === 0) {
+    case MEETING_REQUEST_TYPES.SPECIFIC_FRANCHISE: {
+      const fIds = (Array.isArray(payload.franchiseIds) && payload.franchiseIds.length > 0)
+        ? payload.franchiseIds
+        : (payload.franchiseId ? [payload.franchiseId] : []);
+      if (fIds.length === 0) {
         errors.push('Please select at least one franchise.');
       }
       break;
+    }
 
     case MEETING_REQUEST_TYPES.FRANCHISE_DOWNLINE:
+      // Global Admin must select a target franchise; Operators pass their own franchiseId or omit if resolved on backend
+      if (roleCategory === 'GLOBAL_ADMIN' && !payload.franchiseId) {
+        errors.push('Please select a target franchise to meet its downline network.');
+      }
+      break;
+
     case MEETING_REQUEST_TYPES.ALL:
       // No extra fields required per §7 Payload Checklist
       break;
@@ -193,15 +201,23 @@ export const buildMeetingPayload = (form = {}) => {
           : [],
       };
 
-    case MEETING_REQUEST_TYPES.SPECIFIC_FRANCHISE:
+    case MEETING_REQUEST_TYPES.SPECIFIC_FRANCHISE: {
+      const fIds = (Array.isArray(form.franchiseIds) && form.franchiseIds.length > 0)
+        ? form.franchiseIds.map(Number).filter(Boolean)
+        : (form.franchiseId ? [Number(form.franchiseId)] : []);
       return {
         ...basePayload,
-        franchiseIds: Array.isArray(form.franchiseIds)
-          ? form.franchiseIds.map(Number).filter(Boolean)
-          : [],
+        franchiseIds: fIds,
+        ...(form.franchiseId ? { franchiseId: Number(form.franchiseId) } : {}),
       };
+    }
 
     case MEETING_REQUEST_TYPES.FRANCHISE_DOWNLINE:
+      return {
+        ...basePayload,
+        ...(form.franchiseId ? { franchiseId: Number(form.franchiseId) } : {}),
+      };
+
     case MEETING_REQUEST_TYPES.ALL:
     default:
       return basePayload;
@@ -231,16 +247,8 @@ export const scheduleMeeting = async (formPayload) => {
       body: payload,
     });
   } catch (err) {
-    console.warn('⚠️ apiCall /meetings failed, retrying direct endpoint...', err.message);
-    // Fallback attempt directly to /meetings if cs-network prefix differs
-    try {
-      return await authenticatedFetch('/meetings', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-    } catch (fallbackErr) {
-      throw err; // throw original backend error
-    }
+    // Surface the real backend error (e.g. "Franchise not found.") directly
+    throw err;
   }
 };
 

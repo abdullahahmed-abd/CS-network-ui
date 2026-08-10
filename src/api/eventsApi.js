@@ -1,7 +1,5 @@
 // api/eventsApi.js
-import { authenticatedFetch } from './auth';
-
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+import { authenticatedFetch, BASE_URL } from './auth';
 
 // Helper for API calls
 const eventsApiCall = async (endpoint, bodyPayload) => {

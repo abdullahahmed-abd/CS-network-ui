@@ -1,20 +1,41 @@
-// components/globalAdmin/events/EventCard.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import EventCoverUploadModal from '../../events/EventCoverUploadModal';
-import { resolvePhotoUrl } from '../../../api/profileOperationsApi';
+import { resolvePhotoUrl, fetchEventCoverPhoto } from '../../../api/profileOperationsApi';
+import { ImageLightboxModal } from '../../../screens/EventsComponents';
 
 export default function EventCard({ event: initialEvent, index, onManageRegistrations, onEventUpdated }) {
   const [event, setEvent] = useState(initialEvent);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [fetchedPhotoUrl, setFetchedPhotoUrl] = useState(() => {
+    const raw = initialEvent?.coverImageUrl || initialEvent?.coverPhotoUrl || initialEvent?.fileUrl || initialEvent?.photoUrl || initialEvent?.coverImage;
+    return (raw && typeof raw === 'string' && raw.trim() !== '' && raw !== 'null') ? resolvePhotoUrl(raw) : null;
+  });
+
+  useEffect(() => {
+    setEvent(initialEvent);
+    const raw = initialEvent?.coverImageUrl || initialEvent?.coverPhotoUrl || initialEvent?.fileUrl || initialEvent?.photoUrl || initialEvent?.coverImage;
+    if (raw && typeof raw === 'string' && raw.trim() !== '' && raw !== 'null') {
+      setFetchedPhotoUrl(resolvePhotoUrl(raw));
+    }
+    if (initialEvent?.id) {
+      fetchEventCoverPhoto(initialEvent.id)
+        .then((res) => {
+          if (res?.fileUrl) {
+            setFetchedPhotoUrl(resolvePhotoUrl(res.fileUrl));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [initialEvent?.id, initialEvent?.coverImageUrl]);
 
   const isOnline = event.eventType === 'ONLINE';
   const isPaid   = event.paid;
-  const coverBg  = event.coverImageUrl
-    ? resolvePhotoUrl(event.coverImageUrl)
-    : null;
 
   const handleUploadSuccess = ({ fileUrl }) => {
+    const resolved = resolvePhotoUrl(fileUrl);
+    setFetchedPhotoUrl(resolved);
     const updated = {
       ...event,
       coverImageUrl: fileUrl,
@@ -37,17 +58,31 @@ export default function EventCard({ event: initialEvent, index, onManageRegistra
         }}
       >
         {/* Cover */}
-        <div style={{
-          height: 130,
-          background: coverBg
-            ? `url(${coverBg}) center/cover`
-            : 'linear-gradient(135deg, #16A34A, #22C55E, #4ADE80)',
-          position: 'relative',
-        }}>
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%)',
-          }} />
+        <div
+          onClick={() => fetchedPhotoUrl && setLightboxOpen(true)}
+          style={{
+            height: 200,
+            background: '#F1F5F9', borderBottom: '1px solid #E2E8F0',
+            position: 'relative',
+            overflow: 'hidden',
+            cursor: fetchedPhotoUrl ? 'pointer' : 'default',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          {fetchedPhotoUrl ? (
+            <img
+              src={fetchedPhotoUrl}
+              alt={event.title || 'Event Cover'}
+              onError={() => setFetchedPhotoUrl(null)}
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+              }}
+            />
+          ) : (
+            <div style={{ color: '#94A3B8', fontSize: 12, fontWeight: 600, textAlign: 'center' }}>
+              📷 No Event Image
+            </div>
+          )}
 
           {/* Upload Image Badge / Button */}
           <motion.button
@@ -58,13 +93,13 @@ export default function EventCard({ event: initialEvent, index, onManageRegistra
               setIsUploadModalOpen(true);
             }}
             style={{
-              position: 'absolute', top: 10, left: 10,
+              position: 'absolute', top: 10, left: 10, zIndex: 10,
               padding: '5px 10px', borderRadius: 8,
               background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(22,163,74,0.3)',
-              fontSize: 10, fontWeight: 800, color: '#15803D',
+              border: '1px solid #CBD5E1',
+              fontSize: 10, fontWeight: 800, color: '#1E293B',
               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             }}
           >
             📷 Upload Image
@@ -202,6 +237,14 @@ export default function EventCard({ event: initialEvent, index, onManageRegistra
         onClose={() => setIsUploadModalOpen(false)}
         onUploadSuccess={handleUploadSuccess}
       />
+
+      {lightboxOpen && (
+        <ImageLightboxModal
+          imageUrl={fetchedPhotoUrl}
+          title={event.title}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </>
   );
 }

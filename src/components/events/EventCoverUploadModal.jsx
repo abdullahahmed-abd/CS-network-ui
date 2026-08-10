@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Image, Upload, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { uploadEventCoverPhoto, resolvePhotoUrl } from '../../api/profileOperationsApi';
+import { useEffect } from 'react';
+import { uploadEventCoverPhoto, fetchEventCoverPhoto, resolvePhotoUrl } from '../../api/profileOperationsApi';
 
 export default function EventCoverUploadModal({
   eventId,
@@ -16,6 +17,18 @@ export default function EventCoverUploadModal({
   const [previewUrl, setPreviewUrl] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && eventId && !currentCoverUrl && !previewUrl) {
+      fetchEventCoverPhoto(eventId)
+        .then((res) => {
+          if (res?.fileUrl) {
+            setPreviewUrl(resolvePhotoUrl(res.fileUrl));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen, eventId, currentCoverUrl]);
 
   if (!isOpen) return null;
 

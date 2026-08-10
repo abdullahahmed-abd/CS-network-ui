@@ -91,5 +91,4 @@ export const NAV_ITEMS = [
   { id: 'my_registrations', label: 'My Tickets',    },
 ];
 
-export const BASE_URL =
-  'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+export const BASE_URL = 'https://connectsouq.sundukpay.com';

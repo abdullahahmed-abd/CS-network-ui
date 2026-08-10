@@ -8,14 +8,16 @@ import {
   markCommissionEntryPaid,
 } from '../api/adminApi';
 
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+import { fetchMyProfile, resolvePhotoUrl } from '../api/profileOperationsApi';
+import MyProfileModal from '../components/profile/MyProfileModal';
+
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: '🏠' },
   { id: 'bp_approvals', label: 'BP Approvals', icon: '🛡️' },
   { id: 'applications', label: 'Applications', icon: '📋' },
   { id: 'commissions', label: 'Commissions', icon: '💰' },
-  { id: 'invitations', label: 'Invite Members', icon: '📨' },
   { id: 'members', label: 'Members', icon: '👥' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ];
@@ -25,7 +27,28 @@ export default function GeneralOperatorDashboard({ onLogout }) {
   const [appFilter, setAppFilter] = useState('PENDING');
   const [sidebarOpen, setSidebar] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
-  const user = getUserData() || {};
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState(() => getUserData() || {});
+
+  useEffect(() => {
+    fetchMyProfile()
+      .then((res) => {
+        if (res?.profile) {
+          setUserProfile((prev) => ({ ...prev, ...res.profile }));
+        }
+      })
+      .catch((err) => {
+        console.warn('GeneralOperator fetchMyProfile failed:', err);
+      });
+  }, []);
+
+  const handleProfileUpdated = (updated) => {
+    if (updated) {
+      setUserProfile((prev) => ({ ...prev, ...updated }));
+    }
+  };
+
+  const user = userProfile;
 
   const handleNavigate = (nav, filter = 'PENDING') => {
     setActiveNav(nav);
@@ -157,19 +180,43 @@ export default function GeneralOperatorDashboard({ onLogout }) {
               borderTop: '1px solid rgba(255,255,255,0.1)',
               flexShrink: 0,
             }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                marginBottom: 14, padding: '10px 12px', borderRadius: 12,
-                background: 'rgba(255,255,255,0.08)',
-              }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #BBF7D0, #86EFAC)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#166534', fontWeight: 800, fontSize: 15,
-                }}>
-                  {(user.fullName || 'O')[0].toUpperCase()}
-                </div>
+              <motion.div
+                whileHover={{ scale: 1.02, background: 'rgba(255,255,255,0.14)' }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setProfileModalOpen(true)}
+                title="Click to view / edit My Profile"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  marginBottom: 14, padding: '10px 12px', borderRadius: 12,
+                  background: 'rgba(255,255,255,0.08)', cursor: 'pointer',
+                }}
+              >
+                {(() => {
+                  const photoSrc = resolvePhotoUrl(user.profilePhotoUrl || user.profilePicture);
+                  return photoSrc ? (
+                    <img
+                      src={photoSrc}
+                      alt={user.fullName || 'Operator'}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                      }}
+                      style={{
+                        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                        objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)',
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                      background: 'linear-gradient(135deg, #BBF7D0, #86EFAC)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#166534', fontWeight: 800, fontSize: 15,
+                    }}>
+                      {(user.fullName || user.email || 'O')[0].toUpperCase()}
+                    </div>
+                  );
+                })()}
                 <div style={{ overflow: 'hidden', flex: 1 }}>
                   <div style={{
                     color: '#fff', fontWeight: 700, fontSize: 12,
@@ -178,9 +225,9 @@ export default function GeneralOperatorDashboard({ onLogout }) {
                   <div style={{
                     color: 'rgba(255,255,255,0.5)', fontSize: 10,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  }}>{user.email || ''}</div>
+                  }}>{user.email || 'Click to edit profile'}</div>
                 </div>
-              </div>
+              </motion.div>
 
               <motion.button
                 onClick={handleLogout}
@@ -1653,6 +1700,13 @@ function OperatorCommissionsTab() {
           </motion.button>
         </div>
       </div>
+
+      {/* My Profile Modal */}
+      <MyProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onProfileUpdated={handleProfileUpdated}
+      />
     </div>
   );
 }

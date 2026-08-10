@@ -107,7 +107,62 @@ export const uploadEventCoverPhoto = async (eventId, file) => {
 };
 
 /**
- * 3. 👤 FETCH_MY_PROFILE API
+ * 3. 👤 FETCH_MY_PROFILE_PHOTO API
+ * Endpoint: POST /cs-network/profile-operations
+ * Content-Type: multipart/form-data
+ * Authorization: Bearer <token>
+ *
+ * Body: formData { profileRequestType: "FETCH_PROFILE" }
+ * Response: { "profilePhotoUrl": "https://connectsouq.sundukpay.com/uploads/profile-pictures/1/uuid.jpg" }
+ */
+export const fetchMyProfilePhoto = async () => {
+  const formData = new FormData();
+  formData.append('profileRequestType', 'FETCH_PROFILE');
+
+  const data = await authenticatedFetch(`${BASE_URL}/cs-network/profile-operations`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (data?.profilePhotoUrl) {
+    const existing = getUserData() || {};
+    saveUserData({
+      ...existing,
+      profilePhotoUrl: data.profilePhotoUrl,
+    });
+  }
+
+  return data;
+};
+
+/**
+ * 4. 🖼️ FETCH_EVENT_COVER_PHOTO API
+ * Endpoint: POST /cs-network/profile-operations
+ * Content-Type: multipart/form-data
+ * Authorization: Bearer <token>
+ *
+ * Body: formData { profileRequestType: "FETCH_EVENT_COVER_PHOTO", eventId: 3 }
+ * Response: { "fileUrl": "https://connectsouq.sundukpay.com/uploads/events/3/uuid.jpg" }
+ */
+export const fetchEventCoverPhoto = async (eventId) => {
+  if (!eventId) {
+    throw new Error('eventId is required.');
+  }
+
+  const formData = new FormData();
+  formData.append('profileRequestType', 'FETCH_EVENT_COVER_PHOTO');
+  formData.append('eventId', String(eventId));
+
+  const data = await authenticatedFetch(`${BASE_URL}/cs-network/profile-operations`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  return data;
+};
+
+/**
+ * 5. 👤 FETCH_MY_PROFILE API
  * Endpoint: POST /cs-network/member
  * Authorization: Bearer <token>
  * Content-Type: application/json
@@ -122,57 +177,64 @@ export const fetchMyProfile = async () => {
     }),
   });
 
-  if (data?.profile) {
-    const existing = getUserData() || {};
-    saveUserData({
-      ...existing,
-      ...data.profile,
-      profilePhotoUrl: resolvePhotoUrl(data.profile.profilePhotoUrl),
-    });
+  let photoUrl = data?.profile?.profilePhotoUrl || data?.profile?.profilePicture;
+
+  // Also fetch dedicated profile photo via FETCH_PROFILE endpoint
+  try {
+    const photoRes = await fetchMyProfilePhoto();
+    if (photoRes?.profilePhotoUrl) {
+      photoUrl = photoRes.profilePhotoUrl;
+    }
+  } catch (err) {
+    console.warn('fetchMyProfilePhoto fallback error:', err);
   }
 
-  return data;
+  if (data?.profile || photoUrl) {
+    const existing = getUserData() || {};
+    const updatedUser = {
+      ...existing,
+      ...(data?.profile || {}),
+      ...(photoUrl ? { profilePhotoUrl: photoUrl } : {}),
+    };
+    saveUserData(updatedUser);
+  }
+
+  return {
+    ...data,
+    profile: {
+      ...(data?.profile || {}),
+      ...(photoUrl ? { profilePhotoUrl: photoUrl } : {}),
+    },
+  };
 };
+
+export const API_BASE_URL = 'https://connectsouq.sundukpay.com/cs-network';
 
 /**
  * Helper to construct image URLs for display.
- *
- * WHY THIS MATTERS:
- * Browsers cannot send custom headers (like ngrok-skip-browser-warning)
- * on <img src> or CSS background-image requests.
- * ngrok returns its HTML warning page instead of the actual image.
- *
- * SOLUTION:
- * Strip the ngrok domain from /uploads paths → use local Vite proxy path.
- * Vite proxy adds the ngrok header server-side → ngrok serves the real image.
- *
- * e.g. https://ngrok-xyz.ngrok-free.app/uploads/photo.jpg
- *       → /uploads/photo.jpg  (proxied via Vite with ngrok header)
+ * Handles full URLs (e.g. https://connectsouq.sundukpay.com/uploads/...) as well as relative paths.
  */
 export const resolvePhotoUrl = (rawUrl) => {
   if (!rawUrl) return null;
 
-  // Already a local proxy path — just add cache buster
-  if (rawUrl.startsWith('/uploads/')) {
-    return `${rawUrl}?t=${Date.now()}`;
+  // Clean internal Docker container /app/ path to public web server /uploads/ path
+  let cleaned = String(rawUrl)
+    .replace('/app/uploads/', '/uploads/')
+    .replace('app/uploads/', 'uploads/');
+
+  // Full URL (http:// or https://)
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+    const separator = cleaned.includes('?') ? '&' : '?';
+    return `${cleaned}${separator}t=${Date.now()}`;
   }
 
-  // Full ngrok URL with /uploads path → strip domain, use Vite proxy
-  try {
-    const parsed = new URL(rawUrl);
-    if (parsed.pathname.startsWith('/uploads/')) {
-      return `${parsed.pathname}?t=${Date.now()}`;
-    }
-  } catch {
-    // Not a valid URL, fall through
+  // Relative path starting with /
+  if (cleaned.startsWith('/')) {
+    const separator = cleaned.includes('?') ? '&' : '?';
+    return `${BASE_URL}${cleaned}${separator}t=${Date.now()}`;
   }
 
-  // Relative path without /uploads prefix
-  if (rawUrl.startsWith('/')) {
-    return `${BASE_URL}${rawUrl}?t=${Date.now()}`;
-  }
-
-  // Absolute URL (non-ngrok CDN etc.) — use as-is with cache buster
-  const separator = rawUrl.includes('?') ? '&' : '?';
-  return `${rawUrl}${separator}t=${Date.now()}`;
+  // Relative path without leading slash
+  const separator = cleaned.includes('?') ? '&' : '?';
+  return `${BASE_URL}/${cleaned}${separator}t=${Date.now()}`;
 };

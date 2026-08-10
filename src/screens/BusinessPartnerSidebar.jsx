@@ -17,6 +17,8 @@ const PIPELINE_STAGES = [
   { id: 'CLOSED_LOST',  label: 'Closed Lost',  color: '#EF5350', colorDark: '#C62828', IconComp: () => '✕' },
 ];
 
+import { resolvePhotoUrl } from '../api/profileOperationsApi';
+
 const getInitials = (name) => {
   if (!name) return 'BP';
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -32,6 +34,7 @@ export default function BusinessPartnerSidebar({
   getTotalLeads,
   userData,
   onLogout,
+  onOpenProfile,
 }) {
   return (
     <aside className="sidebar">
@@ -61,35 +64,28 @@ export default function BusinessPartnerSidebar({
         })}
       </nav>
 
-      {/* Pipeline Stages (shown when pipeline active) */}
-      {activeNav === 'pipeline' && (
+      {/* Pipeline Stage Quick Filters */}
+      {stageCounts && (
         <>
-          <div className="nav-divider" />
-          <div>
-            <div className="nav-label">Pipeline Stages</div>
+          <div className="nav-label" style={{ marginTop: 24 }}>Pipeline Stages</div>
+          <div className="stage-quick-links">
             <div
-              className={`nav-stage ${activeStage === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveStage('all')}
+              className={`stage-link ${activeStage === null ? 'active' : ''}`}
+              onClick={() => setActiveStage(null)}
             >
-              <div className="nav-stage-icon-box" style={{ background: `${BRAND}20` }}>
-                <List style={{ color: BRAND }} />
-              </div>
-              <span style={{ flex: 1 }}>All Stages</span>
+              <List size={14} /> <span>All Pipeline</span>
               <span className="nav-stage-count">{getTotalLeads()}</span>
             </div>
 
             {PIPELINE_STAGES.map((stage) => {
-              const StageIcon = stage.IconComp;
               return (
                 <div
                   key={stage.id}
-                  className={`nav-stage ${activeStage === stage.id ? 'active' : ''}`}
+                  className={`stage-link ${activeStage === stage.id ? 'active' : ''}`}
                   onClick={() => setActiveStage(stage.id)}
                 >
-                  <div className="nav-stage-icon-box" style={{ background: `${stage.color}20` }}>
-                    <StageIcon style={{ color: stage.color }} />
-                  </div>
-                  <span style={{ flex: 1 }}>{stage.label}</span>
+                  <span style={{ color: stage.color }}>{stage.IconComp()}</span>
+                  <span>{stage.label}</span>
                   <span className="nav-stage-count">{stageCounts[stage.id] || 0}</span>
                 </div>
               );
@@ -100,9 +96,22 @@ export default function BusinessPartnerSidebar({
 
       {/* Profile Card */}
       <div className="sidebar-foot">
-        <div className="profile-card">
+        <div className="profile-card cursor-pointer hover:border-emerald-400 transition" onClick={onOpenProfile} title="Click to view My Profile">
           <div className="profile-header">
-            <div className="profile-avatar">{getInitials(userData?.fullName || 'BP')}</div>
+            {userData?.profilePhotoUrl || userData?.profilePicture ? (
+              <img
+                src={resolvePhotoUrl(userData.profilePhotoUrl || userData.profilePicture)}
+                alt={userData?.fullName || 'BP'}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.style.display = 'none';
+                }}
+                className="profile-avatar object-cover"
+                style={{ width: 36, height: 36, borderRadius: '50%' }}
+              />
+            ) : (
+              <div className="profile-avatar">{getInitials(userData?.fullName || 'BP')}</div>
+            )}
             <div style={{ minWidth: 0, flex: 1 }}>
               <div className="profile-name">{(userData?.fullName || 'PARTNER').toUpperCase()}</div>
               <div className="profile-role">

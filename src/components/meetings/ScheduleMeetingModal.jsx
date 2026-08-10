@@ -36,7 +36,7 @@ export default function ScheduleMeetingModal({
 }) {
   const user = getUserData() || {};
   const roleCategory = getMeetingRoleCategory(user);
-  const userFranchiseId = user.franchiseId || user.primaryFranchiseId || 12;
+  const userFranchiseId = user.franchiseId || user.primaryFranchiseId || null;
 
   // Build dynamic scenarios array allowed for current role category (§2)
   const availableScenarios = useMemo(() => {
@@ -378,6 +378,10 @@ export default function ScheduleMeetingModal({
     const finalUserIds = selectedUsers.map(u => u.userId);
     const targetDownlineFranchiseId = selectedFranchises[0]?.franchiseId;
 
+    const effectiveFranchiseId = targetDownlineFranchiseId
+      ? Number(targetDownlineFranchiseId)
+      : (userFranchiseId ? Number(userFranchiseId) : null);
+
     const formPayload = {
       title,
       description,
@@ -390,8 +394,10 @@ export default function ScheduleMeetingModal({
       requestType: activeReqType,
       conversationId: Number(conversationId) || null,
       userIds: finalUserIds,
-      franchiseIds: finalFranchiseIds,
-      ...(activeReqType === MEETING_REQUEST_TYPES.FRANCHISE_DOWNLINE && roleCategory === 'GLOBAL_ADMIN' && targetDownlineFranchiseId && { franchiseId: Number(targetDownlineFranchiseId) }),
+      franchiseIds: finalFranchiseIds.length > 0
+        ? finalFranchiseIds
+        : (userFranchiseId ? [Number(userFranchiseId)] : []),
+      ...(effectiveFranchiseId && { franchiseId: effectiveFranchiseId }),
     };
 
     // Client side validation using role category

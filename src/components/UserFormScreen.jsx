@@ -9,7 +9,7 @@ import {
 import Backgroundimage from '../assets/image/Backgroundimg19.png';
 import { authenticatedFetch, removeItem, clearTokens } from '../api/auth';
 
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 
 const COUNTRY_CODES = [
   { code: '+966', flag: '🇸🇦', name: 'Saudi Arabia', short: 'SA', maxLen: 9 },

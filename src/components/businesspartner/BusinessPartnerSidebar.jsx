@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 
 import { THEME, PIPELINE_STAGES } from '../constants/BpConstants';
+import { resolvePhotoUrl } from '../../api/profileOperationsApi';
 
 /* ── Attach Lucide icons to each stage ── */
 const STAGE_ICON_MAP = {
@@ -38,6 +39,7 @@ export default function BusinessPartnerSidebar({
   getTotalLeads,
   userData,
   onLogout,
+  onOpenProfile,
 }) {
   return (
     <aside className="sidebar">
@@ -120,19 +122,36 @@ export default function BusinessPartnerSidebar({
 
       {/* ── Profile Card ── */}
       <div className="sidebar-foot">
-        <div className="profile-card">
-
-          {/* Avatar + Name */}
+        <div
+          className="profile-card cursor-pointer hover:border-emerald-400 transition"
+          onClick={onOpenProfile}
+          title="Click to view / edit My Profile"
+          style={{ cursor: 'pointer' }}
+        >
+          {/* Avatar + Name + Email */}
           <div className="profile-header">
-            <div className="profile-avatar">
-              {getInitials(userData?.fullName || 'BP')}
-            </div>
+            {userData?.profilePhotoUrl || userData?.profilePicture ? (
+              <img
+                src={resolvePhotoUrl(userData.profilePhotoUrl || userData.profilePicture)}
+                alt={userData?.fullName || 'BP'}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.style.display = 'none';
+                }}
+                className="profile-avatar object-cover"
+                style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0 }}
+              />
+            ) : (
+              <div className="profile-avatar">
+                {getInitials(userData?.fullName || 'BP')}
+              </div>
+            )}
             <div style={{ minWidth: 0, flex: 1 }}>
               <div className="profile-name">
-                {(userData?.fullName || 'PARTNER').toUpperCase()}
+                {userData?.fullName || 'Business Partner'}
               </div>
-              <div className="profile-role">
-                <ShieldCheck size={10} /> Verified Broker
+              <div className="profile-role" style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {userData?.email || 'Click to edit profile'}
               </div>
             </div>
           </div>

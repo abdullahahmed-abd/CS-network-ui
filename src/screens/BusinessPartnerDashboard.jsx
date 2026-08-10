@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authenticatedFetch, getUserData } from '../api/auth';
+import { fetchMyProfile, resolvePhotoUrl } from '../api/profileOperationsApi';
+import MyProfileModal from '../components/profile/MyProfileModal';
 import BusinessPartnerSidebar from './BusinessPartnerSidebar';
 import { CreateProposalModal } from '../components/businesspartner/modals/CreateProposalModal';
 import { EventsTab } from './EventsComponents';
@@ -22,8 +24,7 @@ import MeetingsTab from '../components/meetings/MeetingsTab';
 import PartnershipsTab from '../components/partnerships/PartnershipsTab';
 import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
 
-const BASE_URL =
-  'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 
 /* ═══════════════════ 🎨 GREEN THEME SYSTEM (like BuyerSellerDashboard) ═══════════════════ */
 const THEME = {
@@ -3045,7 +3046,28 @@ export default function BusinessPartnerDashboard({ onLogout }) {
   const requestRef = useRef(false);
   const loadedOnceRef = useRef(false);
 
-  const userData = getUserData() || {};
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState(() => getUserData() || {});
+
+  useEffect(() => {
+    fetchMyProfile()
+      .then((res) => {
+        if (res?.profile) {
+          setUserProfile((prev) => ({ ...prev, ...res.profile }));
+        }
+      })
+      .catch((err) => {
+        console.warn('BP fetchMyProfile failed:', err);
+      });
+  }, []);
+
+  const handleProfileUpdated = (updated) => {
+    if (updated) {
+      setUserProfile((prev) => ({ ...prev, ...updated }));
+    }
+  };
+
+  const userData = userProfile;
   const showToast = (message, type = 'success') => setToast({ message, type });
 
   // ═══════════════ Fetch Pipeline ═══════════════
@@ -3267,11 +3289,32 @@ export default function BusinessPartnerDashboard({ onLogout }) {
 
         {/* Profile Card */}
         <div className="sidebar-foot" style={{ marginTop: 'auto', paddingTop: 12 }}>
-          <div className="profile-card">
+          <div
+            className="profile-card cursor-pointer hover:border-emerald-400 transition"
+            onClick={() => setProfileModalOpen(true)}
+            title="Click to view / edit My Profile"
+            style={{ cursor: 'pointer' }}
+          >
             <div className="profile-header">
-              <div className="profile-avatar">{(userData?.fullName || 'BP').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2)}</div>
+              {(() => {
+                const photoSrc = resolvePhotoUrl(userData?.profilePhotoUrl || userData?.profilePicture);
+                return photoSrc ? (
+                  <img
+                    src={photoSrc}
+                    alt={userData?.fullName || 'BP'}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                    }}
+                    className="profile-avatar object-cover"
+                    style={{ width: 36, height: 36, borderRadius: '50%' }}
+                  />
+                ) : (
+                  <div className="profile-avatar">{(userData?.fullName || userData?.email || 'BP').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2)}</div>
+                );
+              })()}
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div className="profile-name">{(userData?.fullName || 'PARTNER').toUpperCase()}</div>
+                <div className="profile-name">{(userData?.fullName || userData?.email || 'PARTNER').toUpperCase()}</div>
                 <div className="profile-role">
                   <ShieldCheck size={10} /> Verified Partner
                 </div>
@@ -3792,6 +3835,13 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           <polyline points="18 15 12 9 6 15" />
         </svg>
       </button>
+
+      {/* My Profile Modal */}
+      <MyProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onProfileUpdated={handleProfileUpdated}
+      />
     </div>
   );
 }

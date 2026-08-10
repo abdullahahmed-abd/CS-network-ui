@@ -73,6 +73,11 @@ export default function OperatorFormScreen({ inviteData, onComplete, onSessionEx
     setStep((s) => s + 1);
   };
 
+  const handleBack = () => {
+    setError('');
+    setStep((s) => s - 1);
+  };
+
   const countries = getCountries();
   const availableStates = form.country ? getStates(form.country) : [];
   const availableCities = (form.country && form.state) ? getCities(form.country, form.state) : [];

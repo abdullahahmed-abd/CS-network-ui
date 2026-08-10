@@ -1,11 +1,10 @@
-// components/globalAdmin/Sidebar.jsx
 import { motion, AnimatePresence } from 'framer-motion';
+import { resolvePhotoUrl } from '../../api/profileOperationsApi';
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: '🏠' },
   { id: 'media_hub', label: 'Media Hub', icon: '🎬' },
   { id: 'franchises', label: 'Franchises', icon: '🏢' },
-  { id: 'invitations', label: 'Invitations', icon: '📨' },
   { id: 'directory', label: 'Directory', icon: '📖' },
   { id: 'events', label: 'Events', icon: '🎉' },
   { id: 'meetings', label: 'Meetings', icon: '📅' },
@@ -16,7 +15,7 @@ const navItems = [
 
 export { navItems };
 
-export default function Sidebar({ open, activeNav, setActiveNav, user, onLogout }) {
+export default function Sidebar({ open, activeNav, setActiveNav, user, onLogout, onOpenProfile }) {
   return (
     <AnimatePresence initial={false}>
       {open && (
@@ -123,31 +122,55 @@ export default function Sidebar({ open, activeNav, setActiveNav, user, onLogout 
             borderTop: '1px solid rgba(255,255,255,0.1)',
             flexShrink: 0,
           }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              marginBottom: 14, padding: '10px 12px', borderRadius: 12,
-              background: 'rgba(255,255,255,0.08)',
-            }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, #BBF7D0, #86EFAC)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#166534', fontWeight: 800, fontSize: 15,
-                border: '2px solid rgba(255,255,255,0.2)',
-              }}>
-                {(user.fullName || 'A')[0].toUpperCase()}
-              </div>
+            <motion.div
+              whileHover={{ scale: 1.02, background: 'rgba(255,255,255,0.14)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onOpenProfile}
+              title="Click to view / edit My Profile"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                marginBottom: 14, padding: '10px 12px', borderRadius: 12,
+                background: 'rgba(255,255,255,0.08)', cursor: 'pointer',
+              }}
+            >
+              {(() => {
+                const photoSrc = resolvePhotoUrl(user?.profilePhotoUrl || user?.profilePicture);
+                return photoSrc ? (
+                  <img
+                    src={photoSrc}
+                    alt={user?.fullName || 'Admin'}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                    }}
+                    style={{
+                      width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                      objectFit: 'cover', border: '2px solid rgba(255,255,255,0.2)',
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                    background: 'linear-gradient(135deg, #BBF7D0, #86EFAC)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#166534', fontWeight: 800, fontSize: 15,
+                    border: '2px solid rgba(255,255,255,0.2)',
+                  }}>
+                    {(user?.fullName || user?.email || 'A')[0].toUpperCase()}
+                  </div>
+                );
+              })()}
               <div style={{ overflow: 'hidden', flex: 1 }}>
                 <div style={{
                   color: '#fff', fontWeight: 700, fontSize: 12,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{user.fullName || 'Admin'}</div>
+                }}>{user?.fullName || 'Admin'}</div>
                 <div style={{
                   color: 'rgba(255,255,255,0.5)', fontSize: 10,
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{user.email || ''}</div>
+                }}>{user?.email || 'Click to edit profile'}</div>
               </div>
-            </div>
+            </motion.div>
 
             <motion.button
               onClick={onLogout}

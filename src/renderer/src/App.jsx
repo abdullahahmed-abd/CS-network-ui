@@ -23,8 +23,9 @@ import {
   removeItem, setSessionExpiredHandler,
   authenticatedFetch,
 } from '../../api/auth';
+import { fetchMyProfile } from '../../api/profileOperationsApi';
 
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 
 // ── BP status localStorage key ──
 const BP_STATUS_KEY    = 'bpApplicationStatus';
@@ -222,6 +223,7 @@ export default function App() {
       const storedBpStatus = getItem(BP_STATUS_KEY);
 
       if (storedToken) {
+        fetchMyProfile().catch(() => {});
         const formFilled = getItem('formFilled');
         if (formFilled === 'true') {
           setSelectedRoles(savedRoles);

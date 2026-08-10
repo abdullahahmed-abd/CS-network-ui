@@ -6,9 +6,7 @@
 // Document Download: GET /partnerships/documents/{documentId}/download
 // ══════════════════════════════════════════════════════════════════════════════
 
-import { getAccessToken, getUserData } from './auth';
-
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+import { authenticatedFetch, BASE_URL } from './auth';
 
 // ─────────────────────────────────────────────
 // Enums & Reference Constants (§3.4 & §6)

@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { formatEnum } from './DirectoryConstants';
+import { resolvePhotoUrl } from '../../api/profileOperationsApi';
 
 export default function MemberCard({ member, onViewProfile, onUpgradeClick }) {
   if (!member) return null;
@@ -74,8 +75,12 @@ export default function MemberCard({ member, onViewProfile, onUpgradeClick }) {
             <div className="relative flex-shrink-0">
               {profilePicture ? (
                 <img
-                  src={profilePicture}
-                  alt={fullName}
+                  src={resolvePhotoUrl(profilePicture)}
+                  alt={fullName || 'Member'}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || 'Member')}&background=10B981&color=fff`;
+                  }}
                   className="w-13 h-13 rounded-2xl object-cover border border-slate-200 shadow-sm"
                 />
               ) : (

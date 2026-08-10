@@ -1,7 +1,9 @@
 // components/franchiseOperator/FranchiseOperatorDashboard.jsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clearTokens, getUserData } from '../../api/auth';
+import { fetchMyProfile, resolvePhotoUrl } from '../../api/profileOperationsApi';
+import MyProfileModal from '../profile/MyProfileModal';
 import FranchiseOperatorContent from '../masterOperator/MasterOperatorContent';
 
 // ── Design Tokens ─────────────────────────────────────────────────
@@ -70,7 +72,6 @@ const getFranchiseConfig = (type) => {
         { id: 'general', label: 'General Franchises', icon: '🏢' },
         { id: 'sector', label: 'Sector Franchises', icon: '🏭' },
         { id: 'members', label: 'Members', icon: '👥' },
-        { id: 'invite', label: 'Invite Link', icon: '🔗' },
         { id: 'events', label: 'Events', icon: '🎉' },
         { id: 'meetings', label: 'Meetings', icon: '📅' },
         { id: 'partnerships', label: 'Partnerships', icon: '🤝' },
@@ -81,7 +82,6 @@ const getFranchiseConfig = (type) => {
         { id: 'bp_approvals', label: 'BP Approvals', icon: '🛡️' },
         { id: 'commissions', label: 'Commissions', icon: '💰' },
         { id: 'members', label: 'Members', icon: '👥' },
-        { id: 'invite', label: 'Invite Link', icon: '🔗' },
         { id: 'events', label: 'Events', icon: '🎉' },
         { id: 'marketplace', label: 'Marketplace', icon: '🛒' },
         { id: 'meetings', label: 'Meetings', icon: '📅' },
@@ -92,7 +92,28 @@ const getFranchiseConfig = (type) => {
 };
 
 export default function FranchiseOperatorDashboard({ onLogout }) {
-  const user = getUserData() || {};
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState(() => getUserData() || {});
+
+  useEffect(() => {
+    fetchMyProfile()
+      .then((res) => {
+        if (res?.profile) {
+          setUserProfile((prev) => ({ ...prev, ...res.profile }));
+        }
+      })
+      .catch((err) => {
+        console.warn('MasterOperator fetchMyProfile failed:', err);
+      });
+  }, []);
+
+  const handleProfileUpdated = (updated) => {
+    if (updated) {
+      setUserProfile((prev) => ({ ...prev, ...updated }));
+    }
+  };
+
+  const user = userProfile;
   const userRoles = user.roles || [];
   const rawType = (
     user.franchiseType ||
@@ -273,26 +294,53 @@ export default function FranchiseOperatorDashboard({ onLogout }) {
               borderTop: '1px solid rgba(255,255,255,0.06)',
               flexShrink: 0, position: 'relative', zIndex: 1,
             }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 11,
-                marginBottom: 13, padding: '12px 14px', borderRadius: T.radius.md,
-                background: 'rgba(255,255,255,0.06)',
-                backdropFilter: T.blur.sm,
-                border: '1px solid rgba(255,255,255,0.05)',
-              }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: 12, flexShrink: 0,
-                  background: cfg.isGeneral
-                    ? 'linear-gradient(135deg,#60A5FA,#818CF8)'
-                    : 'linear-gradient(135deg,#34D399,#06B6D4)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: cfg.isGeneral ? '#1E3A8A' : '#064E3B',
-                  fontWeight: 800, fontSize: 15,
-                  border: '2px solid rgba(255,255,255,0.18)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                }}>
-                  {(user.fullName || 'O')[0].toUpperCase()}
-                </div>
+              <motion.div
+                onClick={() => setProfileModalOpen(true)}
+                whileHover={{ scale: 1.02, background: 'rgba(255,255,255,0.12)' }}
+                whileTap={{ scale: 0.98 }}
+                title="Click to view / edit My Profile"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 11,
+                  marginBottom: 13, padding: '12px 14px', borderRadius: T.radius.md,
+                  background: 'rgba(255,255,255,0.06)',
+                  backdropFilter: T.blur.sm,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  cursor: 'pointer', transition: 'all 0.18s ease',
+                }}
+              >
+                {(() => {
+                  const photoSrc = resolvePhotoUrl(user.profilePhotoUrl || user.profilePicture);
+                  return photoSrc ? (
+                    <img
+                      src={photoSrc}
+                      alt={user.fullName || 'Operator'}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                      }}
+                      style={{
+                        width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+                        objectFit: 'cover',
+                        border: '2px solid rgba(255,255,255,0.18)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+                      background: cfg.isGeneral
+                        ? 'linear-gradient(135deg,#60A5FA,#818CF8)'
+                        : 'linear-gradient(135deg,#34D399,#06B6D4)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: cfg.isGeneral ? '#1E3A8A' : '#064E3B',
+                      fontWeight: 800, fontSize: 15,
+                      border: '2px solid rgba(255,255,255,0.18)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    }}>
+                      {(user.fullName || user.email || 'O')[0].toUpperCase()}
+                    </div>
+                  );
+                })()}
                 <div style={{ overflow: 'hidden', flex: 1 }}>
                   <div style={{
                     color: '#fff', fontWeight: 700, fontSize: 12,
@@ -300,12 +348,12 @@ export default function FranchiseOperatorDashboard({ onLogout }) {
                     fontFamily: T.font,
                   }}>{user.fullName || 'Franchise Operator'}</div>
                   <div style={{
-                    color: 'rgba(255,255,255,0.38)', fontSize: 10,
+                    color: 'rgba(255,255,255,0.5)', fontSize: 10,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     fontFamily: T.font,
-                  }}>{user.email || ''}</div>
+                  }}>{user.email || 'Click to edit profile'}</div>
                 </div>
-              </div>
+              </motion.div>
 
               <motion.button
                 onClick={handleLogout}
@@ -388,34 +436,72 @@ export default function FranchiseOperatorDashboard({ onLogout }) {
             </div>
           </div>
 
-          {/* Live badge */}
-          <motion.div
-            animate={{
-              boxShadow: [
-                `0 0 0 0 ${cfg.isGeneral ? 'rgba(59,130,246,0.4)' : 'rgba(16,185,129,0.4)'}`,
-                `0 0 0 8px ${cfg.isGeneral ? 'rgba(59,130,246,0)' : 'rgba(16,185,129,0)'}`,
-              ],
-            }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 18px', borderRadius: T.radius.full,
-              background: cfg.accentLight,
-              backdropFilter: T.blur.sm,
-              border: `1px solid ${cfg.accentMed}`,
-            }}
-          >
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: cfg.accent,
-              boxShadow: `0 0 8px ${cfg.accent}`,
-            }} />
-            <span style={{
-              fontSize: 12, fontWeight: 700,
-              color: cfg.isGeneral ? '#1D4ED8' : T.green[700],
-              fontFamily: T.font,
-            }}>{cfg.icon} {cfg.label}</span>
-          </motion.div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* My Profile Trigger */}
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setProfileModalOpen(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 14px', borderRadius: 20,
+                background: cfg.accentLight, border: `1px solid ${cfg.accentMed}`,
+                cursor: 'pointer', fontFamily: T.font,
+              }}
+            >
+              {(() => {
+                const photoSrc = resolvePhotoUrl(user.profilePhotoUrl || user.profilePicture);
+                return photoSrc ? (
+                  <img
+                    src={photoSrc}
+                    alt="Profile"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                    style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 26, height: 26, borderRadius: '50%', background: cfg.accent,
+                    color: '#fff', fontSize: 11, fontWeight: 800,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    👤
+                  </div>
+                );
+              })()}
+              <span style={{ fontSize: 12, fontWeight: 700, color: cfg.isGeneral ? '#1D4ED8' : T.green[700] }}>
+                My Profile
+              </span>
+            </motion.button>
+
+            {/* Live badge */}
+            <motion.div
+              animate={{
+                boxShadow: [
+                  `0 0 0 0 ${cfg.isGeneral ? 'rgba(59,130,246,0.4)' : 'rgba(16,185,129,0.4)'}`,
+                  `0 0 0 8px ${cfg.isGeneral ? 'rgba(59,130,246,0)' : 'rgba(16,185,129,0)'}`,
+                ],
+              }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 18px', borderRadius: T.radius.full,
+                background: cfg.accentLight,
+                backdropFilter: T.blur.sm,
+                border: `1px solid ${cfg.accentMed}`,
+              }}
+            >
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: cfg.accent,
+                boxShadow: `0 0 8px ${cfg.accent}`,
+              }} />
+              <span style={{
+                fontSize: 12, fontWeight: 700,
+                color: cfg.isGeneral ? '#1D4ED8' : T.green[700],
+                fontFamily: T.font,
+              }}>{cfg.icon} {cfg.label}</span>
+            </motion.div>
+          </div>
         </header>
 
         {/* Content */}
@@ -446,6 +532,13 @@ export default function FranchiseOperatorDashboard({ onLogout }) {
           <div style={{ height: 48 }} />
         </main>
       </div>
+
+      {/* My Profile Modal */}
+      <MyProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onProfileUpdated={handleProfileUpdated}
+      />
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');

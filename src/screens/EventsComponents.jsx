@@ -11,12 +11,12 @@ import {
   Copy, Download, Timer,
 } from 'lucide-react';
 import { authenticatedFetch } from '../api/auth';
-import { resolvePhotoUrl } from '../api/profileOperationsApi';
+import { resolvePhotoUrl, fetchEventCoverPhoto } from '../api/profileOperationsApi';
 
 // ─────────────────────────────────────────────
 // ⚠️ IMPORTANT: Match these with your dashboard
 // ─────────────────────────────────────────────
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 const BRAND       = '#A2CB8B';
 const BRAND_DARK  = '#7aab65';
 const BRAND_LIGHT = '#e8f5e2';
@@ -271,53 +271,119 @@ export function JoinNowButton({ eventId, startDateTime, endDateTime, fallbackLin
 }
 
 // ══════════════════════════════════════════════
+// Image Lightbox Modal — Full Size Uncropped View
+// ══════════════════════════════════════════════
+export function ImageLightboxModal({ imageUrl, title, onClose }) {
+  if (!imageUrl) return null;
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+      >
+        <motion.div
+          initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+          onClick={(e) => e.stopPropagation()}
+          className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center"
+        >
+          <img
+            src={imageUrl}
+            alt={title || 'Full Event Banner'}
+            className="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl"
+          />
+          {title && (
+            <p className="mt-3 text-white text-sm font-bold text-center drop-shadow-md">
+              {title}
+            </p>
+          )}
+          <button
+            onClick={onClose}
+            className="absolute -top-4 -right-4 w-9 h-9 rounded-full bg-white text-gray-900 font-extrabold flex items-center justify-center shadow-xl hover:bg-gray-100 transition"
+          >
+            ✕
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ══════════════════════════════════════════════
 // EventCard
 // ══════════════════════════════════════════════
 export const EventCard = forwardRef(function EventCard({ event, onView, index = 0 }, ref) {
   const isOnline = event.eventType === 'ONLINE';
   const isPaid   = event.paid;
 
-  return (
-    <motion.div ref={ref} layout
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.985 }} whileHover={{ y: -4 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 25, delay: index * 0.04 }}
-      className="relative overflow-hidden rounded-2xl bg-white"
-      style={{ boxShadow: `0 10px 40px rgba(0,0,0,0.08), 0 0 0 1px ${BRAND}20` }}
-    >
-      <div
-        className="relative h-40 overflow-hidden"
-        style={{
-          background: event.coverImageUrl
-            ? `url(${resolvePhotoUrl(event.coverImageUrl)}) center/cover`
-            : `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)`,
-        }}
-      >
-        <div className="absolute inset-0"
-             style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%)' }} />
+  const [coverUrl, setCoverUrl] = useState(() => {
+    const raw = event?.coverImageUrl || event?.coverPhotoUrl || event?.fileUrl || event?.photoUrl || event?.coverImage;
+    return (raw && typeof raw === 'string' && raw.trim() !== '' && raw !== 'null') ? resolvePhotoUrl(raw) : null;
+  });
 
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md"
-                  style={{ background: isOnline ? 'rgba(59,130,246,0.9)' : 'rgba(249,115,22,0.9)' }}>
+  useEffect(() => {
+    const raw = event?.coverImageUrl || event?.coverPhotoUrl || event?.fileUrl || event?.photoUrl || event?.coverImage;
+    if (raw && typeof raw === 'string' && raw.trim() !== '' && raw !== 'null') {
+      setCoverUrl(resolvePhotoUrl(raw));
+    }
+
+    if (event?.id) {
+      fetchEventCoverPhoto(event.id)
+        .then((res) => {
+          if (res?.fileUrl) {
+            setCoverUrl(resolvePhotoUrl(res.fileUrl));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [event?.id, event?.coverImageUrl]);
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  return (
+    <>
+      <motion.div ref={ref} layout
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.985 }} whileHover={{ y: -4 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25, delay: index * 0.04 }}
+        className="relative overflow-hidden rounded-2xl bg-white"
+        style={{ boxShadow: `0 10px 40px rgba(0,0,0,0.08), 0 0 0 1px ${BRAND}20` }}
+      >
+        <div
+          className="relative h-48 sm:h-52 overflow-hidden cursor-pointer group bg-slate-100 border-b border-slate-100"
+          onClick={() => coverUrl && setLightboxOpen(true)}
+        >
+          {coverUrl ? (
+            <img
+              src={coverUrl}
+              alt={event.title || 'Event Cover'}
+              onError={() => setCoverUrl(null)}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400">
+              <Calendar className="h-10 w-10 mb-1 opacity-60" />
+              <span className="text-xs font-semibold">No Event Image</span>
+            </div>
+          )}
+
+          {/* Clean Crisp Top Badges */}
+          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-10">
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm"
+                  style={{ background: isOnline ? '#2563EB' : '#EA580C' }}>
               {isOnline ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
               {isOnline ? 'ONLINE' : 'IN-PERSON'}
             </span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm"
+                  style={{ background: isPaid ? '#DB2777' : '#059669' }}>
+              {isPaid
+                ? <><Ticket className="h-3 w-3" /> {event.currency} {event.price}</>
+                : <><Sparkles className="h-3 w-3" /> FREE</>}
+            </span>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md"
-                style={{ background: isPaid ? 'rgba(236,72,153,0.9)' : 'rgba(16,185,129,0.9)' }}>
-            {isPaid
-              ? <><Ticket className="h-3 w-3" /> {event.currency} {event.price}</>
-              : <><Sparkles className="h-3 w-3" /> FREE</>}
-          </span>
         </div>
-
-        <div className="absolute bottom-3 left-3 right-3">
-          <p className="text-white font-extrabold text-base leading-tight drop-shadow-lg line-clamp-2">
-            {event.title}
-          </p>
-        </div>
-      </div>
 
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -362,6 +428,15 @@ export const EventCard = forwardRef(function EventCard({ event, onView, index = 
         </div>
       </div>
     </motion.div>
+
+    {lightboxOpen && (
+      <ImageLightboxModal
+        imageUrl={coverUrl}
+        title={event.title}
+        onClose={() => setLightboxOpen(false)}
+      />
+    )}
+    </>
   );
 });
 
@@ -374,6 +449,24 @@ export function EventDetailsModal({ eventId, onClose, onRegistered }) {
   const [error,        setError]        = useState('');
   const [registering,  setRegistering]  = useState(false);
   const [registration, setRegistration] = useState(null);
+  const [coverUrl,     setCoverUrl]     = useState(null);
+
+  useEffect(() => {
+    if (!event) return;
+    const raw = event.coverImageUrl || event.coverPhotoUrl || event.fileUrl || event.photoUrl || event.coverImage;
+    if (raw && typeof raw === 'string' && raw.trim() !== '' && raw !== 'null') {
+      setCoverUrl(resolvePhotoUrl(raw));
+    }
+    if (event.id) {
+      fetchEventCoverPhoto(event.id)
+        .then((res) => {
+          if (res?.fileUrl) {
+            setCoverUrl(resolvePhotoUrl(res.fileUrl));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [event]);
 
   const fetchDetails = useCallback(async () => {
     setLoading(true); setError('');
@@ -465,46 +558,50 @@ export function EventDetailsModal({ eventId, onClose, onRegistered }) {
         ) : (
           <>
             <div
-              className="relative flex-shrink-0 h-48"
-              style={{
-                background: event.coverImageUrl
-                  ? `url(${resolvePhotoUrl(event.coverImageUrl)}) center/cover`
-                  : `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)`,
-              }}
+              className="relative flex-shrink-0 h-56 sm:h-64 overflow-hidden bg-slate-100 border-b border-slate-100"
             >
-              <div className="absolute inset-0"
-                   style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.75) 100%)' }} />
+              {coverUrl ? (
+                <img
+                  src={coverUrl}
+                  alt={event.title || 'Event Cover'}
+                  onError={() => setCoverUrl(null)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400">
+                  <Calendar className="h-12 w-12 mb-2 opacity-60" />
+                  <span className="text-sm font-semibold">No Cover Photo</span>
+                </div>
+              )}
 
               <button onClick={onClose}
-                className="absolute top-4 right-4 z-10 rounded-xl bg-white/25 backdrop-blur-md p-2 text-white hover:bg-white/40 transition">
+                className="absolute top-4 right-4 z-10 rounded-full bg-black/50 backdrop-blur-md p-2 text-white hover:bg-black/70 transition shadow-lg">
                 <X className="h-5 w-5" />
               </button>
+            </div>
 
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md"
-                        style={{ background: isOnline ? 'rgba(59,130,246,0.9)' : 'rgba(249,115,22,0.9)' }}>
+            <div className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-5">
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm"
+                        style={{ background: isOnline ? '#2563EB' : '#EA580C' }}>
                     {isOnline ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
                     {isOnline ? 'ONLINE' : 'IN-PERSON'}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md"
-                        style={{ background: isPaid ? 'rgba(236,72,153,0.9)' : 'rgba(16,185,129,0.9)' }}>
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm"
+                        style={{ background: isPaid ? '#DB2777' : '#059669' }}>
                     {isPaid
                       ? <><Ticket className="h-3 w-3" /> {event.currency} {event.price}</>
                       : <><Sparkles className="h-3 w-3" /> FREE</>}
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md"
-                        style={{ background: 'rgba(255,255,255,0.25)' }}>
-                    <BadgeCheck className="h-3 w-3" /> {event.status}
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-gray-700 bg-gray-100 border border-gray-200">
+                    <BadgeCheck className="h-3 w-3 text-green-600" /> {event.status}
                   </span>
                 </div>
-                <h2 className="text-lg font-extrabold text-white leading-tight drop-shadow-lg">
+                <h2 className="text-xl font-extrabold text-gray-900 leading-tight">
                   {event.title}
                 </h2>
               </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-5">
 
               <AnimatePresence>
                 {registration && (

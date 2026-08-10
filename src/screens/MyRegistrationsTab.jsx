@@ -13,7 +13,7 @@ import { authenticatedFetch } from '../api/auth';
 import { CountdownTimer, JoinNowButton, fetchMyRegistrations } from './EventsComponents';
 
 // ⚠️ Match with your dashboard
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 const BRAND       = '#A2CB8B';
 const BRAND_DARK  = '#7aab65';
 const BRAND_LIGHT = '#e8f5e2';

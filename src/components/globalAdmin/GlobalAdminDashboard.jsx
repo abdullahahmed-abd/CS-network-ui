@@ -1,7 +1,8 @@
-// components/globalAdmin/GlobalAdminDashboard.jsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clearTokens, getUserData } from '../../api/auth';
+import { fetchMyProfile } from '../../api/profileOperationsApi';
+import MyProfileModal from '../profile/MyProfileModal';
 
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -49,7 +50,28 @@ function PlaceholderTab({ name }) {
 export default function GlobalAdminDashboard({ onLogout }) {
   const [activeNav, setActiveNav] = useState('overview');
   const [sidebarOpen, setSidebar] = useState(true);
-  const user = getUserData() || {};
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState(() => getUserData() || {});
+
+  useEffect(() => {
+    fetchMyProfile()
+      .then((res) => {
+        if (res?.profile) {
+          setUserProfile((prev) => ({ ...prev, ...res.profile }));
+        }
+      })
+      .catch((err) => {
+        console.warn('GlobalAdmin fetchMyProfile failed:', err);
+      });
+  }, []);
+
+  const handleProfileUpdated = (updated) => {
+    if (updated) {
+      setUserProfile((prev) => ({ ...prev, ...updated }));
+    }
+  };
+
+  const user = userProfile;
 
   const handleLogout = () => {
     clearTokens();
@@ -68,6 +90,7 @@ export default function GlobalAdminDashboard({ onLogout }) {
         setActiveNav={setActiveNav}
         user={user}
         onLogout={handleLogout}
+        onOpenProfile={() => setProfileModalOpen(true)}
       />
 
       {/* Main Content */}
@@ -99,18 +122,24 @@ export default function GlobalAdminDashboard({ onLogout }) {
               {activeNav === 'overview' && <OverviewTab onNavigate={setActiveNav} />}
               {activeNav === 'media_hub' && <MediaHubTab />}
               {activeNav === 'franchises' && <FranchisesTab />}
-              {activeNav === 'invitations' && <InvitationsTab />}
               {activeNav === 'directory' && <DirectoryTab />}
               {activeNav === 'events' && <EventsTab />}
               {activeNav === 'meetings' && <MeetingsTab />}
               {activeNav === 'partnerships' && <PartnershipsTab />}
               {activeNav === 'users' && <PlaceholderTab name="users" />}
-              {activeNav === 'settings' && <PlaceholderTab name="settings" />}
+              {activeNav === 'settings' && <PlaceholderTab name="Settings" />}
             </motion.div>
           </AnimatePresence>
           <div style={{ height: 40 }} />
         </main>
       </div>
+
+      {/* My Profile Modal */}
+      <MyProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onProfileUpdated={handleProfileUpdated}
+      />
 
       {/* Scrollbar styles */}
       <style>{`

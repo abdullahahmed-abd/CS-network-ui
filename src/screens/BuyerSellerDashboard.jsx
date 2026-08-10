@@ -21,6 +21,8 @@ import {
   getAccessToken,
   refreshAccessToken,
 } from '../api/auth';
+import { resolvePhotoUrl, fetchMyProfile } from '../api/profileOperationsApi';
+import MyProfileModal from '../components/profile/MyProfileModal';
 import { EventsTab } from './EventsComponents';
 import MyRegistrationsTab from './MyRegistrationsTab';
 import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
@@ -30,7 +32,7 @@ import DirectoryTab from '../components/directory/DirectoryTab';
 import PartnershipsTab from '../components/partnerships/PartnershipsTab';
 import { BusinessPartnerDeals as DealsTab } from '../components/businesspartner/BusinessPartnerDeals';
 
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 const WS_URL   = BASE_URL.replace(/^http/, 'ws') + '/cs-network/ws';
 
 // ─────────────────────────────────────────────
@@ -1034,8 +1036,8 @@ export function InboxTab() {
 // ══════════════════════════════════════════════
 function WindOpsShell({
   appName, navItems, activeTab, setActiveTab,
-  searchValue, onSearchChange, userInitial,
-  notifications, onNewIntent, onLogout, children,
+  searchValue, onSearchChange, userInitial, userPhotoUrl, userFullName, userEmail,
+  notifications, onNewIntent, onLogout, onOpenProfile, children,
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -1056,7 +1058,7 @@ function WindOpsShell({
               <div className="text-xs text-white/75 mt-1">Dashboard</div>
             </div>
           </div>
-          <nav className="space-y-1.5">
+          <nav className="space-y-1.5 flex-1 overflow-y-auto min-h-0 pr-1">
             {navItems.map(item => {
               const active = item.id === activeTab;
               return (
@@ -1073,16 +1075,50 @@ function WindOpsShell({
               );
             })}
           </nav>
-          <div className="mt-auto pt-8 space-y-3">
+          <div className="pt-4 mt-2 space-y-2.5 flex-shrink-0 border-t border-white/15">
+            {/* Sidebar Profile Card */}
+            <div
+              onClick={onOpenProfile}
+              title="Click to view / edit My Profile"
+              className="flex items-center gap-3 p-2.5 rounded-xl bg-white/15 hover:bg-white/25 transition cursor-pointer border border-white/10"
+            >
+              {(() => {
+                const photoSrc = resolvePhotoUrl(userPhotoUrl);
+                return photoSrc ? (
+                  <img
+                    src={photoSrc}
+                    alt={userFullName || 'User'}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                    }}
+                    className="h-9 w-9 rounded-full object-cover flex-shrink-0 border border-white/40"
+                  />
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-white/30 font-extrabold text-sm flex items-center justify-center flex-shrink-0 text-white border border-white/30">
+                    {userInitial || 'U'}
+                  </div>
+                );
+              })()}
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-white truncate">
+                  {userFullName || 'Member Profile'}
+                </div>
+                <div className="text-[10px] text-white/70 truncate">
+                  {userEmail || 'Click to edit profile'}
+                </div>
+              </div>
+            </div>
+
             <button onClick={onNewIntent}
-              className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition"
+              className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition"
               style={{ background: 'rgba(255,255,255,0.22)' }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.30)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.22)'}>
               <Plus className="h-4 w-4" /> New Intent
             </button>
             <button onClick={onLogout}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-500/15 px-4 py-3 text-sm font-bold text-white hover:bg-red-500/25 transition">
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-500/15 px-4 py-2.5 text-xs font-bold text-white hover:bg-red-500/25 transition">
               <LogOut className="h-4 w-4" /> Logout
             </button>
           </div>
@@ -1094,17 +1130,17 @@ function WindOpsShell({
               <motion.div className="fixed inset-0 z-40 bg-black/40 lg:hidden"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={() => setDrawerOpen(false)} />
-              <motion.aside className="fixed left-0 top-0 z-50 h-full w-72 p-6 text-white lg:hidden"
+              <motion.aside className="fixed left-0 top-0 z-50 h-full w-72 p-6 text-white lg:hidden flex flex-col"
                 style={{ background: `linear-gradient(180deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}
                 initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
                 transition={{ type: 'spring', stiffness: 260, damping: 30 }}>
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-8 flex-shrink-0">
                   <div className="font-extrabold text-lg">{appName}</div>
                   <button onClick={() => setDrawerOpen(false)} className="rounded-xl bg-white/15 p-2 hover:bg-white/25">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
-                <nav className="space-y-1.5">
+                <nav className="space-y-1.5 flex-1 overflow-y-auto min-h-0 pr-1">
                   {navItems.map(item => {
                     const active = item.id === activeTab;
                     return (
@@ -1122,13 +1158,46 @@ function WindOpsShell({
                     );
                   })}
                 </nav>
-                <div className="mt-8 space-y-3">
+                <div className="pt-4 mt-2 space-y-2.5 flex-shrink-0 border-t border-white/15">
+                  <div
+                    onClick={() => { onOpenProfile(); setDrawerOpen(false); }}
+                    title="Click to view / edit My Profile"
+                    className="flex items-center gap-3 p-2.5 rounded-xl bg-white/15 hover:bg-white/25 transition cursor-pointer border border-white/10"
+                  >
+                    {(() => {
+                      const photoSrc = resolvePhotoUrl(userPhotoUrl);
+                      return photoSrc ? (
+                        <img
+                          src={photoSrc}
+                          alt={userFullName || 'User'}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.style.display = 'none';
+                          }}
+                          className="h-9 w-9 rounded-full object-cover flex-shrink-0 border border-white/40"
+                        />
+                      ) : (
+                        <div className="h-9 w-9 rounded-full bg-white/30 font-extrabold text-sm flex items-center justify-center flex-shrink-0 text-white border border-white/30">
+                          {userInitial || 'U'}
+                        </div>
+                      );
+                    })()}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold text-white truncate">
+                        {userFullName || 'Member Profile'}
+                      </div>
+                      <div className="text-[10px] text-white/70 truncate">
+                        {userEmail || 'Click to edit profile'}
+                      </div>
+                    </div>
+                  </div>
+
                   <button onClick={() => { onNewIntent(); setDrawerOpen(false); }}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-white/20 px-4 py-3 text-sm font-bold hover:bg-white/30 transition">
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-white/20 px-4 py-2.5 text-xs font-bold hover:bg-white/30 transition">
                     <Plus className="h-4 w-4" /> New Intent
                   </button>
                   <button onClick={onLogout}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-500/15 px-4 py-3 text-sm font-bold text-white hover:bg-red-500/25 transition">
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-500/15 px-4 py-2.5 text-xs font-bold text-white hover:bg-red-500/25 transition">
                     <LogOut className="h-4 w-4" /> Logout
                   </button>
                 </div>
@@ -1166,10 +1235,31 @@ function WindOpsShell({
                   </span>
                 )}
               </button>
-              <div className="h-10 w-10 rounded-full border border-white/60 grid place-items-center font-bold text-white text-sm"
-                   style={{ background: BRAND }}>
-                {userInitial}
-              </div>
+              <button
+                onClick={onOpenProfile}
+                title="View / Edit My Profile"
+                className="relative flex items-center justify-center rounded-full border-2 border-white/80 shadow-md hover:scale-105 transition cursor-pointer p-0.5"
+                style={{ background: BRAND }}
+              >
+                {(() => {
+                  const photoSrc = resolvePhotoUrl(userPhotoUrl);
+                  return photoSrc ? (
+                    <img
+                      src={photoSrc}
+                      alt="User Profile"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                      }}
+                      className="h-9 w-9 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full grid place-items-center font-bold text-white text-sm">
+                      {userInitial}
+                    </div>
+                  );
+                })()}
+              </button>
             </div>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto pr-1">{children}</div>
@@ -2327,8 +2417,28 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
   const [proposalTargetIntent, setProposalTargetIntent] = useState(null);
   const [viewProposalsIntent,  setViewProposalsIntent]  = useState(null);
   const [inboxUnread,    setInboxUnread]    = useState(0);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState(() => getUserData() || {});
 
-  const user      = getUserData() || {};
+  useEffect(() => {
+    fetchMyProfile()
+      .then((res) => {
+        if (res?.profile) {
+          setUserProfile((prev) => ({ ...prev, ...res.profile }));
+        }
+      })
+      .catch((err) => {
+        console.warn('Auto fetchMyProfile failed:', err);
+      });
+  }, []);
+
+  const handleProfileUpdated = (updated) => {
+    if (updated) {
+      setUserProfile((prev) => ({ ...prev, ...updated }));
+    }
+  };
+
+  const user      = userProfile;
   const roleBadge = isBoth
     ? { label: 'Buyer & Seller', bg: `linear-gradient(135deg, ${BUYER_COLOR}, ${SELLER_COLOR})`,  color: '#fff' }
     : isBuyer
@@ -2461,7 +2571,11 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
           setAppliedFilters(p => ({ ...p, search: v }));
           setPage(0);
         }}
-        userInitial={(user.fullName || 'U').charAt(0).toUpperCase()}
+        userInitial={(user.fullName || user.email || 'U').charAt(0).toUpperCase()}
+        userPhotoUrl={user.profilePhotoUrl || user.profilePicture}
+        userFullName={user.fullName || 'Member'}
+        userEmail={user.email || ''}
+        onOpenProfile={() => setProfileModalOpen(true)}
         notifications={notifications}
         onNewIntent={() => setShowCreate(true)}
         onLogout={onLogout}
@@ -2741,6 +2855,13 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
             isOwner={true} onSendProposal={() => {}} onViewProposals={() => {}} />
         )}
       </AnimatePresence>
+
+      {/* My Profile Modal */}
+      <MyProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onProfileUpdated={handleProfileUpdated}
+      />
     </>
   );
 }

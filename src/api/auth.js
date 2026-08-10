@@ -1,7 +1,7 @@
 // api/auth.js
 
 export const BASE_URL =
-  'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+  'https://connectsouq.sundukpay.com';
 
 // ── Storage helpers ───────────────────────────────────────────────────────────
 export const setItem = (key, value) => {

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getMemberProfile } from '../../api/directoryApi';
 import { formatEnum } from './DirectoryConstants';
+import { resolvePhotoUrl } from '../../api/profileOperationsApi';
 
 export default function MemberProfileModal({ memberId, onClose, onUpgradeClick }) {
   const [loading, setLoading] = useState(true);
@@ -124,8 +125,12 @@ export default function MemberProfileModal({ memberId, onClose, onUpgradeClick }
               <div className="flex items-start gap-4">
                 {member.profilePicture ? (
                   <img
-                    src={member.profilePicture}
-                    alt={member.fullName}
+                    src={resolvePhotoUrl(member.profilePicture)}
+                    alt={member.fullName || 'Member'}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.fullName || 'Member')}&background=10B981&color=fff`;
+                    }}
                     className="w-16 h-16 rounded-2xl object-cover border border-slate-200 shadow-md"
                   />
                 ) : (

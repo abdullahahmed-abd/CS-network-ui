@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { authenticatedFetch } from '../../api/auth';
+import { authenticatedFetch, getUserData, saveUserData } from '../../api/auth';
 import {
   fetchMasterDashboard,
   fetchFranchiseDashboard,
@@ -26,7 +26,7 @@ import RoleEventsTab from '../events/RoleEventsTab';
 import PartnershipsTab from '../partnerships/PartnershipsTab';
 import { getStates, getCities } from '../../utils/locationData';
 
-const BASE_URL = 'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 
 // ══════════════════════════════════════════════════
 // ── DESIGN HELPERS
@@ -461,6 +461,16 @@ function OverviewTab({ onNavigate, cfg }) {
         console.log('📊 Dashboard Data Loaded:', data);
         setDashData(data);
         setInviteData(res?.memberInviteLink || res?.inviteLink || data?.memberInviteLink);
+
+        // ── Persist franchiseId so ScheduleMeetingModal reads the correct ID ──
+        const franchiseId = data?.franchiseId || data?.franchise?.franchiseId || data?.franchise?.id;
+        if (franchiseId) {
+          const existing = getUserData() || {};
+          if (!existing.franchiseId || existing.franchiseId !== Number(franchiseId)) {
+            saveUserData({ ...existing, franchiseId: Number(franchiseId) });
+            console.log('💾 Saved franchiseId to userData:', franchiseId);
+          }
+        }
       } catch (err) { setError(err.message || 'Failed to load dashboard'); }
       finally { setLoading(false); }
     })();

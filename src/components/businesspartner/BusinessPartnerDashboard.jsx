@@ -9,6 +9,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { authenticatedFetch, getUserData } from '../../api/auth';
 import { fetchMyPipeline } from '../../api/businessPartnerApi';
+import { fetchMyProfile, resolvePhotoUrl } from '../../api/profileOperationsApi';
+import MyProfileModal from '../profile/MyProfileModal';
 
 import BusinessPartnerSidebar from '../businesspartner/BusinessPartnerSidebar';
 import BusinessPartnerPipeline from '../businesspartner/BusinessPartnerPipeline';
@@ -79,9 +81,28 @@ export default function BusinessPartnerDashboard({ onLogout }) {
   const scrollBtnRef  = useRef(null);
   const didFetchRef   = useRef(false);
   const requestRef    = useRef(false);
-  const loadedOnceRef = useRef(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState(() => getUserData() || {});
 
-  const userData  = getUserData() || {};
+  useEffect(() => {
+    fetchMyProfile()
+      .then((res) => {
+        if (res?.profile) {
+          setUserProfile((prev) => ({ ...prev, ...res.profile }));
+        }
+      })
+      .catch((err) => {
+        console.warn('BP fetchMyProfile failed:', err);
+      });
+  }, []);
+
+  const handleProfileUpdated = (updated) => {
+    if (updated) {
+      setUserProfile((prev) => ({ ...prev, ...updated }));
+    }
+  };
+
+  const userData  = userProfile;
   const showToast = (message, type = 'success') => setToast({ message, type });
 
   /* ════════ Fetch Pipeline ════════ */
@@ -257,6 +278,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
         getTotalLeads={getTotalLeads}
         userData={userData}
         onLogout={onLogout}
+        onOpenProfile={() => setProfileModalOpen(true)}
       />
 
       <main className="main">
@@ -330,10 +352,24 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               <span className="dot" />
             </div>
             <div
-              className="profile-avatar"
-              style={{ width:40, height:40, borderRadius:12 }}
+              className="profile-avatar cursor-pointer hover:scale-105 transition"
+              onClick={() => setProfileModalOpen(true)}
+              title="Click to view / edit My Profile"
+              style={{ width:40, height:40, borderRadius:12, cursor: 'pointer', overflow: 'hidden' }}
             >
-              {getInitials(userData?.fullName || 'BP')}
+              {(() => {
+                const photoSrc = resolvePhotoUrl(userData?.profilePhotoUrl || userData?.profilePicture);
+                return photoSrc ? (
+                  <img
+                    src={photoSrc}
+                    alt={userData?.fullName || 'BP'}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  getInitials(userData?.fullName || userData?.email || 'BP')
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -561,6 +597,13 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           <polyline points="18 15 12 9 6 15" />
         </svg>
       </button>
+
+      {/* My Profile Modal */}
+      <MyProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onProfileUpdated={handleProfileUpdated}
+      />
     </div>
   );
 }

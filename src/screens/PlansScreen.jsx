@@ -7,8 +7,7 @@ import {
 import Backgroundimage from '../assets/image/Backgroundimg19.png';
 import { authenticatedFetch } from '../api/auth';
 
-const BASE_URL =
-  'https://unbarrable-semidivisive-rolanda.ngrok-free.dev';
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 
 const PLANS = [
   {

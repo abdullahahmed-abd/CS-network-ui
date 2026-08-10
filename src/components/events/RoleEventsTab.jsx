@@ -16,15 +16,208 @@ import SubmitEventReportModal from './SubmitEventReportModal';
 import RejectEventModal from './RejectEventModal';
 import EventCoverUploadModal from './EventCoverUploadModal';
 import EventRegistrationsModal from '../globalAdmin/events/EventRegistrationsModal';
+import { resolvePhotoUrl, fetchEventCoverPhoto } from '../../api/profileOperationsApi';
+import { ImageLightboxModal } from '../../screens/EventsComponents';
+
+function RoleEventCardItem({
+  ev, activeSubTab, isAdmin, handleApprove, setRejectingEvent,
+  setEditingEvent, setReportingEvent, setRegistrationsEvent,
+  setUploadCoverEvent, getStatusBadge, hasEventPassed
+}) {
+  const [coverUrl, setCoverUrl] = useState(() => {
+    const raw = ev.coverImageUrl || ev.coverPhotoUrl || ev.fileUrl || ev.photoUrl || ev.coverImage;
+    return (raw && typeof raw === 'string' && raw.trim() !== '' && raw !== 'null') ? resolvePhotoUrl(raw) : null;
+  });
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    const raw = ev.coverImageUrl || ev.coverPhotoUrl || ev.fileUrl || ev.photoUrl || ev.coverImage;
+    if (raw && typeof raw === 'string' && raw.trim() !== '' && raw !== 'null') {
+      setCoverUrl(resolvePhotoUrl(raw));
+    }
+    if (ev.id) {
+      fetchEventCoverPhoto(ev.id)
+        .then((res) => {
+          if (res?.fileUrl) {
+            setCoverUrl(resolvePhotoUrl(res.fileUrl));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [ev?.id, ev?.coverImageUrl]);
+
+  const canReport = (ev.status === 'PUBLISHED') && hasEventPassed(ev.endDateTime || ev.startDateTime);
+  const canEdit = ev.status === 'PENDING_APPROVAL';
+
+  return (
+    <>
+      <div
+        style={{
+          background: '#fff', borderRadius: 18, border: '1px solid #E2E8F0',
+          overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        }}
+      >
+        <div>
+          {/* Cover Photo Header — Exact same as Buyer/Seller */}
+          <div
+            onClick={() => coverUrl && setLightboxOpen(true)}
+            style={{
+              height: 200, width: '100%', overflow: 'hidden',
+              background: '#F1F5F9', borderBottom: '1px solid #E2E8F0',
+              position: 'relative', cursor: coverUrl ? 'pointer' : 'default',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {coverUrl ? (
+              <img
+                src={coverUrl}
+                alt={ev.title || 'Event Cover'}
+                onError={() => setCoverUrl(null)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <div style={{ color: '#94A3B8', fontSize: 12, fontWeight: 600, textAlign: 'center' }}>
+                📷 No Event Image
+              </div>
+            )}
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setUploadCoverEvent(ev);
+              }}
+              style={{
+                position: 'absolute', top: 10, right: 10, zIndex: 10,
+                padding: '6px 12px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)',
+                border: '1px solid #CBD5E1',
+                fontSize: 11, fontWeight: 800, color: '#1E293B',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              }}
+            >
+              📷 {coverUrl ? 'Change Cover' : 'Upload Cover'}
+            </button>
+          </div>
+
+          <div style={{ padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              {getStatusBadge(ev.status, ev.pendingApprovalStage)}
+              <span style={{ fontSize: 11, fontWeight: 700, color: ev.eventType === 'ONLINE' ? '#2563EB' : '#D97706' }}>
+                {ev.eventType === 'ONLINE' ? '💻 Online' : '📍 In-Person'}
+              </span>
+            </div>
+
+            <h4 style={{ fontSize: 16, fontWeight: 800, color: '#1E293B', margin: '0 0 6px' }}>
+              {ev.title}
+            </h4>
+            <p style={{ fontSize: 12, color: '#64748B', margin: '0 0 12px', lineHeight: 1.4 }}>
+              {ev.description ? ev.description.slice(0, 100) + '...' : 'No description'}
+            </p>
+
+            <div style={{ fontSize: 11, color: '#475569', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div>📅 {new Date(ev.startDateTime).toLocaleDateString()} at {new Date(ev.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              <div>📍 {ev.city || ev.eventCity || 'Online'}{ev.country ? `, ${ev.country}` : ''}</div>
+              <div>👥 Capacity: {ev.capacity || 'Unlimited'}</div>
+            </div>
+          </div>
+        </div>
+
+      {/* Card Actions */}
+      <div style={{ borderTop: '1px solid #F1F5F9', padding: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {activeSubTab === 'PENDING_APPROVALS' ? (
+          <>
+            <button
+              onClick={() => handleApprove(ev.id)}
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              ✅ Approve
+            </button>
+            <button
+              onClick={() => setRejectingEvent(ev)}
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                background: '#DC2626', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              ❌ Reject
+            </button>
+          </>
+        ) : (
+          <>
+            {canEdit && (
+              <button
+                onClick={() => setEditingEvent(ev)}
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #CBD5E1',
+                  background: '#F8FAFC', color: '#334155', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                ✏️ Edit
+              </button>
+            )}
+
+            <button
+              onClick={() => setUploadCoverEvent(ev)}
+              style={{
+                flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #16A34A',
+                background: '#F0FDF4', color: '#15803D', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              📷 Upload Cover
+            </button>
+
+            {isAdmin && activeSubTab !== 'PENDING_APPROVALS' && (
+              <button
+                onClick={() => setRegistrationsEvent(ev)}
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                  background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                  color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
+                }}
+              >
+                👥 Manage Registrations
+              </button>
+            )}
+
+            {canReport && (
+              <button
+                onClick={() => setReportingEvent(ev)}
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                  background: '#2563EB', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                📊 Submit Report
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+
+    {lightboxOpen && (
+      <ImageLightboxModal
+        imageUrl={coverUrl}
+        title={ev.title}
+        onClose={() => setLightboxOpen(false)}
+      />
+    )}
+    </>
+  );
+}
 
 export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
   const isOperator = userRole === 'FRANCHISE_OPERATOR';
   const isMaster = userRole === 'MASTER_OPERATOR';
   const isAdmin = userRole === 'GLOBAL_ADMIN';
 
-  const [activeSubTab, setActiveSubTab] = useState(
-    isOperator ? 'MY_EVENTS' : 'MY_EVENTS'
-  );
+  const [activeSubTab, setActiveSubTab] = useState('MY_EVENTS');
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -122,12 +315,11 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
           <motion.div
             initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             style={{
-              position: 'fixed', top: 20, right: 20, zIndex: 9999,
-              background: toast.type === 'error' ? '#FEF2F2' : '#F0FDF4',
-              border: `1px solid ${toast.type === 'error' ? '#FECACA' : '#BBF7D0'}`,
-              color: toast.type === 'error' ? '#991B1B' : '#166534',
-              padding: '12px 20px', borderRadius: 12, fontWeight: 700, fontSize: 13,
-              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              position: 'fixed', top: 20, right: 20, zIndex: 2000,
+              padding: '12px 20px', borderRadius: 12,
+              background: toast.type === 'error' ? '#EF4444' : '#10B981',
+              color: '#fff', fontSize: 13, fontWeight: 700,
+              boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
             }}
           >
             {toast.message}
@@ -135,9 +327,9 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
         )}
       </AnimatePresence>
 
-      {/* Header & Sub-Tabs */}
+      {/* Header Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
             onClick={() => { setActiveSubTab('MY_EVENTS'); setPage(0); }}
             style={{
@@ -160,7 +352,7 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
                 fontWeight: 700, fontSize: 12, cursor: 'pointer',
               }}
             >
-              🌐 All Events
+              🌐 All Global Events
             </button>
           )}
 
@@ -214,121 +406,22 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-          {events.map((ev) => {
-            const canReport = (ev.status === 'PUBLISHED') && hasEventPassed(ev.endDateTime || ev.startDateTime);
-            const canEdit = ev.status === 'PENDING_APPROVAL';
-
-            return (
-              <div
-                key={ev.id}
-                style={{
-                  background: '#fff', borderRadius: 18, border: '1px solid #E2E8F0',
-                  padding: 20, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                    {getStatusBadge(ev.status, ev.pendingApprovalStage)}
-                    <span style={{ fontSize: 11, fontWeight: 700, color: ev.eventType === 'ONLINE' ? '#2563EB' : '#D97706' }}>
-                      {ev.eventType === 'ONLINE' ? '💻 Online' : '📍 In-Person'}
-                    </span>
-                  </div>
-
-                  <h4 style={{ fontSize: 16, fontWeight: 800, color: '#1E293B', margin: '0 0 6px' }}>
-                    {ev.title}
-                  </h4>
-                  <p style={{ fontSize: 12, color: '#64748B', margin: '0 0 12px', lineHeight: 1.4 }}>
-                    {ev.description ? ev.description.slice(0, 100) + '...' : 'No description'}
-                  </p>
-
-                  <div style={{ fontSize: 11, color: '#475569', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
-                    <div>📅 {new Date(ev.startDateTime).toLocaleDateString()} at {new Date(ev.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                    <div>📍 {ev.city || ev.eventCity || 'Online'}{ev.country ? `, ${ev.country}` : ''}</div>
-                    <div>👥 Capacity: {ev.capacity || 'Unlimited'}</div>
-                  </div>
-                </div>
-
-                {/* Card Actions */}
-                <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {activeSubTab === 'PENDING_APPROVALS' ? (
-                    <>
-                      <button
-                        onClick={() => handleApprove(ev.id)}
-                        style={{
-                          flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                          background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                        }}
-                      >
-                        ✅ Approve
-                      </button>
-                      <button
-                        onClick={() => setRejectingEvent(ev)}
-                        style={{
-                          flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                          background: '#DC2626', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                        }}
-                      >
-                        ❌ Reject
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {canEdit && (
-                        <button
-                          onClick={() => { setEditingEvent(ev); setCreateModalOpen(true); }}
-                          style={{
-                            flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #CBD5E1',
-                            background: '#F8FAFC', color: '#334155', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                          }}
-                        >
-                          ✏️ Edit
-                        </button>
-                      )}
-
-                      {isAdmin && (
-                        <button
-                          onClick={() => setUploadCoverEvent(ev)}
-                          style={{
-                            flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #16A34A',
-                            background: '#F0FDF4', color: '#15803D', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                          }}
-                        >
-                          📷 Upload Cover
-                        </button>
-                      )}
-
-                      {isAdmin && activeSubTab !== 'PENDING_APPROVALS' && (
-                        <button
-                          onClick={() => setRegistrationsEvent(ev)}
-                          style={{
-                            flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                            background: 'linear-gradient(135deg, #16A34A, #15803D)',
-                            color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
-                          }}
-                        >
-                          👥 Manage Registrations
-                        </button>
-                      )}
-
-                      {canReport && (
-                        <button
-                          onClick={() => setReportingEvent(ev)}
-                          style={{
-                            flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                            background: '#2563EB', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                          }}
-                        >
-                          📊 Submit Report
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {events.map((ev) => (
+            <RoleEventCardItem
+              key={ev.id}
+              ev={ev}
+              activeSubTab={activeSubTab}
+              isAdmin={isAdmin}
+              handleApprove={handleApprove}
+              setRejectingEvent={setRejectingEvent}
+              setEditingEvent={(eventToEdit) => { setEditingEvent(eventToEdit); setCreateModalOpen(true); }}
+              setReportingEvent={setReportingEvent}
+              setRegistrationsEvent={setRegistrationsEvent}
+              setUploadCoverEvent={setUploadCoverEvent}
+              getStatusBadge={getStatusBadge}
+              hasEventPassed={hasEventPassed}
+            />
+          ))}
         </div>
       )}
 
