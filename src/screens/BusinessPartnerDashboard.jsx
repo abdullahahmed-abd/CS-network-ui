@@ -3800,6 +3800,8 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                 </>
               )}
             </div>
+          )}
+
           {/* Proposals Tab (Received & Sent) */}
           {activeNav === 'proposals' && (
             <ProposalsTab
