@@ -276,7 +276,11 @@ function AuthFileLink({ conversationId, messageId, fileName, children }) {
 // ══════════════════════════════════════════════
 // TradeChatScreen
 // ══════════════════════════════════════════════
-export function TradeChatScreen({ conversationId, title, otherPartyName, otherPartyId, dealId, isOwner = true, onClose, onDealCompleted }) {
+export function TradeChatScreen({
+  conversationId, title, otherPartyName, otherPartyId,
+  dealId, tradeProposalId, tradeIntentId,
+  isOwner = false, onClose, onDealCompleted
+}) {
   const [messages,           setMessages]           = useState([]);
   const [input,              setInput]              = useState('');
   const [connected,          setConnected]          = useState(false);
@@ -499,8 +503,13 @@ export function TradeChatScreen({ conversationId, title, otherPartyName, otherPa
   };
 
   const handleMarkDealCompleted = async () => {
-    const targetDealId = dealId || conversationId;
-    if (!targetDealId || completingDeal) return;
+    const targetDealId = dealId || tradeProposalId || tradeIntentId;
+    if (!targetDealId) {
+      setError('Unable to mark complete: Deal ID or Intent ID is missing for this trade session.');
+      return;
+    }
+    if (completingDeal) return;
+
     setCompletingDeal(true);
     setError('');
     try {
@@ -1021,8 +1030,13 @@ export function InboxTab() {
             title={activeChat.participantName || 'Trade Chat'}
             otherPartyName={activeChat.participantName}
             otherPartyId={activeChat.participantId || activeChat.otherUserId || activeChat.partnerId}
-            dealId={activeChat.dealId || activeChat.tradeIntentId || activeChat.tradeProposalId || activeChat.conversationId}
-            isOwner={activeChat.isOwner !== false}
+            dealId={activeChat.dealId || activeChat.tradeDealId || activeChat.tradeProposalId || activeChat.proposalId || activeChat.tradeIntentId || activeChat.intentId}
+            tradeProposalId={activeChat.tradeProposalId || activeChat.proposalId}
+            tradeIntentId={activeChat.tradeIntentId || activeChat.intentId}
+            isOwner={
+              activeChat.isOwner === true ||
+              (activeChat.intentOwnerId && String(activeChat.intentOwnerId) === String(user?.id || user?.userId || user?.memberId))
+            }
             onClose={() => setActiveChat(null)}
           />
         )}
@@ -2048,7 +2062,9 @@ export function SentProposalsContent() {
             title={`Trade #${chatProposal.tradeIntentId}`}
             otherPartyName={chatProposal.intentOwnerName || chatProposal.createdByName || chatProposal.receiverName || chatProposal.proposerName || `Intent #${chatProposal.tradeIntentId}`}
             otherPartyId={chatProposal.intentOwnerId || chatProposal.createdById || chatProposal.receiverId}
-            dealId={chatProposal.dealId || chatProposal.tradeProposalId || chatProposal.proposalId}
+            dealId={chatProposal.dealId || chatProposal.tradeDealId || chatProposal.tradeProposalId || chatProposal.proposalId || chatProposal.tradeIntentId}
+            tradeProposalId={chatProposal.tradeProposalId || chatProposal.proposalId || chatProposal.id}
+            tradeIntentId={chatProposal.tradeIntentId}
             isOwner={false}
             onClose={() => setChatProposal(null)} />
         )}

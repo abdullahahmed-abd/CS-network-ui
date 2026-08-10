@@ -1,11 +1,32 @@
-import React from 'react';
-import { X, Users, Building2, ShoppingCart, Store } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Users, Building2, ShoppingCart, Store, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { INTENT_STATUS } from '../../constants/BpConstants';
 import { fmtNumber, fmtCurrency, formatFullDate } from '../../../utils/BpHelpers';
+import { authenticatedFetch } from '../../../api/auth';
+
+const BASE_URL = 'https://connectsouq.sundukpay.com';
 
 export function IntentDetailModal({ intent, onClose, onRaiseProposal }) {
+  const [proposals, setProposals] = useState([]);
+  const [loadingProposals, setLoadingProposals] = useState(false);
+
+  useEffect(() => {
+    if (!intent?.id) return;
+    setLoadingProposals(true);
+    authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+      method: 'POST',
+      body: JSON.stringify({
+        memberRequestType: 'FETCH_PROPOSALS_FOR_INTENT',
+        tradeIntentId: Number(intent.id),
+      }),
+    })
+      .then((data) => setProposals(data?.proposals || []))
+      .catch((err) => console.warn('Fetch proposals error:', err))
+      .finally(() => setLoadingProposals(false));
+  }, [intent?.id]);
+
   if (!intent) return null;
 
   const isBuy  = intent.intentType === 'BUY';
@@ -103,6 +124,46 @@ export function IntentDetailModal({ intent, onClose, onRaiseProposal }) {
                   <div className="modal-field-label">Franchise</div>
                   <div className="modal-field-value">{intent.franchiseName}</div>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Proposals for this Intent */}
+          <div className="modal-section" style={{ marginTop: 16 }}>
+            <div className="modal-section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Received Proposals ({proposals.length})</span>
+              {loadingProposals && <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />}
+            </div>
+            {loadingProposals ? (
+              <div style={{ padding: 12, textAlign: 'center', color: '#64748B', fontSize: 12 }}>
+                Loading proposals...
+              </div>
+            ) : proposals.length === 0 ? (
+              <div style={{ padding: 12, textAlign: 'center', color: '#94A3B8', fontSize: 12, background: '#F8FAFC', borderRadius: 10 }}>
+                No proposals received for this intent yet.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 180, overflowY: 'auto' }}>
+                {proposals.map((prop) => (
+                  <div key={prop.proposalId || prop.id} style={{
+                    padding: 10, borderRadius: 10, background: '#F8FAFC', border: '1px solid #E2E8F0',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{prop.proposerName || 'Proposer'}</div>
+                      <div style={{ fontSize: 11, color: '#64748B' }}>
+                        {fmtCurrency(prop.offeredPrice || prop.pricePerUnit, intent.currency)}/unit · {prop.offeredQuantity || prop.quantity} {intent.unit}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
+                      background: prop.status === 'ACCEPTED' ? '#DCFCE7' : '#FEF3C7',
+                      color: prop.status === 'ACCEPTED' ? '#15803D' : '#B45309',
+                    }}>
+                      {prop.status}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
