@@ -10,6 +10,8 @@ import {
   fetchGlobalAdminPendingEventRequests,
   approveGlobalAdminEventRequest,
   fetchMemberEventList,
+  registerForEvent,
+  fetchMyRegistrations,
 } from '../../api/eventsApi';
 
 import CreateEventModal from '../globalAdmin/events/CreateEventModal';
@@ -18,13 +20,14 @@ import RejectEventModal from './RejectEventModal';
 import EventCoverUploadModal from './EventCoverUploadModal';
 import EventRegistrationsModal from '../globalAdmin/events/EventRegistrationsModal';
 import { resolvePhotoUrl, fetchEventCoverPhoto } from '../../api/profileOperationsApi';
-import { ImageLightboxModal } from '../../screens/EventsComponents';
+import { ImageLightboxModal, EventDetailsModal, EventCard } from '../../screens/EventsComponents';
+import MyRegistrationsTab from '../../screens/MyRegistrationsTab';
 import { getUserData, authenticatedFetch, BASE_URL } from '../../api/auth';
 
 function RoleEventCardItem({
   ev, activeSubTab, isAdmin, isMaster, handleApprove, setRejectingEvent,
   setEditingEvent, setReportingEvent, setRegistrationsEvent,
-  setUploadCoverEvent, getStatusBadge, hasEventPassed,
+  setUploadCoverEvent, setViewingEvent, getStatusBadge, hasEventPassed,
   handleRegisterForEvent, isRegistered, isRegistering,
 }) {
   const [coverUrl, setCoverUrl] = useState(() => {
@@ -49,6 +52,7 @@ function RoleEventCardItem({
     }
   }, [ev?.id, ev?.coverImageUrl]);
 
+  const isRegisteredUser = Boolean(isRegistered || ev?.isRegistered || ev?.registered);
   const currentUser = getUserData() || {};
   const currentUserId = String(currentUser.id || currentUser.userId || '');
   const creatorId = String(ev.createdById || ev.userId || ev.creatorId || '');
@@ -122,8 +126,13 @@ function RoleEventCardItem({
           <div style={{ padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
               {getStatusBadge(ev.status, ev.pendingApprovalStage)}
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                {(ev.isPaid || ev.paid) && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                {isRegisteredUser && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: 6 }}>
+                    ✅ Registered
+                  </span>
+                )}
+                {(ev.isPaid || ev.paid) && Number(ev.price) > 0 && (
                   <span style={{ fontSize: 11, fontWeight: 800, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: 6 }}>
                     ₹{ev.price} {ev.currency || 'INR'}
                   </span>
@@ -231,36 +240,36 @@ function RoleEventCardItem({
             </>
           ) : (
             /* Non-creator role viewing event: Register / Purchase Flow */
-            isRegistered ? (
+            <>
               <button
-                disabled
+                onClick={() => setViewingEvent(ev)}
                 style={{
-                  flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                  background: '#DCFCE7', color: '#15803D', fontSize: 12, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #CBD5E1',
+                  background: '#F8FAFC', color: '#334155', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 }}
               >
-                ✅ {ev.isPaid || ev.paid ? 'Purchased & Registered' : 'Registered'}
+                👁️ View Details
               </button>
-            ) : (
-              <button
-                onClick={() => handleRegisterForEvent(ev.id)}
-                disabled={isRegistering}
-                style={{
-                  flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                  background: 'linear-gradient(135deg, #16A34A, #15803D)',
-                  color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}
-              >
-                {isRegistering
-                  ? '⏳ Processing...'
-                  : (ev.isPaid || ev.paid)
-                  ? `💳 Purchase & Register (₹${ev.price || '0'})`
-                  : '🎟️ Register / Join Event'}
-              </button>
-            )
+              {!isRegisteredUser && (
+                <button
+                  onClick={() => handleRegisterForEvent(ev.id)}
+                  disabled={isRegistering}
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                    background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                    color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  }}
+                >
+                  {isRegistering
+                    ? '⏳ Processing...'
+                    : (ev.isPaid || ev.paid) && Number(ev.price) > 0
+                    ? `💳 Purchase & Register (₹${ev.price})`
+                    : '🎟️ Register Now'}
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -295,18 +304,22 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
   const [rejectingEvent, setRejectingEvent] = useState(null);
   const [uploadCoverEvent, setUploadCoverEvent] = useState(null);
   const [registrationsEvent, setRegistrationsEvent] = useState(null);
+  const [viewingEvent, setViewingEvent] = useState(null);
   const [registeringId, setRegisteringId] = useState(null);
   const [registeredIds, setRegisteredIds] = useState([]);
 
   useEffect(() => {
-    authenticatedFetch(`${BASE_URL}/cs-network/member`, {
-      method: 'POST',
-      body: JSON.stringify({ memberRequestType: 'FETCH_MY_REGISTRATIONS' }),
-    })
+    fetchMyRegistrations()
       .then((res) => {
-        const list = res?.registrations || res?.data || [];
+        const list = res?.registrations || res?.data || res?.events || [];
         if (Array.isArray(list)) {
-          const ids = list.map(r => Number(r.eventId || r.event?.id)).filter(Boolean);
+          const ids = list
+            .map(r => {
+              if (typeof r === 'number' || typeof r === 'string') return String(r);
+              const val = r.eventId || r.event?.id || r.event_id || r.id;
+              return val ? String(val) : null;
+            })
+            .filter(Boolean);
           setRegisteredIds(ids);
         }
       })
@@ -314,17 +327,11 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
   }, []);
 
   const handleRegisterForEvent = async (eventId) => {
-    setRegisteringId(eventId);
+    setRegisteringId(String(eventId));
     try {
-      const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
-        method: 'POST',
-        body: JSON.stringify({
-          memberRequestType: 'REGISTER_FOR_EVENT',
-          eventId: Number(eventId),
-        }),
-      });
+      const data = await registerForEvent(eventId);
       showToast(data?.message || '✓ Registration request submitted! Sent to Global Admin for approval.');
-      setRegisteredIds(prev => [...prev, Number(eventId)]);
+      setRegisteredIds(prev => [...prev, String(eventId)]);
     } catch (err) {
       showToast(err.message || 'Failed to register for event', 'error');
     } finally {
@@ -346,52 +353,8 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
         else if (isMaster) res = await fetchMasterOperatorEvents(pg, 100);
         else if (isAdmin) res = await fetchGlobalAdminMyEvents(pg, 100);
       } else if (activeSubTab === 'ALL_EVENTS') {
-        if (isAdmin) {
-          res = await fetchAllGlobalEvents(pg, 100);
-        } else if (isMaster) {
-          // Master Operator sees Global Admin events + Master's own events
-          // (Does NOT see General/Sector Operator events!)
-          res = await fetchMemberEventList(pg, 100);
-          if (res?.events && Array.isArray(res.events)) {
-            const currentUser = getUserData() || {};
-            const currentUserId = String(currentUser.id || currentUser.userId || '');
-            res.events = res.events.filter(ev => {
-              const creatorRole = String(ev.creatorRole || ev.createdRole || ev.createdByRole || ev.role || ev.creatorType || ev.createdUserType || '').toUpperCase();
-              const creatorId = String(ev.createdById || ev.userId || ev.creatorId || '');
-              const isGlobal = ev.isGlobalAdmin === true || creatorRole.includes('ADMIN') || creatorRole.includes('GLOBAL');
-              const isMasterEv = creatorRole.includes('MASTER') || (creatorId && creatorId === currentUserId);
-              const isGeneralOrSector = creatorRole.includes('FRANCHISE') || creatorRole.includes('GENERAL') || creatorRole.includes('SECTOR');
-
-              if (isGeneralOrSector) return false; // Hide general/sector operator events from Master in Network Events tab
-              return true;
-            });
-          }
-        } else if (isOperator) {
-          // General / Sector Operator sees:
-          // Global Admin events + Master Operator events + General/Sector Operator's OWN events
-          // (Does NOT see other General/Sector Operators' events!)
-          res = await fetchMemberEventList(pg, 100);
-          if (res?.events && Array.isArray(res.events)) {
-            const currentUser = getUserData() || {};
-            const currentUserId = String(currentUser.id || currentUser.userId || '');
-            res.events = res.events.filter(ev => {
-              const creatorRole = String(ev.creatorRole || ev.createdRole || ev.createdByRole || ev.role || ev.creatorType || ev.createdUserType || '').toUpperCase();
-              const creatorId = String(ev.createdById || ev.userId || ev.creatorId || '');
-              const isGlobal = ev.isGlobalAdmin === true || creatorRole.includes('ADMIN') || creatorRole.includes('GLOBAL');
-              const isMasterEv = creatorRole.includes('MASTER');
-              const isMine = creatorId && creatorId === currentUserId;
-
-              // Show Global Admin events, Master Operator events, and MY OWN events
-              if (isGlobal || isMasterEv || isMine) return true;
-
-              // Hide other Franchise/General/Sector operators' events
-              const isFranchiseRole = creatorRole.includes('FRANCHISE') || creatorRole.includes('GENERAL') || creatorRole.includes('SECTOR');
-              if (isFranchiseRole && !isMine) return false;
-
-              return true;
-            });
-          }
-        }
+        // All roles see Network Events via member endpoint (scoped by backend)
+        res = await fetchMemberEventList(pg, 100);
       } else if (activeSubTab === 'PENDING_APPROVALS') {
         if (isMaster) res = await fetchMasterPendingEventRequests(pg, 100);
         else if (isAdmin) res = await fetchGlobalAdminPendingEventRequests(pg, 100);
@@ -487,17 +450,19 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
             📋 My Events
           </button>
 
-          <button
-            onClick={() => { setActiveSubTab('ALL_EVENTS'); setPage(0); }}
-            style={{
-              padding: '8px 16px', borderRadius: 12, border: 'none',
-              background: activeSubTab === 'ALL_EVENTS' ? '#16A34A' : '#E2E8F0',
-              color: activeSubTab === 'ALL_EVENTS' ? '#fff' : '#475569',
-              fontWeight: 700, fontSize: 12, cursor: 'pointer',
-            }}
-          >
-            🌐 {isAdmin ? 'All Global Events' : 'Network Events'}
-          </button>
+          {!isAdmin && (
+            <button
+              onClick={() => { setActiveSubTab('ALL_EVENTS'); setPage(0); }}
+              style={{
+                padding: '8px 16px', borderRadius: 12, border: 'none',
+                background: activeSubTab === 'ALL_EVENTS' ? '#16A34A' : '#E2E8F0',
+                color: activeSubTab === 'ALL_EVENTS' ? '#fff' : '#475569',
+                fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              🌐 Network Events
+            </button>
+          )}
 
           {(isMaster || isAdmin) && (
             <button
@@ -510,6 +475,20 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
               }}
             >
               ⏳ Approval Queue {activeSubTab === 'PENDING_APPROVALS' && totalRecords > 0 ? `(${totalRecords})` : ''}
+            </button>
+          )}
+
+          {!isAdmin && (
+            <button
+              onClick={() => { setActiveSubTab('MY_TICKETS'); setPage(0); }}
+              style={{
+                padding: '8px 16px', borderRadius: 12, border: 'none',
+                background: activeSubTab === 'MY_TICKETS' ? '#16A34A' : '#E2E8F0',
+                color: activeSubTab === 'MY_TICKETS' ? '#fff' : '#475569',
+                fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              🎫 My Tickets ({registeredIds.length})
             </button>
           )}
         </div>
@@ -527,8 +506,10 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
         </button>
       </div>
 
-      {/* Events List */}
-      {loading ? (
+      {/* Content Section */}
+      {activeSubTab === 'MY_TICKETS' ? (
+        <MyRegistrationsTab />
+      ) : loading ? (
         <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748B', fontWeight: 600 }}>
           Loading events...
         </div>
@@ -547,7 +528,20 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
               : 'Click "Create Event" to schedule a new event.'}
           </p>
         </div>
+      ) : activeSubTab === 'ALL_EVENTS' ? (
+        /* ── Network Events: Use same premium EventCard as Buyer/Seller ── */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+          {events.map((ev, idx) => (
+            <EventCard
+              key={ev.id}
+              event={ev}
+              index={idx}
+              onView={(e) => setViewingEvent(e)}
+            />
+          ))}
+        </div>
       ) : (
+        /* ── MY_EVENTS / PENDING_APPROVALS: Management card ── */
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {events.map((ev) => (
             <RoleEventCardItem
@@ -562,18 +556,19 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
               setReportingEvent={setReportingEvent}
               setRegistrationsEvent={setRegistrationsEvent}
               setUploadCoverEvent={setUploadCoverEvent}
+              setViewingEvent={setViewingEvent}
               getStatusBadge={getStatusBadge}
               hasEventPassed={hasEventPassed}
               handleRegisterForEvent={handleRegisterForEvent}
-              isRegistered={registeredIds.includes(Number(ev.id))}
-              isRegistering={registeringId === ev.id}
+              isRegistered={registeredIds.some(id => String(id) === String(ev.id)) || Boolean(ev.isRegistered || ev.registered)}
+              isRegistering={String(registeringId) === String(ev.id)}
             />
           ))}
         </div>
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {activeSubTab !== 'MY_TICKETS' && totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20 }}>
           <button
             disabled={page === 0}
@@ -660,6 +655,20 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
           onClose={() => setRegistrationsEvent(null)}
           onToast={({ message, type }) => showToast(message, type)}
         />
+      )}
+
+      {/* Event Details Modal (Same as Buyer/Seller & Member) */}
+      {viewingEvent && (
+        <AnimatePresence>
+          <EventDetailsModal
+            eventId={viewingEvent.id}
+            onClose={() => setViewingEvent(null)}
+            onRegistered={() => {
+              setRegisteredIds((prev) => [...prev, String(viewingEvent.id)]);
+              showToast('✓ Registered successfully!');
+            }}
+          />
+        </AnimatePresence>
       )}
     </div>
   );

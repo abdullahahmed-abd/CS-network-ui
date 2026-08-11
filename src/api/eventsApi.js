@@ -21,6 +21,17 @@ export const fetchMemberEventList = (page = 0, size = 10) =>
     size: Number(size),
   });
 
+export const registerForEvent = (eventId) =>
+  eventsApiCall('/cs-network/member', {
+    memberRequestType: 'REGISTER_FOR_EVENT',
+    eventId: Number(eventId),
+  });
+
+export const fetchMyRegistrations = () =>
+  eventsApiCall('/cs-network/member', {
+    memberRequestType: 'FETCH_MY_REGISTRATIONS',
+  });
+
 // ══════════════════════════════════════════════════════════════
 // 2️⃣ FRANCHISE OPERATOR APIs (Endpoint: POST /cs-network/franchise-operator)
 // ══════════════════════════════════════════════════════════════

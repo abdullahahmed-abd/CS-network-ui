@@ -349,6 +349,15 @@ export default function CreateEventModal({
                     ? 'Submitted for approval. Global Admin will review.'
                     : 'Create & publish a new event'}
                 </p>
+                {isEditing && isOperator && (
+                  <div style={{
+                    marginTop: 8, padding: '6px 12px', borderRadius: 8,
+                    background: '#FEF3C7', border: '1px solid #FDE68A',
+                    color: '#92400E', fontSize: 11, fontWeight: 700,
+                  }}>
+                    ⚠️ Note: Re-editing this event will reset its approval status back to Master Review!
+                  </div>
+                )}
               </div>
               <motion.button
                 onClick={onClose}

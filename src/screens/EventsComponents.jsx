@@ -816,43 +816,36 @@ export function EventDetailsModal({ eventId, onClose, onRegistered }) {
 // ══════════════════════════════════════════════
 function RegistrationStatusCard({ registration, onCopyLink }) {
   const status = registration.status;
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   const config = {
     CONFIRMED: {
       bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-      lightBg: '#ecfdf5',
-      borderColor: '#a7f3d0',
+      badgeBg: '#dcfce7',
+      badgeText: '#15803d',
       icon: CheckCircle2,
-      iconBg: '#10b981',
-      title: '🎉 You\'re Confirmed!',
-      subtitle: 'You are all set for the event',
+      title: "You're Confirmed",
     },
     PENDING_APPROVAL: {
       bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      lightBg: '#fffbeb',
-      borderColor: '#fde68a',
+      badgeBg: '#fef3c7',
+      badgeText: '#b45309',
       icon: Clock,
-      iconBg: '#f59e0b',
-      title: '⏳ Waiting for Approval',
-      subtitle: 'Organizer will review your registration soon',
+      title: 'Waiting Approval',
     },
     PAYMENT_PENDING: {
       bg: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
-      lightBg: '#fdf2f8',
-      borderColor: '#fbcfe8',
+      badgeBg: '#fce7f3',
+      badgeText: '#be185d',
       icon: CreditCard,
-      iconBg: '#ec4899',
-      title: '💳 Complete Your Payment',
-      subtitle: 'Pay now to secure your seat',
+      title: 'Payment Pending',
     },
     REJECTED: {
       bg: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-      lightBg: '#fef2f2',
-      borderColor: '#fecaca',
+      badgeBg: '#fee2e2',
+      badgeText: '#b91c1c',
       icon: X,
-      iconBg: '#ef4444',
-      title: '❌ Registration Rejected',
-      subtitle: 'Your registration was not approved',
+      title: 'Rejected',
     },
   };
 
@@ -860,8 +853,9 @@ function RegistrationStatusCard({ registration, onCopyLink }) {
   const StatusIcon = cfg.icon;
 
   const handlePayNow = () => {
-    console.log('🔗 Redirecting to Stripe:', registration.paymentCheckoutUrl);
-    window.location.href = registration.paymentCheckoutUrl;
+    if (registration.paymentCheckoutUrl) {
+      window.location.href = registration.paymentCheckoutUrl;
+    }
   };
 
   const handleDownloadQR = () => {
@@ -875,140 +869,153 @@ function RegistrationStatusCard({ registration, onCopyLink }) {
     document.body.removeChild(link);
   };
 
+  const eventTitle = registration.eventTitle || registration.event?.title || `Event Pass #${registration.id}`;
+
   return (
-    <div className="rounded-2xl overflow-hidden border-2"
-         style={{ borderColor: cfg.borderColor, background: cfg.lightBg }}>
-      <div className="p-4 flex items-center gap-3" style={{ background: cfg.bg }}>
-        <div className="h-11 w-11 rounded-xl bg-white/25 backdrop-blur-md flex items-center justify-center flex-shrink-0">
-          <StatusIcon className="h-6 w-6 text-white" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-extrabold text-white">{cfg.title}</p>
-          <p className="text-[11px] text-white/85 font-semibold mt-0.5">{cfg.subtitle}</p>
-        </div>
-      </div>
-
-      <div className="p-4 space-y-3">
-        {registration.message && (
-          <p className="text-sm text-gray-700 leading-relaxed font-medium">
-            {registration.message}
-          </p>
-        )}
-
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-white p-2.5 border border-gray-100">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Reg ID</p>
-            <p className="text-xs font-bold text-gray-900 mt-0.5">#{registration.id}</p>
+    <>
+      <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-3">
+        <div>
+          {/* Header row with Status Badge */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[11px] font-mono font-bold text-slate-400">
+              #{registration.id}
+            </span>
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold"
+              style={{ background: cfg.badgeBg, color: cfg.badgeText }}
+            >
+              <StatusIcon className="h-3.5 w-3.5" />
+              {cfg.title}
+            </span>
           </div>
-          <div className="rounded-lg bg-white p-2.5 border border-gray-100">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Status</p>
-            <p className="text-xs font-bold mt-0.5" style={{ color: cfg.iconBg }}>
-              {status.replace('_', ' ')}
-            </p>
+
+          {/* Title */}
+          <h4 className="text-sm font-extrabold text-slate-900 line-clamp-1 mb-1">
+            {eventTitle}
+          </h4>
+
+          {/* Details */}
+          <div className="text-[11px] text-slate-600 space-y-1">
+            {registration.eventStartDateTime && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-3 w-3 text-slate-400" />
+                <span>{fmtEventDateTime(registration.eventStartDateTime)}</span>
+              </div>
+            )}
+            {registration.registeredAt && (
+              <div className="text-[10px] text-slate-400">
+                Registered on {fmtEventDate(registration.registeredAt)}
+              </div>
+            )}
           </div>
         </div>
 
-        {registration.registeredAt && (
-          <p className="text-[10px] text-gray-500 text-center">
-            Registered on {fmtEventDateTime(registration.registeredAt)}
-          </p>
-        )}
+        {/* Action Row */}
+        <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+          {status === 'PAYMENT_PENDING' && registration.paymentCheckoutUrl && (
+            <button
+              onClick={handlePayNow}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold text-white shadow-sm transition hover:opacity-90"
+              style={{ background: cfg.bg }}
+            >
+              <CreditCard className="h-3.5 w-3.5" /> Pay Now via Stripe
+            </button>
+          )}
 
-        {/* ONLINE JOIN — With Countdown Timer */}
-        {status === 'CONFIRMED' && registration.onlineJoinLink && registration.eventStartDateTime && (
-          <JoinNowButton
-            eventId={registration.eventId}
-            startDateTime={registration.eventStartDateTime}
-            endDateTime={registration.eventEndDateTime}
-            fallbackLink={registration.onlineJoinLink}
-          />
-        )}
+          {status === 'CONFIRMED' && registration.qrCodeToken && (
+            <button
+              onClick={() => setQrModalOpen(true)}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 transition hover:bg-emerald-100"
+            >
+              <Ticket className="h-3.5 w-3.5 text-emerald-600" /> View Entry Pass QR
+            </button>
+          )}
 
-        {/* QR CODE (Free & Paid both if In-Person) */}
-        {status === 'CONFIRMED' && registration.qrCodeToken && (
-          <div className="rounded-xl bg-white border-2 p-4 text-center" style={{ borderColor: cfg.borderColor }}>
-            <div className="flex items-center justify-center gap-1.5 mb-3">
-              <BadgeCheck className="h-4 w-4" style={{ color: cfg.iconBg }} />
-              <p className="text-xs font-bold uppercase tracking-wide" style={{ color: cfg.iconBg }}>
-                Your Entry Pass
-              </p>
-            </div>
-
-            <div className="inline-block p-3 bg-white rounded-2xl border-4" style={{ borderColor: BRAND }}>
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(registration.qrCodeToken)}&margin=0`}
-                alt="QR Code Entry Pass"
-                className="rounded-lg block"
-                width={200}
-                height={200}
+          {status === 'CONFIRMED' && registration.onlineJoinLink && registration.eventStartDateTime && (
+            <div className="flex-1">
+              <JoinNowButton
+                eventId={registration.eventId}
+                startDateTime={registration.eventStartDateTime}
+                endDateTime={registration.eventEndDateTime}
+                fallbackLink={registration.onlineJoinLink}
               />
             </div>
+          )}
 
-            <p className="text-xs text-gray-700 mt-3 font-semibold">
-              📱 Show this QR at venue for check-in
-            </p>
-
-            <div className="mt-3 rounded-lg bg-gray-50 border border-gray-200 p-2">
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wide mb-1">Pass Token</p>
-              <p className="text-[10px] font-mono text-gray-700 break-all">
-                {registration.qrCodeToken}
-              </p>
+          {status === 'PENDING_APPROVAL' && (
+            <div className="text-[11px] font-semibold text-amber-700 bg-amber-50 rounded-lg p-2 w-full text-center">
+              ⏳ Awaiting Organizer Approval
             </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
-                onClick={() => onCopyLink(registration.qrCodeToken, 'QR Token')}
-                className="flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-white transition hover:opacity-90"
-                style={{ background: cfg.iconBg }}
-              >
-                <Copy className="h-3.5 w-3.5" /> Copy Token
-              </button>
-              <button
-                onClick={handleDownloadQR}
-                className="flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-white transition hover:opacity-90"
-                style={{ background: cfg.bg }}
-              >
-                <Download className="h-3.5 w-3.5" /> Download
-              </button>
-            </div>
-
-            <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-gray-500 font-semibold">
-              <Sparkles className="h-3 w-3" />
-              Registration Confirmed • Ready for entry
-            </div>
-          </div>
-        )}
-
-        {/* PAYMENT CHECKOUT */}
-        {status === 'PAYMENT_PENDING' && registration.paymentCheckoutUrl && (
-          <>
-            <motion.button
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              onClick={handlePayNow}
-              className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition hover:opacity-90"
-              style={{ background: cfg.bg, boxShadow: `0 4px 14px ${cfg.iconBg}55` }}
-            >
-              <CreditCard className="h-4 w-4" /> Pay Now via Stripe
-            </motion.button>
-            <p className="text-[10px] text-center text-gray-500 font-medium">
-              🔒 Secure payment powered by Stripe
-            </p>
-          </>
-        )}
-
-        {/* PENDING APPROVAL */}
-        {status === 'PENDING_APPROVAL' && (
-          <div className="rounded-xl bg-white border p-3 flex items-start gap-2"
-               style={{ borderColor: cfg.borderColor }}>
-            <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: cfg.iconBg }} />
-            <p className="text-xs text-gray-700 leading-relaxed">
-              You'll receive access once the organizer approves your registration.
-              Check "My Tickets" tab for updates.
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Entry Pass Modal with QR */}
+      {qrModalOpen && (
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setQrModalOpen(false)}
+            className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center relative"
+            >
+              <button
+                onClick={() => setQrModalOpen(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+
+              <div className="flex items-center justify-center gap-1.5 mb-2 text-emerald-700 font-extrabold text-sm uppercase tracking-wide">
+                <BadgeCheck className="h-5 w-5 text-emerald-600" />
+                Verified Entry Pass
+              </div>
+              <p className="text-xs text-slate-500 font-semibold mb-4">{eventTitle}</p>
+
+              <div className="inline-block p-3 bg-white rounded-2xl border-4 border-emerald-500 shadow-md">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(registration.qrCodeToken)}&margin=0`}
+                  alt="QR Entry Pass"
+                  className="rounded-lg block"
+                  width={200}
+                  height={200}
+                />
+              </div>
+
+              <p className="text-xs font-semibold text-slate-700 mt-3">
+                📱 Show this QR code at venue for check-in
+              </p>
+
+              <div className="mt-3 bg-slate-50 rounded-xl p-2.5 border border-slate-200">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Token ID</p>
+                <p className="text-[11px] font-mono text-slate-800 break-all font-bold mt-0.5">
+                  {registration.qrCodeToken}
+                </p>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => onCopyLink(registration.qrCodeToken, 'Pass Token')}
+                  className="py-2 px-3 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition"
+                >
+                  <Copy className="h-3.5 w-3.5 inline mr-1" /> Copy Token
+                </button>
+                <button
+                  onClick={handleDownloadQR}
+                  className="py-2 px-3 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition"
+                >
+                  <Download className="h-3.5 w-3.5 inline mr-1" /> Download Pass
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        </AnimatePresence>
+      )}
+    </>
   );
 }
 
@@ -1174,5 +1181,87 @@ export function EventsTab() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+// ══════════════════════════════════════════════
+// MyRegistrationsTab Component (My Tickets & Passes)
+// ══════════════════════════════════════════════
+export function MyRegistrationsTab() {
+  const [registrations, setRegistrations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadRegistrations = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetchMyRegistrations();
+      const list = res?.registrations || res?.data || [];
+      setRegistrations(Array.isArray(list) ? list : []);
+    } catch (err) {
+      setError(err.message || 'Failed to load tickets/registrations.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRegistrations();
+  }, [loadRegistrations]);
+
+  const copyToClipboard = (text, label = 'Link') => {
+    navigator.clipboard.writeText(text)
+      .then(() => alert(`${label} copied to clipboard!`))
+      .catch(() => alert('Failed to copy'));
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div className="mb-5 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-extrabold text-gray-900">My Event Tickets & Passes</h2>
+          <p className="text-sm text-gray-600">Your QR codes, entry passes, and payment status for joined events</p>
+        </div>
+        <button
+          onClick={loadRegistrations}
+          className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-700 hover:bg-gray-50 transition shadow-sm"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </button>
+      </div>
+
+      {error && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-600">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <p className="text-sm font-semibold flex-1">{error}</p>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: BRAND_DARK }} />
+          <p className="text-sm text-gray-600 font-medium">Loading your tickets...</p>
+        </div>
+      ) : registrations.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+          <Ticket className="h-12 w-12 text-gray-400" />
+          <div>
+            <p className="font-bold text-gray-800">No Tickets Found</p>
+            <p className="text-xs text-gray-500 mt-1">You haven't registered for any events yet.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
+          {registrations.map((reg) => (
+            <RegistrationStatusCard
+              key={reg.id}
+              registration={reg}
+              onCopyLink={copyToClipboard}
+            />
+          ))}
+        </div>
+      )}
+    </motion.div>
   );
 }
