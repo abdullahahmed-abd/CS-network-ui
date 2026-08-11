@@ -9,6 +9,7 @@ import {
   fetchAllGlobalEvents,
   fetchGlobalAdminPendingEventRequests,
   approveGlobalAdminEventRequest,
+  fetchMemberEventList,
 } from '../../api/eventsApi';
 
 import CreateEventModal from '../globalAdmin/events/CreateEventModal';
@@ -18,6 +19,7 @@ import EventCoverUploadModal from './EventCoverUploadModal';
 import EventRegistrationsModal from '../globalAdmin/events/EventRegistrationsModal';
 import { resolvePhotoUrl, fetchEventCoverPhoto } from '../../api/profileOperationsApi';
 import { ImageLightboxModal } from '../../screens/EventsComponents';
+import { getUserData } from '../../api/auth';
 
 function RoleEventCardItem({
   ev, activeSubTab, isAdmin, handleApprove, setRejectingEvent,
@@ -42,7 +44,7 @@ function RoleEventCardItem({
             setCoverUrl(resolvePhotoUrl(res.fileUrl));
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [ev?.id, ev?.coverImageUrl]);
 
@@ -120,94 +122,99 @@ function RoleEventCardItem({
               <div>📅 {new Date(ev.startDateTime).toLocaleDateString()} at {new Date(ev.startDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
               <div>📍 {ev.city || ev.eventCity || 'Online'}{ev.country ? `, ${ev.country}` : ''}</div>
               <div>👥 Capacity: {ev.capacity || 'Unlimited'}</div>
+              {(ev.createdByName || ev.createdByRole) && (
+                <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600 }}>
+                  👤 Organizer: {ev.createdByName || 'System'} {ev.createdByRole ? `(${ev.createdByRole.replace('_', ' ')})` : ''}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-      {/* Card Actions */}
-      <div style={{ borderTop: '1px solid #F1F5F9', padding: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {activeSubTab === 'PENDING_APPROVALS' ? (
-          <>
-            <button
-              onClick={() => handleApprove(ev.id)}
-              style={{
-                flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              }}
-            >
-              ✅ Approve
-            </button>
-            <button
-              onClick={() => setRejectingEvent(ev)}
-              style={{
-                flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                background: '#DC2626', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              }}
-            >
-              ❌ Reject
-            </button>
-          </>
-        ) : (
-          <>
-            {canEdit && (
+        {/* Card Actions */}
+        <div style={{ borderTop: '1px solid #F1F5F9', padding: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {activeSubTab === 'PENDING_APPROVALS' ? (
+            <>
               <button
-                onClick={() => setEditingEvent(ev)}
-                style={{
-                  flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #CBD5E1',
-                  background: '#F8FAFC', color: '#334155', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                ✏️ Edit
-              </button>
-            )}
-
-            <button
-              onClick={() => setUploadCoverEvent(ev)}
-              style={{
-                flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #16A34A',
-                background: '#F0FDF4', color: '#15803D', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              }}
-            >
-              📷 Upload Cover
-            </button>
-
-            {isAdmin && activeSubTab !== 'PENDING_APPROVALS' && (
-              <button
-                onClick={() => setRegistrationsEvent(ev)}
+                onClick={() => handleApprove(ev.id)}
                 style={{
                   flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                  background: 'linear-gradient(135deg, #16A34A, #15803D)',
-                  color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
+                  background: '#16A34A', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 }}
               >
-                👥 Manage Registrations
+                ✅ Approve
               </button>
-            )}
-
-            {canReport && (
               <button
-                onClick={() => setReportingEvent(ev)}
+                onClick={() => setRejectingEvent(ev)}
                 style={{
                   flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                  background: '#2563EB', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  background: '#DC2626', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 }}
               >
-                📊 Submit Report
+                ❌ Reject
               </button>
-            )}
-          </>
-        )}
+            </>
+          ) : (
+            <>
+              {canEdit && (
+                <button
+                  onClick={() => setEditingEvent(ev)}
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #CBD5E1',
+                    background: '#F8FAFC', color: '#334155', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  ✏️ Edit
+                </button>
+              )}
+
+              <button
+                onClick={() => setUploadCoverEvent(ev)}
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #16A34A',
+                  background: '#F0FDF4', color: '#15803D', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                📷 Upload Cover
+              </button>
+
+              {isAdmin && activeSubTab !== 'PENDING_APPROVALS' && (
+                <button
+                  onClick={() => setRegistrationsEvent(ev)}
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                    background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                    color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
+                  }}
+                >
+                  👥 Manage Registrations
+                </button>
+              )}
+
+              {canReport && (
+                <button
+                  onClick={() => setReportingEvent(ev)}
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                    background: '#2563EB', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  📊 Submit Report
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
 
-    {lightboxOpen && (
-      <ImageLightboxModal
-        imageUrl={coverUrl}
-        title={ev.title}
-        onClose={() => setLightboxOpen(false)}
-      />
-    )}
+      {lightboxOpen && (
+        <ImageLightboxModal
+          imageUrl={coverUrl}
+          title={ev.title}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </>
   );
 }
@@ -245,8 +252,53 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
         if (isOperator) res = await fetchFranchiseOperatorEvents(pg, 100);
         else if (isMaster) res = await fetchMasterOperatorEvents(pg, 100);
         else if (isAdmin) res = await fetchGlobalAdminMyEvents(pg, 100);
-      } else if (activeSubTab === 'ALL_EVENTS' && isAdmin) {
-        res = await fetchAllGlobalEvents(pg, 100);
+      } else if (activeSubTab === 'ALL_EVENTS') {
+        if (isAdmin) {
+          res = await fetchAllGlobalEvents(pg, 100);
+        } else if (isMaster) {
+          // Master Operator sees Global Admin events + Master's own events
+          // (Does NOT see General/Sector Operator events!)
+          res = await fetchMemberEventList(pg, 100);
+          if (res?.events && Array.isArray(res.events)) {
+            const currentUser = getUserData() || {};
+            const currentUserId = String(currentUser.id || currentUser.userId || '');
+            res.events = res.events.filter(ev => {
+              const creatorRole = String(ev.creatorRole || ev.createdRole || ev.createdByRole || ev.role || ev.creatorType || ev.createdUserType || '').toUpperCase();
+              const creatorId = String(ev.createdById || ev.userId || ev.creatorId || '');
+              const isGlobal = ev.isGlobalAdmin === true || creatorRole.includes('ADMIN') || creatorRole.includes('GLOBAL');
+              const isMasterEv = creatorRole.includes('MASTER') || (creatorId && creatorId === currentUserId);
+              const isGeneralOrSector = creatorRole.includes('FRANCHISE') || creatorRole.includes('GENERAL') || creatorRole.includes('SECTOR');
+
+              if (isGeneralOrSector) return false; // Hide general/sector operator events from Master in Network Events tab
+              return true;
+            });
+          }
+        } else if (isOperator) {
+          // General / Sector Operator sees:
+          // Global Admin events + Master Operator events + General/Sector Operator's OWN events
+          // (Does NOT see other General/Sector Operators' events!)
+          res = await fetchMemberEventList(pg, 100);
+          if (res?.events && Array.isArray(res.events)) {
+            const currentUser = getUserData() || {};
+            const currentUserId = String(currentUser.id || currentUser.userId || '');
+            res.events = res.events.filter(ev => {
+              const creatorRole = String(ev.creatorRole || ev.createdRole || ev.createdByRole || ev.role || ev.creatorType || ev.createdUserType || '').toUpperCase();
+              const creatorId = String(ev.createdById || ev.userId || ev.creatorId || '');
+              const isGlobal = ev.isGlobalAdmin === true || creatorRole.includes('ADMIN') || creatorRole.includes('GLOBAL');
+              const isMasterEv = creatorRole.includes('MASTER');
+              const isMine = creatorId && creatorId === currentUserId;
+
+              // Show Global Admin events, Master Operator events, and MY OWN events
+              if (isGlobal || isMasterEv || isMine) return true;
+
+              // Hide other Franchise/General/Sector operators' events
+              const isFranchiseRole = creatorRole.includes('FRANCHISE') || creatorRole.includes('GENERAL') || creatorRole.includes('SECTOR');
+              if (isFranchiseRole && !isMine) return false;
+
+              return true;
+            });
+          }
+        }
       } else if (activeSubTab === 'PENDING_APPROVALS') {
         if (isMaster) res = await fetchMasterPendingEventRequests(pg, 100);
         else if (isAdmin) res = await fetchGlobalAdminPendingEventRequests(pg, 100);
@@ -254,7 +306,7 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
 
       setEvents(res?.events || []);
       setTotalPages(res?.totalPages || 1);
-      setTotalRecords(res?.totalRecords || 0);
+      setTotalRecords(res?.events?.length || res?.totalRecords || 0);
     } catch (err) {
       console.error('Failed to load events:', err);
       showToast(err.message || 'Failed to load events', 'error');
@@ -342,19 +394,17 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
             📋 My Events
           </button>
 
-          {isAdmin && (
-            <button
-              onClick={() => { setActiveSubTab('ALL_EVENTS'); setPage(0); }}
-              style={{
-                padding: '8px 16px', borderRadius: 12, border: 'none',
-                background: activeSubTab === 'ALL_EVENTS' ? '#16A34A' : '#E2E8F0',
-                color: activeSubTab === 'ALL_EVENTS' ? '#fff' : '#475569',
-                fontWeight: 700, fontSize: 12, cursor: 'pointer',
-              }}
-            >
-              🌐 All Global Events
-            </button>
-          )}
+          <button
+            onClick={() => { setActiveSubTab('ALL_EVENTS'); setPage(0); }}
+            style={{
+              padding: '8px 16px', borderRadius: 12, border: 'none',
+              background: activeSubTab === 'ALL_EVENTS' ? '#16A34A' : '#E2E8F0',
+              color: activeSubTab === 'ALL_EVENTS' ? '#fff' : '#475569',
+              fontWeight: 700, fontSize: 12, cursor: 'pointer',
+            }}
+          >
+            🌐 {isAdmin ? 'All Global Events' : 'Network Events'}
+          </button>
 
           {(isMaster || isAdmin) && (
             <button

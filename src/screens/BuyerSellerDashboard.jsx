@@ -12,7 +12,7 @@ import {
   Menu, FileText, Send, Clock, CheckCheck,
   Users, ArrowRight, BadgeCheck,
   Calendar, DollarSign, MessageCircle, Paperclip,
-  Inbox, Ticket, Video, Building2,
+  Inbox, Ticket, Video, Building2, Award,
 } from 'lucide-react';
 import { Client } from '@stomp/stompjs';
 import {
@@ -20,6 +20,7 @@ import {
   getUserData,
   getAccessToken,
   refreshAccessToken,
+  getItem,
 } from '../api/auth';
 import { resolvePhotoUrl, fetchMyProfile } from '../api/profileOperationsApi';
 import MyProfileModal from '../components/profile/MyProfileModal';
@@ -555,12 +556,14 @@ export function TradeChatScreen({
     if (msg.mine === true || msg.isMine === true) return true;
 
     // Extract current logged-in user identifiers
+    const storedUserId = getItem('userId');
     const myIdList = [
       user.id,
       user.userId,
       user.memberId,
       user.sub,
       user.user_id,
+      storedUserId,
     ].filter(Boolean).map(v => String(v).trim().toLowerCase());
 
     // Extract sender identifiers from message
@@ -605,7 +608,7 @@ export function TradeChatScreen({
       ''
     ).toLowerCase().trim();
 
-    if (myName && senderName && (myName === senderName || (myName.length > 2 && senderName.length > 2 && (myName.includes(senderName) || senderName.includes(myName))))) return true;
+    if (myName && senderName && myName === senderName) return true;
 
     // 5. Check against OTHER party (if message sender is explicitly the other party -> return false)
     const otherName = String(otherPartyName || '').toLowerCase().trim();
@@ -614,10 +617,7 @@ export function TradeChatScreen({
     if (otherId && senderId && otherId === senderId) return false;
     if (otherName && senderName && (otherName === senderName || (otherName.length > 2 && senderName.length > 2 && (otherName.includes(senderName) || senderName.includes(otherName))))) return false;
 
-    // 6. In a 1-to-1 chat: if sender is present and is NOT the other party, it MUST be mine!
-    if (otherName && senderName && !otherName.includes(senderName) && !senderName.includes(otherName)) return true;
-    if (otherId && senderId && otherId !== senderId) return true;
-
+    // Default to false (Receiver message -> Left side, White background)
     return false;
   };
 
@@ -1782,54 +1782,78 @@ function IntentDetailModal({ intent, onClose, onSendProposal, onViewProposals, i
 }
 
 // ── ReceivedProposalsContent ──
-export function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefreshMyIntents }) {
-  const [selectedIntent,   setSelectedIntent]   = useState(null);
+export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = false, onRefreshMyIntents }) {
   const [proposals,        setProposals]        = useState([]);
   const [proposalsLoading, setProposalsLoading] = useState(false);
   const [accepting,        setAccepting]        = useState(null);
   const [error,            setError]            = useState('');
   const [successMsg,       setSuccessMsg]       = useState('');
   const [chatProposal,     setChatProposal]     = useState(null);
+  const [completingId,     setCompletingId]     = useState(null);
+  const [statusFilter,     setStatusFilter]     = useState('ALL');
 
-  useEffect(() => {
-    if (myIntents.length === 1 && !selectedIntent) setSelectedIntent(myIntents[0]);
+  const fetchAllReceivedProposals = useCallback(async () => {
+    setProposalsLoading(true);
+    setError('');
+    try {
+      if (!myIntents || myIntents.length === 0) {
+        setProposals([]);
+        setProposalsLoading(false);
+        return;
+      }
+
+      const results = await Promise.all(
+        myIntents.map(async (intent) => {
+          try {
+            const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+              method: 'POST',
+              body: JSON.stringify({
+                memberRequestType: 'FETCH_PROPOSALS_FOR_INTENT',
+                tradeIntentId: intent.id,
+              }),
+            });
+            return data?.proposals || [];
+          } catch (e) {
+            return [];
+          }
+        })
+      );
+
+      const allProps = results.flat();
+      setProposals(allProps);
+    } catch (err) {
+      setError(err.message || 'Failed to load received proposals');
+    } finally {
+      setProposalsLoading(false);
+    }
   }, [myIntents]);
 
-  const fetchProposals = useCallback(async (intent) => {
-    if (!intent) return;
-    setProposalsLoading(true); setError('');
-    try {
-      const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
-        method: 'POST',
-        body: JSON.stringify({ memberRequestType: 'FETCH_PROPOSALS_FOR_INTENT', tradeIntentId: intent.id }),
-      });
-      setProposals(data?.proposals || []);
-    } catch (err) { setError(err.message || 'Failed to load proposals'); }
-    finally       { setProposalsLoading(false); }
-  }, []);
-
-  useEffect(() => { if (selectedIntent) fetchProposals(selectedIntent); }, [selectedIntent, fetchProposals]);
+  useEffect(() => {
+    fetchAllReceivedProposals();
+  }, [fetchAllReceivedProposals]);
 
   const handleAccept = async (proposalId) => {
-    setAccepting(proposalId); setError('');
+    setAccepting(proposalId);
+    setError('');
     try {
       await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
         method: 'POST',
-        body: JSON.stringify({ memberRequestType: 'ACCEPT_TRADE_PROPOSAL', tradeProposalId: String(proposalId) }),
+        body: JSON.stringify({
+          memberRequestType: 'ACCEPT_TRADE_PROPOSAL',
+          tradeProposalId: String(proposalId),
+        }),
       });
       setSuccessMsg('✓ Proposal accepted! You can now chat with the proposer.');
-      await fetchProposals(selectedIntent);
-    } catch (err) { setError(err.message || 'Failed to accept proposal'); }
-    finally       { setAccepting(null); }
+      await fetchAllReceivedProposals();
+    } catch (err) {
+      setError(err.message || 'Failed to accept proposal');
+    } finally {
+      setAccepting(null);
+    }
   };
 
-  const [completingId, setCompletingId] = useState(null);
-
   const handleMarkProposalCompleted = async (prop) => {
-    console.log('🔍 [RECEIVED_PROPOSALS_CONTENT] Mark Complete clicked for proposal:', prop);
-    const targetId = prop.dealId || prop.tradeDealId || prop.tradeProposalId || prop.proposalId || prop.id || prop.tradeIntentId || selectedIntent?.id;
-    console.log('🔍 [RECEIVED_PROPOSALS_CONTENT] Computed Target ID for completion:', targetId);
-
+    const targetId = prop.dealId || prop.tradeDealId || prop.tradeProposalId || prop.proposalId || prop.id || prop.tradeIntentId;
     if (!targetId) {
       setError('Unable to mark complete: Proposal or Deal ID is missing.');
       return;
@@ -1842,25 +1866,27 @@ export function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefres
         memberRequestType: 'MARK_DEAL_COMPLETED',
         dealId: Number(targetId),
         ...((prop.tradeProposalId || prop.proposalId || prop.id) && { tradeProposalId: Number(prop.tradeProposalId || prop.proposalId || prop.id) }),
-        ...((prop.tradeIntentId || prop.intentId || selectedIntent?.id) && { tradeIntentId: Number(prop.tradeIntentId || prop.intentId || selectedIntent?.id) }),
+        ...((prop.tradeIntentId || prop.intentId) && { tradeIntentId: Number(prop.tradeIntentId || prop.intentId) }),
       };
-      console.log('🚀 [RECEIVED_PROPOSALS_CONTENT] Sending payload:', payload);
 
       const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
         method: 'POST',
         body: JSON.stringify(payload),
       });
-      console.log('✅ [RECEIVED_PROPOSALS_CONTENT] Success response:', data);
 
       setSuccessMsg(data?.message || '✓ Deal marked as completed! Commission ledger generated.');
-      await fetchProposals(selectedIntent);
+      await fetchAllReceivedProposals();
     } catch (err) {
-      console.error('❌ [RECEIVED_PROPOSALS_CONTENT] Error:', err);
       setError(err.message || 'Failed to mark deal completed');
     } finally {
       setCompletingId(null);
     }
   };
+
+  const filteredProposals = proposals.filter(p => {
+    if (statusFilter === 'ALL') return true;
+    return p.status === statusFilter;
+  });
 
   const pendingCount  = proposals.filter(p => p.status === 'PENDING').length;
   const acceptedCount = proposals.filter(p => p.status === 'ACCEPTED').length;
@@ -1886,139 +1912,63 @@ export function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefres
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col lg:flex-row gap-5 min-h-0">
-        <div className="lg:w-80 xl:w-96 flex-shrink-0">
-          <div className="rounded-2xl border border-white/60 bg-white/35 backdrop-blur-md p-4">
-            <div className="flex items-center justify-between mb-3 px-1">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Your Trade Intents</p>
-              <button onClick={onRefreshMyIntents}
-                className="rounded-lg border border-white/60 bg-white/35 p-1.5 text-gray-600 hover:bg-white/50 transition">
-                <RefreshCw className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            {myIntentsLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin" style={{ color: BRAND_DARK }} />
-              </div>
-            ) : myIntents.length === 0 ? (
-              <div className="flex flex-col items-center py-10 gap-2 text-center">
-                <Package className="h-8 w-8 text-gray-400" />
-                <p className="text-sm font-semibold text-gray-600">No intents yet</p>
-                <p className="text-xs text-gray-500">Create a trade intent first</p>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-[calc(100vh-26rem)] overflow-y-auto pr-1">
-                {myIntents.map(intent => {
-                  const isSelected = selectedIntent?.id === intent.id;
-                  const isBuy = intent.intentType === 'BUY';
-                  const st = STATUS_CONFIG[intent.status] || STATUS_CONFIG.OPEN;
-                  return (
-                    <motion.button key={intent.id} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-                      onClick={() => setSelectedIntent(intent)}
-                      className="w-full text-left rounded-xl p-3.5 transition-all border"
-                      style={isSelected
-                        ? { background: `${BRAND}18`, borderColor: BRAND, boxShadow: `0 0 0 2px ${BRAND}30` }
-                        : { background: 'rgba(255,255,255,0.5)', borderColor: 'transparent' }}>
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="h-6 w-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                               style={{ background: isBuy ? '#dbeafe' : '#ffedd5' }}>
-                            {isBuy
-                              ? <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
-                              : <Store className="h-3.5 w-3.5 text-orange-600" />}
-                          </div>
-                          <p className="text-xs font-bold text-gray-900 truncate">{intent.title}</p>
-                        </div>
-                        <span className={`text-[9px] font-bold rounded-full px-1.5 py-0.5 flex-shrink-0 ${st.color} ${st.bg}`}>
-                          {st.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-[10px] text-gray-500">
-                        <span>{intent.category}</span>
-                        <span>{fmt(intent.quantity)} {intent.unit}</span>
-                      </div>
-                      {isSelected && (
-                        <div className="mt-2 flex items-center gap-1 text-[10px] font-bold" style={{ color: BRAND_DARK }}>
-                          <ArrowRight className="h-3 w-3" /> Viewing proposals
-                        </div>
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            )}
+      <div className="mb-4 flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex flex-wrap gap-2">
+          {['ALL', 'PENDING', 'ACCEPTED', 'COMPLETED'].map(status => (
+            <button key={status} onClick={() => setStatusFilter(status)}
+              className="rounded-xl px-4 py-2 text-sm font-semibold transition-all"
+              style={statusFilter === status
+                ? { background: BRAND, color: '#fff', boxShadow: `0 4px 14px ${BRAND}55` }
+                : { border: '1px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.35)', color: '#374151' }}>
+              {status}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => { onRefreshMyIntents?.(); fetchAllReceivedProposals(); }}
+          className="rounded-xl border border-white/60 bg-white/35 backdrop-blur p-2.5 text-gray-700 hover:bg-white/50 transition">
+          <RefreshCw className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mb-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={FileText}   label="Total Received" value={proposals.length}   delay={0.05} />
+        <StatCard icon={Clock}      label="Pending Approval" value={pendingCount}    delay={0.1}  accent="#f59e0b" />
+        <StatCard icon={CheckCheck} label="Accepted"       value={acceptedCount}    delay={0.15} accent="#10b981" />
+        <StatCard icon={Award}      label="Completed"      value={proposals.filter(p=>p.status==='COMPLETED').length} delay={0.2} accent="#6366f1" />
+      </div>
+
+      {proposalsLoading || myIntentsLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: BRAND_DARK }} />
+          <p className="text-sm text-gray-700 font-medium">Loading received proposals...</p>
+        </div>
+      ) : filteredProposals.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="rounded-2xl border border-white/60 bg-white/35 backdrop-blur p-6">
+            <Inbox className="h-10 w-10 text-gray-500" />
+          </div>
+          <div className="text-center">
+            <p className="font-bold text-gray-800 mb-1">No received proposals</p>
+            <p className="text-sm text-gray-700 max-w-sm">
+              {statusFilter === 'ALL'
+                ? 'When other members submit trade proposals to your intents for approval, they will appear here.'
+                : `No ${statusFilter.toLowerCase()} proposals found.`}
+            </p>
           </div>
         </div>
-
-        <div className="flex-1 min-w-0">
-          {!selectedIntent ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-[300px] rounded-2xl border-2 border-dashed border-gray-200 bg-white/20">
-              <div className="rounded-2xl bg-white/40 p-6 mb-4"><FileText className="h-10 w-10 text-gray-400" /></div>
-              <p className="font-bold text-gray-700 mb-1">Select an Intent</p>
-              <p className="text-sm text-gray-500 text-center max-w-xs">
-                Choose one of your trade intents from the left panel to view its proposals
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="rounded-2xl p-4 mb-4 flex items-center justify-between gap-3"
-                   style={{ background: `linear-gradient(135deg, ${BRAND}30, ${BRAND_LIGHT})`, border: `1px solid ${BRAND}40` }}>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Proposals for</p>
-                  <p className="font-bold text-gray-900 truncate">{selectedIntent.title}</p>
-                  <p className="text-xs text-gray-600 mt-0.5">
-                    {fmt(selectedIntent.quantity)} {selectedIntent.unit} · {fmtCurrency(selectedIntent.pricePerUnit, selectedIntent.currency)}/unit
-                  </p>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  {[
-                    { label: 'Total',    value: proposals.length,  cls: 'bg-white/60 text-gray-900',     sub: 'text-gray-500'    },
-                    { label: 'Pending',  value: pendingCount,      cls: 'bg-amber-50 text-amber-700',    sub: 'text-amber-600'   },
-                    { label: 'Accepted', value: acceptedCount,     cls: 'bg-emerald-50 text-emerald-700',sub: 'text-emerald-600' },
-                  ].map(s => (
-                    <div key={s.label} className={`rounded-xl ${s.cls} px-3 py-2 text-center min-w-[60px]`}>
-                      <p className="text-lg font-extrabold">{s.value}</p>
-                      <p className={`text-[9px] font-semibold ${s.sub}`}>{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center justify-end mb-3">
-                <button onClick={() => fetchProposals(selectedIntent)}
-                  className="flex items-center gap-1.5 rounded-xl border border-white/60 bg-white/35 backdrop-blur px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-white/50 transition">
-                  <RefreshCw className="h-3.5 w-3.5" /> Refresh
-                </button>
-              </div>
-              {proposalsLoading ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin" style={{ color: BRAND_DARK }} />
-                  <p className="text-sm text-gray-600 font-medium">Loading proposals...</p>
-                </div>
-              ) : proposals.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-2xl border-2 border-dashed border-gray-200 bg-white/20">
-                  <div className="rounded-2xl bg-white/40 p-5"><Users className="h-8 w-8 text-gray-400" /></div>
-                  <p className="font-bold text-gray-700">No proposals yet</p>
-                  <p className="text-sm text-gray-500 text-center max-w-xs">
-                    Other members will send proposals to this intent. They'll appear here.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                  <AnimatePresence mode="popLayout">
-                    {proposals.map(proposal => (
-                      <ProposalCard key={proposal.proposalId || proposal.id} proposal={proposal}
-                        onAccept={handleAccept} isOwner={true} accepting={accepting}
-                        onOpenChat={setChatProposal}
-                        onMarkCompleted={handleMarkProposalCompleted}
-                        completingId={completingId} />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </>
-          )}
+      ) : (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout">
+            {filteredProposals.map(proposal => (
+              <ProposalCard key={proposal.proposalId || proposal.id} proposal={proposal}
+                onAccept={handleAccept} isOwner={true} accepting={accepting}
+                onOpenChat={setChatProposal}
+                onMarkCompleted={handleMarkProposalCompleted}
+                completingId={completingId} />
+            ))}
+          </AnimatePresence>
         </div>
-      </div>
+      )}
 
       <AnimatePresence>
         {chatProposal?.conversationId && (
@@ -2026,7 +1976,7 @@ export function ReceivedProposalsContent({ myIntents, myIntentsLoading, onRefres
             title={`Trade #${chatProposal.tradeIntentId}`}
             otherPartyName={chatProposal.proposerName || 'Trader'}
             otherPartyId={chatProposal.proposerId || chatProposal.proposerMemberId || chatProposal.memberId}
-            dealId={chatProposal.dealId || chatProposal.tradeProposalId || chatProposal.proposalId || selectedIntent?.id}
+            dealId={chatProposal.dealId || chatProposal.tradeProposalId || chatProposal.proposalId}
             isOwner={true}
             onClose={() => setChatProposal(null)} />
         )}

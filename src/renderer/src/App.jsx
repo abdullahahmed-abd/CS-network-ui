@@ -506,21 +506,36 @@ export default function App() {
     setItem('formFilled', 'true');
 
     const savedUser  = getUserData() || {};
-    const savedRoles = savedUser?.roles || selectedRoles;
+    const savedRoles = (savedUser?.roles && savedUser.roles.length > 0)
+      ? savedUser.roles
+      : (selectedRoles.length > 0 ? selectedRoles : ['MEMBER']);
+
+    saveUserData({
+      ...savedUser,
+      roles: savedRoles,
+    });
+
     setSelectedRoles(savedRoles);
 
     const targetScreen = getScreenFromRoles(savedRoles, savedUser);
     console.log('🚀 Plan selected, transitioning to target screen:', targetScreen);
     setScreen(targetScreen);
-
-    // Auto reload to clear loading state and land directly on Dashboard
-    window.location.reload();
   };
 
   const handlePaymentSuccess = () => {
     setItem('planPurchased', 'true');
+    setItem('formFilled', 'true');
+
     const savedUser  = getUserData() || {};
-    const savedRoles = savedUser?.roles || selectedRoles;
+    const savedRoles = (savedUser?.roles && savedUser.roles.length > 0)
+      ? savedUser.roles
+      : (selectedRoles.length > 0 ? selectedRoles : ['MEMBER']);
+
+    saveUserData({
+      ...savedUser,
+      roles: savedRoles,
+    });
+
     setSelectedRoles(savedRoles);
     setScreen(getScreenFromRoles(savedRoles, savedUser));
   };

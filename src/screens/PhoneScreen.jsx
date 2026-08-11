@@ -289,10 +289,8 @@ export default function PhoneScreen({ onBack, onSendOTP, mode = 'signup' }) {
               width: 96,
               paddingLeft: 10,
               paddingRight: 8,
-              borderRight: '1px solid #E5E7EB',
               background: 'transparent',
               cursor: 'pointer',
-              border: 'none',
               borderRight: '1px solid #E5E7EB',
             }}
             whileHover={{ backgroundColor: 'rgba(37,211,102,0.04)' }}

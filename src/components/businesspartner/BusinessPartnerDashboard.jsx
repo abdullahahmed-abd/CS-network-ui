@@ -81,6 +81,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
   const scrollBtnRef  = useRef(null);
   const didFetchRef   = useRef(false);
   const requestRef    = useRef(false);
+  const loadedOnceRef = useRef(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [userProfile, setUserProfile] = useState(() => getUserData() || {});
 
@@ -109,13 +110,27 @@ export default function BusinessPartnerDashboard({ onLogout }) {
   const fetchPipeline = useCallback(async (isRefresh = false) => {
     if (requestRef.current) return;
     requestRef.current = true;
-    if (isRefresh) setRefreshing(true); else setLoading(true);
-    if (!isRefresh) setError('');
+    if (isRefresh) setRefreshing(true);
+    else if (!loadedOnceRef.current) setLoading(true);
+
     try {
       const data = await fetchMyPipeline();
-      if (data?.pipeline?.board || data?.board) {
-        setLeads(data?.pipeline?.board || data?.board);
-        setStageCounts(data?.pipeline?.stageCounts || data?.stageCounts || {});
+      const rawLeads = data?.leads || data?.content || data?.data || [];
+
+      if (Array.isArray(rawLeads)) {
+        const grouped = {};
+        const counts = {};
+        PIPELINE_STAGES.forEach(s => { grouped[s.id] = []; counts[s.id] = 0; });
+
+        rawLeads.forEach(lead => {
+          const st = lead.stage || 'NEW_LEAD';
+          if (!grouped[st]) grouped[st] = [];
+          grouped[st].push(lead);
+          counts[st] = (counts[st] || 0) + 1;
+        });
+
+        setLeads(grouped);
+        setStageCounts(counts);
         loadedOnceRef.current = true;
         setError('');
       } else {
@@ -162,13 +177,13 @@ export default function BusinessPartnerDashboard({ onLogout }) {
     setMyIntentsLoading(true);
     try {
       const data = await authenticatedFetch(
-        `${BASE_URL}/cs-network/business-partner`,
+        `${BASE_URL}/cs-network/member`,
         {
           method: 'POST',
-          body: JSON.stringify({ businessPartnerRequestType: 'FETCH_PROPOSAL_FOR_INTENT' }),
+          body: JSON.stringify({ memberRequestType: 'FETCH_INTENT', page: 0, size: 20 }),
         }
       );
-      const content = data?.myIntents?.content || data?.intents?.content || data?.intents || [];
+      const content = data?.intents?.content || data?.intents || [];
       setMyIntents(Array.isArray(content) ? content : []);
     } catch (err) {
       console.error('My intents error:', err);

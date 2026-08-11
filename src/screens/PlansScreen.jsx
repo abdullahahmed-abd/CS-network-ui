@@ -5,13 +5,13 @@ import {
   Star, Loader2, Shield, ArrowLeft,
 } from 'lucide-react';
 import Backgroundimage from '../assets/image/Backgroundimg19.png';
-import { authenticatedFetch } from '../api/auth';
+import { authenticatedFetch, setItem } from '../api/auth';
 
 const BASE_URL = 'https://connectsouq.sundukpay.com';
 
 const PLANS = [
   {
-    id: '2',
+    id: '1',
     name: 'Growth',
     price: 5.00,
     period: 'MONTHLY',
@@ -39,7 +39,7 @@ const PLANS = [
     ],
   },
   {
-    id: '3',
+    id: '2',
     name: 'Enterprise',
     price: 10.00,
     period: 'MONTHLY',
@@ -69,7 +69,7 @@ const PLANS = [
   },
 ];
 
-export default function PlansScreen({ roles, onPlanSelect, onBack }) {
+export default function PlansScreen({ roles = [], onPlanSelect, onBack }) {
   const [loadingPlanId, setLoadingPlanId] = useState(null);
   const [error, setError] = useState('');
 
@@ -99,9 +99,9 @@ export default function PlansScreen({ roles, onPlanSelect, onBack }) {
 
       // ✅ Store flags locally before navigating
       try {
-        localStorage.setItem('cs_selectedPlanId', String(planId));
-        localStorage.setItem('cs_planPurchased', 'true');
-        localStorage.setItem('cs_formFilled', 'true');
+        setItem('selectedPlanId', String(planId));
+        setItem('planPurchased', 'true');
+        setItem('formFilled', 'true');
       } catch (e) {}
 
       // Directly go to dashboard via onPlanSelect

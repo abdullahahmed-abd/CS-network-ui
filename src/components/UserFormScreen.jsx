@@ -152,7 +152,7 @@ const capitalizeFirstLetter = (str) => {
 
 const getPlanId = (roles) => {
   if (roles.includes('BUSINESS_PARTNER')) return null;
-  return 2; // Backend requires planId: 2 for member creation
+  return 1; // Default Growth plan ID
 };
 
 // ══════════════════════════════════════════════════════════
