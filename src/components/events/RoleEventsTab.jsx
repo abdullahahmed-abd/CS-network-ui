@@ -295,6 +295,42 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
   const [rejectingEvent, setRejectingEvent] = useState(null);
   const [uploadCoverEvent, setUploadCoverEvent] = useState(null);
   const [registrationsEvent, setRegistrationsEvent] = useState(null);
+  const [registeringId, setRegisteringId] = useState(null);
+  const [registeredIds, setRegisteredIds] = useState([]);
+
+  useEffect(() => {
+    authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+      method: 'POST',
+      body: JSON.stringify({ memberRequestType: 'FETCH_MY_REGISTRATIONS' }),
+    })
+      .then((res) => {
+        const list = res?.registrations || res?.data || [];
+        if (Array.isArray(list)) {
+          const ids = list.map(r => Number(r.eventId || r.event?.id)).filter(Boolean);
+          setRegisteredIds(ids);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleRegisterForEvent = async (eventId) => {
+    setRegisteringId(eventId);
+    try {
+      const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+        method: 'POST',
+        body: JSON.stringify({
+          memberRequestType: 'REGISTER_FOR_EVENT',
+          eventId: Number(eventId),
+        }),
+      });
+      showToast(data?.message || '✓ Registration request submitted! Sent to Global Admin for approval.');
+      setRegisteredIds(prev => [...prev, Number(eventId)]);
+    } catch (err) {
+      showToast(err.message || 'Failed to register for event', 'error');
+    } finally {
+      setRegisteringId(null);
+    }
+  };
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
