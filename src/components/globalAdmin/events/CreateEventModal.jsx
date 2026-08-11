@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   createGlobalAdminEvent,
+  updateGlobalAdminEvent,
   createMasterOperatorEvent,
   createFranchiseOperatorEvent,
   updateFranchiseOperatorEvent,
@@ -163,6 +164,8 @@ export default function CreateEventModal({
           res = await updateFranchiseOperatorEvent(editEvent.id, payload);
         } else if (isMaster) {
           res = await updateMasterOperatorEvent(editEvent.id, payload);
+        } else {
+          res = await updateGlobalAdminEvent(editEvent.id, payload);
         }
       } else {
         if (isOperator) {

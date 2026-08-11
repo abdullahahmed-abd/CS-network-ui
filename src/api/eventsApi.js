@@ -178,6 +178,13 @@ export const createGlobalAdminEvent = (eventData) => {
   });
 };
 
+export const updateGlobalAdminEvent = (eventId, updateData) =>
+  eventsApiCall('/cs-network/global-admin', {
+    requestType: 'UPDATE_EVENT',
+    eventId: Number(eventId),
+    ...updateData,
+  });
+
 export const fetchGlobalAdminMyEvents = (page = 0, size = 10) =>
   eventsApiCall('/cs-network/global-admin', {
     requestType: 'FETCH_MY_EVENTS',
