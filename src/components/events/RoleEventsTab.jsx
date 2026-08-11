@@ -19,7 +19,7 @@ import EventCoverUploadModal from './EventCoverUploadModal';
 import EventRegistrationsModal from '../globalAdmin/events/EventRegistrationsModal';
 import { resolvePhotoUrl, fetchEventCoverPhoto } from '../../api/profileOperationsApi';
 import { ImageLightboxModal } from '../../screens/EventsComponents';
-import { getUserData } from '../../api/auth';
+import { getUserData, authenticatedFetch, BASE_URL } from '../../api/auth';
 
 function RoleEventCardItem({
   ev, activeSubTab, isAdmin, isMaster, handleApprove, setRejectingEvent,
