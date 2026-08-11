@@ -22,9 +22,10 @@ import { ImageLightboxModal } from '../../screens/EventsComponents';
 import { getUserData } from '../../api/auth';
 
 function RoleEventCardItem({
-  ev, activeSubTab, isAdmin, handleApprove, setRejectingEvent,
+  ev, activeSubTab, isAdmin, isMaster, handleApprove, setRejectingEvent,
   setEditingEvent, setReportingEvent, setRegistrationsEvent,
-  setUploadCoverEvent, getStatusBadge, hasEventPassed
+  setUploadCoverEvent, getStatusBadge, hasEventPassed,
+  handleRegisterForEvent, isRegistered, isRegistering,
 }) {
   const [coverUrl, setCoverUrl] = useState(() => {
     const raw = ev.coverImageUrl || ev.coverPhotoUrl || ev.fileUrl || ev.photoUrl || ev.coverImage;
@@ -48,8 +49,21 @@ function RoleEventCardItem({
     }
   }, [ev?.id, ev?.coverImageUrl]);
 
-  const canReport = (ev.status === 'PUBLISHED') && hasEventPassed(ev.endDateTime || ev.startDateTime);
-  const canEdit = ev.status === 'PENDING_APPROVAL';
+  const currentUser = getUserData() || {};
+  const currentUserId = String(currentUser.id || currentUser.userId || '');
+  const creatorId = String(ev.createdById || ev.userId || ev.creatorId || '');
+  const isCreator = activeSubTab === 'MY_EVENTS' || Boolean(creatorId && currentUserId && creatorId === currentUserId);
+  const creatorRoleStr = String(ev.createdByRole || ev.creatorRole || '').toUpperCase();
+
+  // Explicit Cover Upload Permission:
+  // 1. Global Admin: can upload cover on any event
+  // 2. Event Creator: can upload cover on their own event
+  // 3. Master Operator: can upload cover on Franchise Operator events under them
+  const canUploadCover = isAdmin || isCreator || (isMaster && creatorRoleStr.includes('FRANCHISE'));
+
+  const canManage = isCreator || isAdmin;
+  const canReport = canManage && (ev.status === 'PUBLISHED') && hasEventPassed(ev.endDateTime || ev.startDateTime);
+  const canEdit = canManage && ev.status === 'PENDING_APPROVAL';
 
   return (
     <>
@@ -61,7 +75,7 @@ function RoleEventCardItem({
         }}
       >
         <div>
-          {/* Cover Photo Header — Exact same as Buyer/Seller */}
+          {/* Cover Photo Header */}
           <div
             onClick={() => coverUrl && setLightboxOpen(true)}
             style={{
@@ -84,31 +98,40 @@ function RoleEventCardItem({
               </div>
             )}
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setUploadCoverEvent(ev);
-              }}
-              style={{
-                position: 'absolute', top: 10, right: 10, zIndex: 10,
-                padding: '6px 12px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)',
-                border: '1px solid #CBD5E1',
-                fontSize: 11, fontWeight: 800, color: '#1E293B',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-              }}
-            >
-              📷 {coverUrl ? 'Change Cover' : 'Upload Cover'}
-            </button>
+            {canUploadCover && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setUploadCoverEvent(ev);
+                }}
+                style={{
+                  position: 'absolute', top: 10, right: 10, zIndex: 10,
+                  padding: '6px 12px', borderRadius: 8,
+                  background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)',
+                  border: '1px solid #CBD5E1',
+                  fontSize: 11, fontWeight: 800, color: '#1E293B',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                }}
+              >
+                📷 {coverUrl ? 'Change Cover' : 'Upload Cover'}
+              </button>
+            )}
           </div>
 
           <div style={{ padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
               {getStatusBadge(ev.status, ev.pendingApprovalStage)}
-              <span style={{ fontSize: 11, fontWeight: 700, color: ev.eventType === 'ONLINE' ? '#2563EB' : '#D97706' }}>
-                {ev.eventType === 'ONLINE' ? '💻 Online' : '📍 In-Person'}
-              </span>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                {(ev.isPaid || ev.paid) && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#16A34A', background: '#DCFCE7', padding: '2px 8px', borderRadius: 6 }}>
+                    ₹{ev.price} {ev.currency || 'INR'}
+                  </span>
+                )}
+                <span style={{ fontSize: 11, fontWeight: 700, color: ev.eventType === 'ONLINE' ? '#2563EB' : '#D97706' }}>
+                  {ev.eventType === 'ONLINE' ? '💻 Online' : '📍 In-Person'}
+                </span>
+              </div>
             </div>
 
             <h4 style={{ fontSize: 16, fontWeight: 800, color: '#1E293B', margin: '0 0 6px' }}>
@@ -154,7 +177,7 @@ function RoleEventCardItem({
                 ❌ Reject
               </button>
             </>
-          ) : (
+          ) : canManage ? (
             <>
               {canEdit && (
                 <button
@@ -168,15 +191,17 @@ function RoleEventCardItem({
                 </button>
               )}
 
-              <button
-                onClick={() => setUploadCoverEvent(ev)}
-                style={{
-                  flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #16A34A',
-                  background: '#F0FDF4', color: '#15803D', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                📷 Upload Cover
-              </button>
+              {canUploadCover && (
+                <button
+                  onClick={() => setUploadCoverEvent(ev)}
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #16A34A',
+                    background: '#F0FDF4', color: '#15803D', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  📷 Upload Cover
+                </button>
+              )}
 
               {isAdmin && activeSubTab !== 'PENDING_APPROVALS' && (
                 <button
@@ -204,6 +229,38 @@ function RoleEventCardItem({
                 </button>
               )}
             </>
+          ) : (
+            /* Non-creator role viewing event: Register / Purchase Flow */
+            isRegistered ? (
+              <button
+                disabled
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                  background: '#DCFCE7', color: '#15803D', fontSize: 12, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                ✅ {ev.isPaid || ev.paid ? 'Purchased & Registered' : 'Registered'}
+              </button>
+            ) : (
+              <button
+                onClick={() => handleRegisterForEvent(ev.id)}
+                disabled={isRegistering}
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                  background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                  color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(22,163,74,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                {isRegistering
+                  ? '⏳ Processing...'
+                  : (ev.isPaid || ev.paid)
+                  ? `💳 Purchase & Register (₹${ev.price || '0'})`
+                  : '🎟️ Register / Join Event'}
+              </button>
+            )
           )}
         </div>
       </div>
@@ -462,6 +519,7 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
               ev={ev}
               activeSubTab={activeSubTab}
               isAdmin={isAdmin}
+              isMaster={isMaster}
               handleApprove={handleApprove}
               setRejectingEvent={setRejectingEvent}
               setEditingEvent={(eventToEdit) => { setEditingEvent(eventToEdit); setCreateModalOpen(true); }}
@@ -470,6 +528,9 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
               setUploadCoverEvent={setUploadCoverEvent}
               getStatusBadge={getStatusBadge}
               hasEventPassed={hasEventPassed}
+              handleRegisterForEvent={handleRegisterForEvent}
+              isRegistered={registeredIds.includes(Number(ev.id))}
+              isRegistering={registeringId === ev.id}
             />
           ))}
         </div>
