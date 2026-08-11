@@ -130,6 +130,13 @@ export const fetchMasterOperatorEvents = (page = 0, size = 10) =>
     size: Number(size),
   });
 
+export const fetchMasterOperatorTeamEvents = (page = 0, size = 10) =>
+  eventsApiCall('/cs-network/master-operator', {
+    requestType: 'FETCH_TEAM_EVENTS',
+    page: Number(page),
+    size: Number(size),
+  });
+
 export const fetchMasterPendingEventRequests = (page = 0, size = 10) =>
   eventsApiCall('/cs-network/master-operator', {
     requestType: 'FETCH_PENDING_EVENT_REQUESTS',
@@ -199,6 +206,13 @@ export const updateGlobalAdminEvent = (eventId, updateData) =>
 export const fetchGlobalAdminMyEvents = (page = 0, size = 10) =>
   eventsApiCall('/cs-network/global-admin', {
     requestType: 'FETCH_MY_EVENTS',
+    page: Number(page),
+    size: Number(size),
+  });
+
+export const fetchGlobalAdminTeamEvents = (page = 0, size = 10) =>
+  eventsApiCall('/cs-network/global-admin', {
+    requestType: 'FETCH_TEAM_EVENTS',
     page: Number(page),
     size: Number(size),
   });

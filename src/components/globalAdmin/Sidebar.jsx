@@ -3,6 +3,7 @@ import { resolvePhotoUrl } from '../../api/profileOperationsApi';
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: '🏠' },
+  { id: 'leaderboard', label: 'Trust - Leaderboards', icon: '🏆' },
   { id: 'media_hub', label: 'Media Hub', icon: '🎬' },
   { id: 'franchises', label: 'Franchises', icon: '🏢' },
   { id: 'directory', label: 'Directory', icon: '📖' },

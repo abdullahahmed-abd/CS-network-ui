@@ -359,3 +359,27 @@ export const deleteMediaVideo = (videoId) =>
       videoId: Number(videoId),
     },
   });
+
+// ══════════════════════════════════════
+// TRUST SCORE & LEADERBOARD APIs
+// ══════════════════════════════════════
+
+export const fetchTrustLeaderboard = (page = 0, size = 25) =>
+  apiCall('/trust-score', {
+    body: {
+      requestType: 'GET_LEADERBOARD',
+      page: Number(page),
+      size: Number(size),
+    },
+  });
+
+export const fetchTrustProfileDetail = (targetUserId, page = 0, size = 10) =>
+  apiCall('/trust-score', {
+    body: {
+      requestType: 'GET_PROFILE_DETAIL',
+      targetUserId: Number(targetUserId),
+      page: Number(page),
+      size: Number(size),
+    },
+  });
+

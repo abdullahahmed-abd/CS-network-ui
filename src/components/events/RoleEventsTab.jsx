@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   fetchFranchiseOperatorEvents,
   fetchMasterOperatorEvents,
+  fetchMasterOperatorTeamEvents,
   fetchMasterPendingEventRequests,
   approveMasterEventRequest,
   fetchGlobalAdminMyEvents,
+  fetchGlobalAdminTeamEvents,
   fetchAllGlobalEvents,
   fetchGlobalAdminPendingEventRequests,
   approveGlobalAdminEventRequest,
@@ -352,6 +354,9 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
         if (isOperator) res = await fetchFranchiseOperatorEvents(pg, 100);
         else if (isMaster) res = await fetchMasterOperatorEvents(pg, 100);
         else if (isAdmin) res = await fetchGlobalAdminMyEvents(pg, 100);
+      } else if (activeSubTab === 'TEAM_EVENTS') {
+        if (isMaster) res = await fetchMasterOperatorTeamEvents(pg, 100);
+        else if (isAdmin) res = await fetchGlobalAdminTeamEvents(pg, 100);
       } else if (activeSubTab === 'ALL_EVENTS') {
         // All roles see Network Events via member endpoint (scoped by backend)
         res = await fetchMemberEventList(pg, 100);
@@ -450,6 +455,20 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
             📋 My Events
           </button>
 
+          {(isMaster || isAdmin) && (
+            <button
+              onClick={() => { setActiveSubTab('TEAM_EVENTS'); setPage(0); }}
+              style={{
+                padding: '8px 16px', borderRadius: 12, border: 'none',
+                background: activeSubTab === 'TEAM_EVENTS' ? '#16A34A' : '#E2E8F0',
+                color: activeSubTab === 'TEAM_EVENTS' ? '#fff' : '#475569',
+                fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              👥 Team Events
+            </button>
+          )}
+
           {!isAdmin && (
             <button
               onClick={() => { setActiveSubTab('ALL_EVENTS'); setPage(0); }}
@@ -525,6 +544,8 @@ export default function RoleEventsTab({ userRole = 'FRANCHISE_OPERATOR' }) {
           <p style={{ fontSize: 12, margin: 0 }}>
             {activeSubTab === 'PENDING_APPROVALS'
               ? 'No event requests sitting in approval queue.'
+              : activeSubTab === 'TEAM_EVENTS'
+              ? 'No team events created by operators under you yet.'
               : 'Click "Create Event" to schedule a new event.'}
           </p>
         </div>

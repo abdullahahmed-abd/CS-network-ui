@@ -15,6 +15,8 @@ import MeetingsTab from '../meetings/MeetingsTab';
 import DirectoryTab from '../directory/DirectoryTab';
 import PartnershipsTab from '../partnerships/PartnershipsTab';
 
+import TrustLeaderboardTab from './tabs/TrustLeaderboardTab';
+
 // ── Placeholder Tab ───────────────────────
 function PlaceholderTab({ name }) {
   return (
@@ -120,6 +122,7 @@ export default function GlobalAdminDashboard({ onLogout }) {
               transition={{ duration: 0.22 }}
             >
               {activeNav === 'overview' && <OverviewTab onNavigate={setActiveNav} />}
+              {activeNav === 'leaderboard' && <TrustLeaderboardTab />}
               {activeNav === 'media_hub' && <MediaHubTab />}
               {activeNav === 'franchises' && <FranchisesTab />}
               {activeNav === 'directory' && <DirectoryTab />}
