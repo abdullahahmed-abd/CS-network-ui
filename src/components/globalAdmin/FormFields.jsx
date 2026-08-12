@@ -90,7 +90,7 @@ export function SelectField({ label, value, onChange, options }) {
 }
 
 // ── DateTime ───────────────────────────────
-export function DateTimeField({ label, value, onChange }) {
+export function DateTimeField({ label, value, onChange, min, max }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <label style={{
@@ -99,7 +99,8 @@ export function DateTimeField({ label, value, onChange }) {
       }}>{label}</label>
       <input
         type="datetime-local"
-        min={getNowDateTimeString()}
+        min={min !== undefined ? min : getNowDateTimeString()}
+        max={max}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{

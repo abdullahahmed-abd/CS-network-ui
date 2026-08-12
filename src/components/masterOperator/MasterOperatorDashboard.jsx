@@ -69,6 +69,7 @@ const getFranchiseConfig = (type) => {
     navItems: isMaster
       ? [
         { id: 'overview', label: 'Overview', icon: '📊' },
+        { id: 'leaderboard', label: 'Leaderboards', icon: '🏆' },
         { id: 'general', label: 'General Franchises', icon: '🏢' },
         { id: 'sector', label: 'Sector Franchises', icon: '🏭' },
         { id: 'members', label: 'Members', icon: '👥' },
@@ -79,6 +80,7 @@ const getFranchiseConfig = (type) => {
       ]
       : [
         { id: 'overview', label: 'Overview', icon: '📊' },
+        { id: 'leaderboard', label: 'Leaderboards', icon: '🏆' },
         { id: 'bp_approvals', label: 'BP Approvals', icon: '🛡️' },
         { id: 'commissions', label: 'Commissions', icon: '💰' },
         { id: 'members', label: 'Members', icon: '👥' },
@@ -88,6 +90,7 @@ const getFranchiseConfig = (type) => {
         { id: 'partnerships', label: 'Partnerships', icon: '🤝' },
         { id: 'settings', label: 'Settings', icon: '⚙️' },
       ],
+
   };
 };
 

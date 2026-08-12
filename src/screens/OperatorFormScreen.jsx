@@ -374,9 +374,11 @@ export default function OperatorFormScreen({ inviteData, onComplete, onSessionEx
                     </select>
                     <input
                       type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
                       value={form.alternatePhoneNumber}
-                      onChange={(e) => updateField('alternatePhoneNumber', e.target.value.replace(/\D/g, ''))}
-                      placeholder="9876543210"
+                      onChange={(e) => updateField('alternatePhoneNumber', e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                      placeholder="10-digit number"
                       style={{
                         flex: 1, padding: '12px 16px', borderRadius: 12, border: '1.5px solid #E8F0E0',
                         background: '#fff', fontSize: 14, fontWeight: 500, color: '#1A3A1A', outline: 'none',

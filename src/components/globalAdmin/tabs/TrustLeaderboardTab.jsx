@@ -1125,8 +1125,9 @@ function AwardTrustPointsSubTab() {
 }
 
 // ── Main Leaderboard Component ─────────────────────────────────
-export default function TrustLeaderboardTab({ isAdmin = true }) {
-  const [activeSubTab, setActiveSubTab] = useState('leaderboard'); // 'leaderboard' | 'award_points'
+export default function TrustLeaderboardTab({ isAdmin = true, userRole = 'GLOBAL_ADMIN' }) {
+  const isMasterOperator = userRole === 'MASTER_OPERATOR' || userRole === 'OPERATOR';
+  const [activeSubTab, setActiveSubTab] = useState(isMasterOperator ? 'global' : 'leaderboard'); // 'global' | 'scope' for Master Operator, 'leaderboard' | 'award_points' for Global Admin
   const [data, setData]               = useState(null);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
@@ -1136,12 +1137,14 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
   const [levelFilter, setLevelFilter] = useState('ALL');
   const [selectedUserForDetail, setSelectedUserForDetail] = useState(null);
 
+  const showDetailsButton = !isMasterOperator || activeSubTab === 'scope';
 
-  const loadLeaderboard = useCallback(async (pg = page, size = pageSize) => {
+  const loadLeaderboard = useCallback(async (pg = page, size = pageSize, subTab = activeSubTab) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetchTrustLeaderboard(pg, size);
+      const scopeToMyNetwork = subTab === 'scope';
+      const res = await fetchTrustLeaderboard(pg, size, scopeToMyNetwork);
       if (res?.leaderboard) {
         setData(res.leaderboard);
       } else if (Array.isArray(res?.content)) {
@@ -1155,11 +1158,14 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, activeSubTab]);
 
   useEffect(() => {
-    loadLeaderboard(page, pageSize);
-  }, [page, pageSize, loadLeaderboard]);
+    if (activeSubTab !== 'award_points') {
+      loadLeaderboard(page, pageSize, activeSubTab);
+    }
+  }, [page, pageSize, activeSubTab, loadLeaderboard]);
+
 
   const rawList = data?.content || [];
 
@@ -1194,36 +1200,73 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
         marginBottom: 24, border: '1px solid #E2E8F0', width: 'fit-content',
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       }}>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('leaderboard')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '10px 22px', borderRadius: 12, border: 'none',
-            background: activeSubTab === 'leaderboard' ? '#166534' : 'transparent',
-            color: activeSubTab === 'leaderboard' ? '#FFFFFF' : '#64748B',
-            fontWeight: 800, fontSize: 14, cursor: 'pointer',
-            boxShadow: activeSubTab === 'leaderboard' ? '0 4px 12px rgba(22, 101, 52, 0.25)' : 'none',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <span>🏆</span> Leaderboards
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('award_points')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '10px 22px', borderRadius: 12, border: 'none',
-            background: activeSubTab === 'award_points' ? '#166534' : 'transparent',
-            color: activeSubTab === 'award_points' ? '#FFFFFF' : '#64748B',
-            fontWeight: 800, fontSize: 14, cursor: 'pointer',
-            boxShadow: activeSubTab === 'award_points' ? '0 4px 12px rgba(22, 101, 52, 0.25)' : 'none',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <span>🎁</span> Award Trust Points
-        </button>
+        {isMasterOperator ? (
+          <>
+            <button
+              type="button"
+              onClick={() => { setActiveSubTab('global'); setPage(0); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 22px', borderRadius: 12, border: 'none',
+                background: activeSubTab === 'global' ? '#166534' : 'transparent',
+                color: activeSubTab === 'global' ? '#FFFFFF' : '#64748B',
+                fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                boxShadow: activeSubTab === 'global' ? '0 4px 12px rgba(22, 101, 52, 0.25)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span>🏆</span> Global Leaderboard
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActiveSubTab('scope'); setPage(0); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 22px', borderRadius: 12, border: 'none',
+                background: activeSubTab === 'scope' ? '#166534' : 'transparent',
+                color: activeSubTab === 'scope' ? '#FFFFFF' : '#64748B',
+                fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                boxShadow: activeSubTab === 'scope' ? '0 4px 12px rgba(22, 101, 52, 0.25)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span>🌐</span> My Scope
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => { setActiveSubTab('leaderboard'); setPage(0); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 22px', borderRadius: 12, border: 'none',
+                background: activeSubTab === 'leaderboard' ? '#166534' : 'transparent',
+                color: activeSubTab === 'leaderboard' ? '#FFFFFF' : '#64748B',
+                fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                boxShadow: activeSubTab === 'leaderboard' ? '0 4px 12px rgba(22, 101, 52, 0.25)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span>🏆</span> Leaderboards
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSubTab('award_points')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 22px', borderRadius: 12, border: 'none',
+                background: activeSubTab === 'award_points' ? '#166534' : 'transparent',
+                color: activeSubTab === 'award_points' ? '#FFFFFF' : '#64748B',
+                fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                boxShadow: activeSubTab === 'award_points' ? '0 4px 12px rgba(22, 101, 52, 0.25)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span>🎁</span> Award Trust Points
+            </button>
+          </>
+        )}
       </div>
 
       {activeSubTab === 'award_points' ? (
@@ -1239,19 +1282,22 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1A3A1A', margin: 0, letterSpacing: '-0.3px' }}>
-              Trust - Leaderboards
+              {activeSubTab === 'scope' ? 'Trust - My Scope Leaderboard' : 'Trust - Leaderboards'}
             </h2>
             <span style={{
               background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0',
               borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700,
             }}>
-              Top 100 Members
+              {activeSubTab === 'scope' ? 'My Network Scope' : 'Top 100 Members'}
             </span>
           </div>
           <p style={{ fontSize: 13, color: '#6B8F71', margin: '4px 0 0', fontWeight: 500 }}>
-            Real-time rankings of members based on highest accumulated trust scores and reputation.
+            {activeSubTab === 'scope'
+              ? 'Rankings of members within your local network scope.'
+              : 'Real-time rankings of members based on highest accumulated trust scores and reputation.'}
           </p>
         </div>
+
 
         <button
           onClick={() => loadLeaderboard(page, pageSize)}
@@ -1666,9 +1712,10 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
                   <th style={{ padding: '14px 20px' }}>Current Level</th>
                   <th style={{ padding: '14px 20px', textAlign: 'right' }}>Trust Score</th>
                   <th style={{ padding: '14px 20px', width: 120 }}>Relative Bar</th>
-                  {isAdmin && <th style={{ padding: '14px 20px', textAlign: 'center' }}>Admin Action</th>}
+                  {showDetailsButton && <th style={{ padding: '14px 20px', textAlign: 'center' }}>Action</th>}
                 </tr>
               </thead>
+
               <tbody>
                 <AnimatePresence mode="popLayout">
                   {filteredList.map((item, idx) => {
@@ -1838,8 +1885,8 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
                           </div>
                         </td>
 
-                        {/* Admin Action (GLOBAL ADMIN ONLY) */}
-                        {isAdmin && (
+                        {/* Additional Details Action */}
+                        {showDetailsButton && (
                           <td style={{ padding: '14px 20px', textAlign: 'center' }}>
                             <button
                               onClick={() => setSelectedUserForDetail(item)}
@@ -1849,13 +1896,14 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
                                 fontWeight: 700, cursor: 'pointer', display: 'inline-flex',
                                 alignItems: 'center', gap: 4, transition: 'all 0.2s ease',
                               }}
-                              title="View Trust History & Additional Details (Global Admin Only)"
+                              title="View Trust History & Additional Details"
                             >
-                              📜 View Trust History & Details
+                              📜 View Details
                             </button>
                           </td>
                         )}
                       </motion.tr>
+
                     );
                   })}
                 </AnimatePresence>

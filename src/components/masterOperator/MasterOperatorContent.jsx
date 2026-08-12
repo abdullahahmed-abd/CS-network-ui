@@ -24,7 +24,9 @@ import MeetingsTab from '../meetings/MeetingsTab';
 import DirectoryTab from '../directory/DirectoryTab';
 import RoleEventsTab from '../events/RoleEventsTab';
 import PartnershipsTab from '../partnerships/PartnershipsTab';
+import TrustLeaderboardTab from '../globalAdmin/tabs/TrustLeaderboardTab';
 import { getStates, getCities } from '../../utils/locationData';
+
 
 const BASE_URL = 'https://connectsouq.sundukpay.com';
 
@@ -2003,7 +2005,9 @@ export default function FranchiseOperatorContent({ activeNav, onNavigate, franch
   return (
     <>
       {activeNav === 'overview' && <OverviewTab onNavigate={onNavigate} cfg={cfg} />}
+      {activeNav === 'leaderboard' && <TrustLeaderboardTab userRole={cfg?.isMaster ? 'MASTER_OPERATOR' : 'OPERATOR'} />}
       {activeNav === 'bp_approvals' && <ApplicationsTab initialFilter={initialFilter} key={initialFilter} />}
+
       {activeNav === 'commissions' && <OperatorCommissionsTab />}
       {activeNav === 'general' && <GeneralFranchiseTab cfg={cfg} />}
       {activeNav === 'sector' && <SectorFranchiseTab cfg={cfg} />}

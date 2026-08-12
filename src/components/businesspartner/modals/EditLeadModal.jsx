@@ -108,10 +108,12 @@ export function EditLeadModal({ lead, onClose, onSuccess, showToast }) {
                 </select>
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/[^0-9]/g, '').slice(0, 10) })}
                   className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:ring-1 focus:ring-emerald-500"
-                  placeholder="500000000"
+                  placeholder="10-digit number"
                 />
               </div>
             </div>

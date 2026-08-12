@@ -364,14 +364,16 @@ export const deleteMediaVideo = (videoId) =>
 // TRUST SCORE & LEADERBOARD APIs
 // ══════════════════════════════════════
 
-export const fetchTrustLeaderboard = (page = 0, size = 25) =>
+export const fetchTrustLeaderboard = (page = 0, size = 25, scopeToMyNetwork = false) =>
   apiCall('/trust-score', {
     body: {
       requestType: 'GET_LEADERBOARD',
       page: Number(page),
       size: Number(size),
+      ...(scopeToMyNetwork ? { scopeToMyNetwork: 'true' } : {}),
     },
   });
+
 
 export const fetchTrustProfileDetail = (targetUserId, page = 0, size = 10) =>
   apiCall('/trust-score', {

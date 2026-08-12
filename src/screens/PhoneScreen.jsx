@@ -345,16 +345,17 @@ export default function PhoneScreen({ onBack, onSendOTP, mode = 'signup' }) {
             type="tel"
             inputMode="numeric"
             value={phone}
-            maxLength={selectedCountry.maxLen}
+            maxLength={Math.min(10, selectedCountry?.maxLen || 10)}
             onChange={(e) => {
-              const cleaned = e.target.value.replace(/\D/g, '');
-              setPhone(cleaned.slice(0, selectedCountry.maxLen));
+              const cleaned = e.target.value.replace(/[^0-9]/g, '');
+              const maxL = Math.min(10, selectedCountry?.maxLen || 10);
+              setPhone(cleaned.slice(0, maxL));
               setError('');
             }}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={`${selectedCountry.maxLen}-digit number`}
+            placeholder="10-digit number"
             autoFocus
             className="flex-1 bg-transparent outline-none"
             style={{

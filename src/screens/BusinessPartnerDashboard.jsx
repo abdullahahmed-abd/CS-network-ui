@@ -2751,13 +2751,38 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">Phone</label>
-                    <input className="form-input" placeholder="+919876543210" value={externalForm.phone} onChange={e => setExternalForm({ ...externalForm, phone: e.target.value })} />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <select
+                        style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid #CBD5E1', background: '#fff', fontSize: 13, fontWeight: 700 }}
+                        value={externalForm.phoneCountryCode || '+91'}
+                        onChange={e => setExternalForm({ ...externalForm, phoneCountryCode: e.target.value })}
+                      >
+                        <option value="+91">🇮🇳 +91</option>
+                        <option value="+971">🇦🇪 +971</option>
+                        <option value="+966">🇸🇦 +966</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+965">🇰🇼 +965</option>
+                        <option value="+974">🇶🇦 +974</option>
+                        <option value="+92">🇵🇰 +92</option>
+                      </select>
+                      <input
+                        className="form-input"
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        placeholder="10-digit number"
+                        value={externalForm.phone}
+                        onChange={e => setExternalForm({ ...externalForm, phone: e.target.value.replace(/[^0-9]/g, '').slice(0, 10) })}
+                      />
+                    </div>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Email</label>
                     <input className="form-input" type="email" placeholder="john@abctrading.com" value={externalForm.email} onChange={e => setExternalForm({ ...externalForm, email: e.target.value })} />
                   </div>
                 </div>
+
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label form-label-required">Intent Type</label>
@@ -2809,8 +2834,9 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Follow-up Date</label>
-                  <input className="form-input" type="date" min={getTodayDateString()} value={externalForm.followUpDate} onChange={e => setExternalForm({ ...externalForm, followUpDate: e.target.value })} />
+                  <input className="form-input" type="date" min={getTodayDateString()} max={externalForm.expiresAt || undefined} value={externalForm.followUpDate} onChange={e => setExternalForm({ ...externalForm, followUpDate: e.target.value })} />
                 </div>
+
               </>)}
 
               {selectedType.id === 'CREATE_TRADE_INTENT_FOR_MEMBER' && (<>

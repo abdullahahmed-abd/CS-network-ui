@@ -339,14 +339,31 @@ export function AddLeadModal({ onClose, onSuccess, showToast }) {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Phone</label>
-                    <input
-                      type="text"
-                      value={extForm.phone}
-                      onChange={(e) => setExtForm({ ...extForm, phone: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800"
-                      placeholder="+971500000001"
-                    />
+                    <div className="flex gap-1">
+                      <select
+                        value={extForm.countryCode || '+91'}
+                        onChange={(e) => setExtForm({ ...extForm, countryCode: e.target.value })}
+                        className="px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-bold text-xs"
+                      >
+                        <option value="+91">🇮🇳 +91</option>
+                        <option value="+971">🇦🇪 +971</option>
+                        <option value="+966">🇸🇦 +966</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+92">🇵🇰 +92</option>
+                      </select>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={extForm.phone}
+                        onChange={(e) => setExtForm({ ...extForm, phone: e.target.value.replace(/[^0-9]/g, '').slice(0, 10) })}
+                        className="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800"
+                        placeholder="10-digit number"
+                      />
+                    </div>
                   </div>
+
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Email</label>
                     <input
@@ -486,11 +503,13 @@ export function AddLeadModal({ onClose, onSuccess, showToast }) {
                     <input
                       type="date"
                       min={getTodayDateString()}
+                      max={extForm.expiresAt || undefined}
                       value={extForm.followUpDate}
                       onChange={(e) => setExtForm({ ...extForm, followUpDate: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800"
                     />
                   </div>
+
                 </div>
               </>
             )}

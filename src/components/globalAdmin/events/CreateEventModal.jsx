@@ -405,8 +405,22 @@ export default function CreateEventModal({
         {/* Date & Time */}
         <SectionTitle>📅 Date & Time</SectionTitle>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <DateTimeField label="Start Date & Time *" value={startDateTime} onChange={setStartDateTime} />
-          <DateTimeField label="End Date & Time *"   value={endDateTime}   onChange={setEndDateTime} />
+          <DateTimeField
+            label="Start Date & Time *"
+            value={startDateTime}
+            onChange={(val) => {
+              setStartDateTime(val);
+              if (endDateTime && endDateTime < val) {
+                setEndDateTime(val);
+              }
+            }}
+          />
+          <DateTimeField
+            label="End Date & Time *"
+            value={endDateTime}
+            onChange={setEndDateTime}
+            min={startDateTime || undefined}
+          />
         </div>
         <InputField label="Timezone *" value={timezone} onChange={setTimezone}
           placeholder="e.g. Asia/Kolkata" />
