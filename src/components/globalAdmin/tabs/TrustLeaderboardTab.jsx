@@ -1,7 +1,9 @@
-// components/globalAdmin/tabs/TrustLeaderboardTab.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { fetchTrustLeaderboard, fetchTrustProfileDetail } from '../../../api/adminApi';
+import { fetchTrustLeaderboard, fetchTrustProfileDetail, awardTrustPoints } from '../../../api/adminApi';
+import { searchDirectory, searchOperators } from '../../../api/directoryApi';
+import MemberProfileModal from '../../directory/MemberProfileModal';
+
 
 // ── Level Badge Colors ─────────────────────────────────────────
 const LEVEL_STYLES = {
@@ -363,8 +365,768 @@ function TrustProfileDetailModal({ userId, userName, onClose }) {
   );
 }
 
+// ── Fixed Trust Dimensions for Awarding Points ───────────────────
+const TRUST_DIMENSIONS = [
+  {
+    id: 'BUSINESS_IMPACT',
+    label: 'Business Impact',
+    icon: '💼',
+    desc: 'Ecosystem growth, deals & strategic revenue generation',
+  },
+  {
+    id: 'COMMUNITY_IMPACT',
+    label: 'Community Impact',
+    icon: '🤝',
+    desc: 'Active networking, referrals & community contribution',
+  },
+  {
+    id: 'LEADERSHIP_IMPACT',
+    label: 'Leadership Impact',
+    icon: '👑',
+    desc: 'Mentorship, guidance & ecosystem leadership',
+  },
+  {
+    id: 'GROWTH_IMPACT',
+    label: 'Growth Impact',
+    icon: '🚀',
+    desc: 'Network expansion, scalability & innovation drive',
+  },
+];
+
+// ── Award Trust Points Modal Component ───────────────────────────
+function AwardTrustPointsModal({ user, onClose, onSuccess }) {
+  const targetUserId = user?.id || user?.memberId || user?.operatorId || user?.userId || '';
+  const targetUserName = user?.fullName || user?.name || 'User';
+  const targetUserSub = user?.position || user?.franchiseName || user?.role || user?.email || `ID: #${targetUserId}`;
+
+  const [trustDimension, setTrustDimension] = useState('COMMUNITY_IMPACT');
+  const [tokenAmount, setTokenAmount] = useState('70');
+  const [awardReason, setAwardReason] = useState('Imaandaar aadmi hai');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!targetUserId) {
+      setError('Invalid target user selection.');
+      return;
+    }
+    if (!tokenAmount || Number(tokenAmount) <= 0) {
+      setError('Please enter a valid positive token amount.');
+      return;
+    }
+    if (!trustDimension) {
+      setError('Please select a trust dimension.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      const res = await awardTrustPoints({
+        targetUserId: String(targetUserId),
+        awardReason: awardReason.trim(),
+        tokenAmount: String(tokenAmount),
+        trustDimension,
+      });
+
+      setSuccessMsg(res?.message || `Successfully awarded ${tokenAmount} Trust Points to ${targetUserName}!`);
+      if (onSuccess) onSuccess();
+      setTimeout(() => {
+        onClose();
+      }, 1800);
+    } catch (err) {
+      console.error('Failed to award trust points:', err);
+      setError(err?.message || 'Failed to award trust points. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justify: 'center', padding: 20,
+        }}
+      >
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: '#fff', borderRadius: 24, width: '100%', maxWidth: 650,
+            maxHeight: '90vh', overflowY: 'auto', border: '1px solid #E2E8F0',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column',
+          }}
+        >
+          {/* Header */}
+          <div style={{
+            padding: '20px 24px', borderBottom: '1px solid #E2E8F0',
+            background: 'linear-gradient(135deg, #15803D 0%, #166534 100%)', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderTopLeftRadius: 24, borderTopRightRadius: 24, flexShrink: 0,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 14, background: 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justify: 'center', fontSize: 22,
+                border: '1px solid rgba(255,255,255,0.3)',
+              }}>
+                🏆
+              </div>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: '#fff' }}>
+                  Award Trust Points & Tokens
+                </h3>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', margin: '2px 0 0' }}>
+                  Global Admin Executive Override
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff',
+                width: 32, height: 32, borderRadius: '50%', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Body */}
+          <form onSubmit={handleSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Target User Info Banner */}
+            <div style={{
+              background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16,
+              padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: '50%', background: '#166534',
+                  color: '#fff', display: 'flex', alignItems: 'center', justify: 'center',
+                  fontWeight: 800, fontSize: 18, border: '2px solid #BBF7D0',
+                }}>
+                  {targetUserName[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>{targetUserName}</span>
+                    <span style={{
+                      background: '#DCFCE7', color: '#15803D', fontSize: 11, fontWeight: 800,
+                      padding: '2px 8px', borderRadius: 12, border: '1px solid #86EFAC',
+                    }}>
+                      User ID: #{targetUserId}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{targetUserSub}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Error Banner */}
+            {error && (
+              <div style={{
+                background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B',
+                borderRadius: 12, padding: '12px 16px', fontSize: 13, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <span>⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Success Banner */}
+            {successMsg && (
+              <div style={{
+                background: '#F0FDF4', border: '1px solid #86EFAC', color: '#166534',
+                borderRadius: 12, padding: '14px 16px', fontSize: 13, fontWeight: 700,
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <span style={{ fontSize: 18 }}>🎉</span>
+                <span>{successMsg}</span>
+              </div>
+            )}
+
+            {/* Trust Dimension Selection */}
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8, display: 'block' }}>
+                Select Trust Dimension <span style={{ color: '#DC2626' }}>*</span>
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+                {TRUST_DIMENSIONS.map((dim) => {
+                  const isSelected = trustDimension === dim.id;
+                  return (
+                    <div
+                      key={dim.id}
+                      onClick={() => setTrustDimension(dim.id)}
+                      style={{
+                        padding: '14px', borderRadius: 14, cursor: 'pointer',
+                        border: isSelected ? '2px solid #166534' : '1px solid #E2E8F0',
+                        background: isSelected ? '#F0FDF4' : '#fff',
+                        transition: 'all 0.2s ease', boxShadow: isSelected ? '0 4px 12px rgba(22,101,52,0.1)' : 'none',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 18 }}>{dim.icon}</span>
+                        {isSelected && (
+                          <span style={{ fontSize: 11, fontWeight: 800, background: '#166534', color: '#fff', padding: '2px 8px', borderRadius: 10 }}>
+                            Selected
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: isSelected ? '#15803D' : '#1E293B' }}>
+                        {dim.label}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, lineHeight: 1.3 }}>
+                        {dim.desc}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Token Amount */}
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8, display: 'block' }}>
+                Trust Token Amount <span style={{ color: '#DC2626' }}>*</span>
+              </label>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min="1"
+                  value={tokenAmount}
+                  onChange={(e) => setTokenAmount(e.target.value)}
+                  placeholder="e.g. 70"
+                  required
+                  style={{
+                    flex: 1, padding: '12px 16px', borderRadius: 12, border: '1px solid #CBD5E1',
+                    fontSize: 15, fontWeight: 700, outline: 'none', color: '#0F172A',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {['10', '25', '50', '70', '100'].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setTokenAmount(amt)}
+                      style={{
+                        padding: '8px 12px', borderRadius: 10, border: tokenAmount === amt ? '1px solid #166534' : '1px solid #E2E8F0',
+                        background: tokenAmount === amt ? '#166534' : '#F8FAFC',
+                        color: tokenAmount === amt ? '#fff' : '#334155',
+                        fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      +{amt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Award Reason */}
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8, display: 'block' }}>
+                Award Reason / Justification <span style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8' }}>(Optional)</span>
+              </label>
+              <textarea
+                value={awardReason}
+                onChange={(e) => setAwardReason(e.target.value)}
+                placeholder="e.g. Imaandaar aadmi hai / Outstanding ecosystem leadership"
+                rows={3}
+                style={{
+                  width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid #CBD5E1',
+                  fontSize: 13, outline: 'none', resize: 'vertical', color: '#0F172A', fontFamily: 'inherit',
+                }}
+              />
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                style={{
+                  padding: '12px 20px', borderRadius: 12, border: '1px solid #CBD5E1',
+                  background: '#fff', color: '#475569', fontWeight: 700, fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '12px 24px', borderRadius: 12, border: 'none',
+                  background: submitting ? '#94A3B8' : 'linear-gradient(135deg, #15803D 0%, #166534 100%)',
+                  color: '#fff', fontWeight: 800, fontSize: 14,
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 14px rgba(22,101,52,0.3)',
+                }}
+              >
+                {submitting ? 'Awarding Points...' : '🎁 Grant Trust Points'}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ── Award Trust Points Sub-Tab Component ─────────────────────────
+function AwardTrustPointsSubTab() {
+  const [directoryType, setDirectoryType] = useState('MEMBERS'); // 'MEMBERS' | 'OPERATORS'
+  const [filters, setFilters] = useState({
+    search: '',
+    country: '',
+    state: '',
+    city: '',
+    businessSector: '',
+    position: '',
+    franchiseType: '',
+    page: 0,
+    size: 10,
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [responseData, setResponseData] = useState(null);
+
+  const [selectedUserForAward, setSelectedUserForAward] = useState(null);
+  const [selectedMemberIdForProfile, setSelectedMemberIdForProfile] = useState(null);
+
+  const loadDirectoryData = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      let res;
+      if (directoryType === 'MEMBERS') {
+        res = await searchDirectory(filters);
+      } else {
+        res = await searchOperators(filters);
+      }
+      setResponseData(res);
+    } catch (err) {
+      console.error('Failed to load directory:', err);
+      setError(err?.message || 'Failed to fetch directory items.');
+    } finally {
+      setLoading(false);
+    }
+  }, [directoryType, filters]);
+
+  useEffect(() => {
+    loadDirectoryData();
+  }, [directoryType, filters.page, loadDirectoryData]);
+
+  const handleSearchSubmit = (e) => {
+    e?.preventDefault();
+    setFilters(f => ({ ...f, page: 0 }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      country: '',
+      state: '',
+      city: '',
+      businessSector: '',
+      position: '',
+      franchiseType: '',
+      page: 0,
+      size: 10,
+    });
+  };
+
+  const itemsPage = directoryType === 'MEMBERS'
+    ? (responseData?.members || { content: [], page: 0, totalPages: 1, totalElements: 0 })
+    : (responseData?.operators || { content: [], page: 0, totalPages: 1, totalElements: 0 });
+
+  const itemsList = itemsPage.content || [];
+  const totalElements = itemsPage.totalElements || itemsList.length;
+  const totalPages = itemsPage.totalPages || Math.ceil(totalElements / filters.size) || 1;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Directory Selector Header */}
+      <div style={{
+        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+        borderRadius: 20, padding: '24px', color: '#fff',
+        display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 10px 25px -5px rgba(15,23,42,0.3)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 24 }}>🎁</span>
+              <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: '#fff' }}>
+                Award Trust Points to Network Users
+              </h2>
+            </div>
+            <p style={{ fontSize: 13, color: '#94A3B8', margin: '4px 0 0' }}>
+              Search Members or Internal Operators directory, inspect profile details, and issue trust points.
+            </p>
+          </div>
+
+          {/* Directory Mode Pill Toggle */}
+          <div style={{
+            display: 'flex', background: 'rgba(255,255,255,0.1)', padding: 4, borderRadius: 14,
+            border: '1px solid rgba(255,255,255,0.15)',
+          }}>
+            <button
+              type="button"
+              onClick={() => { setDirectoryType('MEMBERS'); setFilters(f => ({ ...f, page: 0 })); }}
+              style={{
+                padding: '8px 16px', borderRadius: 10, border: 'none',
+                background: directoryType === 'MEMBERS' ? '#166534' : 'transparent',
+                color: directoryType === 'MEMBERS' ? '#fff' : '#CBD5E1',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s ease',
+              }}
+            >
+              👥 Member Directory
+            </button>
+            <button
+              type="button"
+              onClick={() => { setDirectoryType('OPERATORS'); setFilters(f => ({ ...f, page: 0 })); }}
+              style={{
+                padding: '8px 16px', borderRadius: 10, border: 'none',
+                background: directoryType === 'OPERATORS' ? '#166534' : 'transparent',
+                color: directoryType === 'OPERATORS' ? '#fff' : '#CBD5E1',
+                fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s ease',
+              }}
+            >
+              🛡️ Operator Directory
+            </button>
+          </div>
+        </div>
+
+        {/* Filter Controls Bar */}
+        <form onSubmit={handleSearchSubmit} style={{
+          background: 'rgba(255,255,255,0.06)', borderRadius: 16, padding: '16px',
+          border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
+        }}>
+          {/* Search Input */}
+          <div style={{ flex: '1 1 240px', minWidth: 200 }}>
+            <input
+              type="text"
+              placeholder="Search by name, email, company..."
+              value={filters.search}
+              onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(0,0,0,0.2)', color: '#fff', fontSize: 13, outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Country Input */}
+          <div style={{ flex: '1 1 140px', minWidth: 120 }}>
+            <input
+              type="text"
+              placeholder="Country"
+              value={filters.country}
+              onChange={(e) => setFilters(f => ({ ...f, country: e.target.value }))}
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(0,0,0,0.2)', color: '#fff', fontSize: 13, outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Position Input */}
+          <div style={{ flex: '1 1 140px', minWidth: 120 }}>
+            <input
+              type="text"
+              placeholder="Position / Role"
+              value={filters.position}
+              onChange={(e) => setFilters(f => ({ ...f, position: e.target.value }))}
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(0,0,0,0.2)', color: '#fff', fontSize: 13, outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Franchise Select */}
+          <div style={{ flex: '1 1 140px', minWidth: 130 }}>
+            <select
+              value={filters.franchiseType}
+              onChange={(e) => setFilters(f => ({ ...f, franchiseType: e.target.value }))}
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)',
+                background: '#1E293B', color: '#fff', fontSize: 13, outline: 'none',
+              }}
+            >
+              <option value="">All Franchise Types</option>
+              <option value="MASTER">Master Franchise</option>
+              <option value="SECTOR">Sector Franchise</option>
+              <option value="GENERAL">General Franchise</option>
+            </select>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+            <button
+              type="submit"
+              style={{
+                padding: '10px 18px', borderRadius: 10, border: 'none',
+                background: '#166534', color: '#fff', fontWeight: 700, fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              Search
+            </button>
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              style={{
+                padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)',
+                background: 'transparent', color: '#CBD5E1', fontWeight: 600, fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div style={{
+          background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B',
+          borderRadius: 14, padding: '16px', fontSize: 13, fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span>⚠️</span>
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Directory Results Grid */}
+      {loading ? (
+        <div style={{
+          background: '#fff', borderRadius: 20, padding: 40, border: '1px solid #E2E8F0',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
+        }}>
+          <div style={{
+            width: 36, height: 36, border: '3px solid #E2E8F0', borderTopColor: '#166534',
+            borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+          }} />
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#475569' }}>
+            Fetching {directoryType === 'MEMBERS' ? 'Member' : 'Operator'} Directory...
+          </div>
+        </div>
+      ) : itemsList.length === 0 ? (
+        <div style={{
+          background: '#fff', borderRadius: 20, padding: 48, border: '1px solid #E2E8F0',
+          textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+        }}>
+          <div style={{ fontSize: 40 }}>🔍</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#1E293B' }}>No Users Found</div>
+          <div style={{ fontSize: 13, color: '#64748B', maxWidth: 400 }}>
+            No {directoryType.toLowerCase()} matched your criteria. Try adjusting your search query or reset filters.
+          </div>
+          <button
+            onClick={handleResetFilters}
+            style={{
+              marginTop: 8, padding: '8px 18px', borderRadius: 10, border: '1px solid #CBD5E1',
+              background: '#F8FAFC', color: '#334155', fontWeight: 700, fontSize: 12, cursor: 'pointer',
+            }}
+          >
+            Reset Search Filters
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+          {itemsList.map((item) => {
+            const userId = item.id || item.memberId || item.operatorId || item.userId;
+            const name = item.fullName || item.name || item.username || 'User';
+            const position = item.position || item.role || item.businessSector || 'Network Member';
+            const location = [item.city, item.state, item.country].filter(Boolean).join(', ') || 'Global';
+            const franchise = item.franchiseName || item.franchiseType || '';
+
+            return (
+              <motion.div
+                key={userId || Math.random()}
+                whileHover={{ y: -3 }}
+                style={{
+                  background: '#fff', borderRadius: 20, border: '1px solid #E2E8F0',
+                  padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                  gap: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.03)', transition: 'all 0.2s ease',
+                }}
+              >
+                {/* User Header */}
+                <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #15803D 0%, #166534 100%)',
+                    color: '#fff', display: 'flex', alignItems: 'center', justify: 'center',
+                    fontWeight: 800, fontSize: 18, flexShrink: 0, border: '2px solid #DCFCE7',
+                  }}>
+                    {name[0]?.toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                      <h4 style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {name}
+                      </h4>
+                      <span style={{
+                        background: '#F1F5F9', color: '#475569', fontSize: 11, fontWeight: 800,
+                        padding: '2px 8px', borderRadius: 10, flexShrink: 0,
+                      }}>
+                        ID: #{userId}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#166534', marginTop: 2 }}>
+                      {position}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+                      📍 {location}
+                    </div>
+                    {franchise && (
+                      <div style={{
+                        marginTop: 6, display: 'inline-block', background: '#F0FDF4', color: '#15803D',
+                        border: '1px solid #BBF7D0', padding: '2px 8px', borderRadius: 8, fontSize: 11, fontWeight: 700,
+                      }}>
+                        🏢 {franchise}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Contact Snippet */}
+                <div style={{
+                  background: '#F8FAFC', borderRadius: 12, padding: '10px 12px',
+                  display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: '#475569',
+                }}>
+                  {item.email && (
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      ✉️ <span style={{ fontWeight: 600 }}>{item.email}</span>
+                    </div>
+                  )}
+                  {item.mobileNumber && (
+                    <div>
+                      📞 <span style={{ fontWeight: 600 }}>{item.mobileNumber}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Action Buttons */}
+                <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMemberIdForProfile(userId)}
+                    style={{
+                      flex: 1, padding: '8px 12px', borderRadius: 10, border: '1px solid #CBD5E1',
+                      background: '#fff', color: '#334155', fontWeight: 700, fontSize: 12,
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    👁️ View Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserForAward(item)}
+                    style={{
+                      flex: 1.2, padding: '8px 12px', borderRadius: 10, border: 'none',
+                      background: 'linear-gradient(135deg, #15803D 0%, #166534 100%)',
+                      color: '#fff', fontWeight: 800, fontSize: 12,
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      boxShadow: '0 2px 8px rgba(22,101,52,0.2)',
+                    }}
+                  >
+                    🎁 Award Points
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pagination Footer */}
+      {!loading && itemsList.length > 0 && (
+        <div style={{
+          padding: '16px 20px', background: '#fff', borderRadius: 16, border: '1px solid #E2E8F0',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+        }}>
+          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>
+            Showing Page <span style={{ fontWeight: 800, color: '#0F172A' }}>{filters.page + 1}</span> of{' '}
+            <span style={{ fontWeight: 800, color: '#0F172A' }}>{totalPages}</span> ({totalElements} total entries)
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              disabled={filters.page === 0}
+              onClick={() => setFilters(f => ({ ...f, page: Math.max(0, f.page - 1) }))}
+              style={{
+                padding: '7px 14px', borderRadius: 8, border: '1px solid #CBD5E1',
+                background: filters.page === 0 ? '#F1F5F9' : '#fff',
+                color: filters.page === 0 ? '#94A3B8' : '#334155',
+                fontSize: 12, fontWeight: 700, cursor: filters.page === 0 ? 'not-allowed' : 'pointer',
+              }}
+            >
+              ◀ Previous
+            </button>
+
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#166534', padding: '0 6px' }}>
+              {filters.page + 1}
+            </span>
+
+            <button
+              disabled={filters.page >= totalPages - 1}
+              onClick={() => setFilters(f => ({ ...f, page: Math.min(totalPages - 1, f.page + 1) }))}
+              style={{
+                padding: '7px 14px', borderRadius: 8, border: '1px solid #CBD5E1',
+                background: filters.page >= totalPages - 1 ? '#F1F5F9' : '#fff',
+                color: filters.page >= totalPages - 1 ? '#94A3B8' : '#334155',
+                fontSize: 12, fontWeight: 700, cursor: filters.page >= totalPages - 1 ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Next ▶
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Award Points Modal */}
+      {selectedUserForAward && (
+        <AwardTrustPointsModal
+          user={selectedUserForAward}
+          onClose={() => setSelectedUserForAward(null)}
+          onSuccess={() => loadDirectoryData()}
+        />
+      )}
+
+      {/* Member Profile Modal */}
+      {selectedMemberIdForProfile && (
+        <MemberProfileModal
+          memberId={selectedMemberIdForProfile}
+          onClose={() => setSelectedMemberIdForProfile(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Main Leaderboard Component ─────────────────────────────────
 export default function TrustLeaderboardTab({ isAdmin = true }) {
+  const [activeSubTab, setActiveSubTab] = useState('leaderboard'); // 'leaderboard' | 'award_points'
   const [data, setData]               = useState(null);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
@@ -373,6 +1135,7 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState('ALL');
   const [selectedUserForDetail, setSelectedUserForDetail] = useState(null);
+
 
   const loadLeaderboard = useCallback(async (pg = page, size = pageSize) => {
     setLoading(true);
@@ -424,7 +1187,51 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
 
   return (
     <div style={{ paddingBottom: 40 }}>
-      {/* ── Header ── */}
+      {/* ── Sub-Tab Navigation Bar ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        background: '#fff', padding: '6px', borderRadius: 16,
+        marginBottom: 24, border: '1px solid #E2E8F0', width: 'fit-content',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+      }}>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('leaderboard')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 22px', borderRadius: 12, border: 'none',
+            background: activeSubTab === 'leaderboard' ? '#166534' : 'transparent',
+            color: activeSubTab === 'leaderboard' ? '#FFFFFF' : '#64748B',
+            fontWeight: 800, fontSize: 14, cursor: 'pointer',
+            boxShadow: activeSubTab === 'leaderboard' ? '0 4px 12px rgba(22, 101, 52, 0.25)' : 'none',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <span>🏆</span> Leaderboards
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('award_points')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 22px', borderRadius: 12, border: 'none',
+            background: activeSubTab === 'award_points' ? '#166534' : 'transparent',
+            color: activeSubTab === 'award_points' ? '#FFFFFF' : '#64748B',
+            fontWeight: 800, fontSize: 14, cursor: 'pointer',
+            boxShadow: activeSubTab === 'award_points' ? '0 4px 12px rgba(22, 101, 52, 0.25)' : 'none',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <span>🎁</span> Award Trust Points
+        </button>
+      </div>
+
+      {activeSubTab === 'award_points' ? (
+        <AwardTrustPointsSubTab />
+      ) : (
+        <>
+          {/* ── Header ── */}
+
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
         marginBottom: 24, flexWrap: 'wrap', gap: 16,
@@ -1104,13 +1911,15 @@ export default function TrustLeaderboardTab({ isAdmin = true }) {
         )}
       </div>
 
-      {/* ── Global Admin Trust Profile Detail Modal ── */}
-      {selectedUserForDetail && (
-        <TrustProfileDetailModal
-          userId={selectedUserForDetail.userId}
-          userName={selectedUserForDetail.fullName}
-          onClose={() => setSelectedUserForDetail(null)}
-        />
+        {/* ── Global Admin Trust Profile Detail Modal ── */}
+        {selectedUserForDetail && (
+          <TrustProfileDetailModal
+            userId={selectedUserForDetail.userId}
+            userName={selectedUserForDetail.fullName}
+            onClose={() => setSelectedUserForDetail(null)}
+          />
+        )}
+        </>
       )}
     </div>
   );

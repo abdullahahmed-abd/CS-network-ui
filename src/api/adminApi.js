@@ -383,3 +383,15 @@ export const fetchTrustProfileDetail = (targetUserId, page = 0, size = 10) =>
     },
   });
 
+export const awardTrustPoints = ({ targetUserId, awardReason, tokenAmount, trustDimension }) =>
+  apiCall('/global-admin', {
+    body: {
+      requestType: 'AWARD_POINTS',
+      targetUserId: String(targetUserId),
+      awardReason: awardReason || '',
+      tokenAmount: String(tokenAmount),
+      trustDimension,
+    },
+  });
+
+
