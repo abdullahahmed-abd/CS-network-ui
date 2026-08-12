@@ -23,6 +23,7 @@ import {
   getItem,
 } from '../api/auth';
 import { resolvePhotoUrl, fetchMyProfile } from '../api/profileOperationsApi';
+import { fetchMyPipeline, fetchLeadProposals } from '../api/businessPartnerApi';
 import MyProfileModal from '../components/profile/MyProfileModal';
 import { EventsTab } from './EventsComponents';
 import MyRegistrationsTab from './MyRegistrationsTab';
@@ -1038,6 +1039,41 @@ export function InboxTab() {
   const [activeChat, setActiveChat] = useState(null);
   const [search, setSearch] = useState('');
 
+  const resolveParticipantName = (conv) => {
+    if (!conv) return 'Trade Partner';
+    const candidate = String(
+      conv.participantName ||
+      conv.otherPartyName ||
+      conv.otherUserName ||
+      conv.userName ||
+      conv.proposerName ||
+      conv.receiverName ||
+      conv.companyName ||
+      conv.contactPerson ||
+      conv.intentTitle ||
+      conv.tradeIntentTitle ||
+      conv.title ||
+      conv.commodity ||
+      conv.productName ||
+      ''
+    ).trim();
+
+    if (candidate && candidate.toLowerCase() !== 'unknown' && candidate.toLowerCase() !== 'null' && candidate.toLowerCase() !== 'undefined') {
+      return candidate;
+    }
+
+    if (conv.tradeIntentId || conv.intentId) {
+      return `Trade #${conv.tradeIntentId || conv.intentId}`;
+    }
+    if (conv.tradeProposalId || conv.proposalId) {
+      return `Proposal #${conv.tradeProposalId || conv.proposalId}`;
+    }
+    if (conv.participantId || conv.otherUserId) {
+      return `Trader #${conv.participantId || conv.otherUserId}`;
+    }
+    return 'Trade Partner';
+  };
+
   const fetchInbox = useCallback(async () => {
     setLoading(true); setError('');
     try {
@@ -1046,16 +1082,27 @@ export function InboxTab() {
       const res = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to fetch inbox');
-      setConversations(data?.conversations || []);
+
+      const rawList = data?.conversations || data?.content || (Array.isArray(data) ? data : []);
+      const list = Array.isArray(rawList) ? rawList : [];
+
+      const enriched = list.map(c => ({
+        ...c,
+        resolvedName: resolveParticipantName(c),
+      }));
+
+      setConversations(enriched);
     } catch (err) { setError(err.message || 'Failed to load inbox'); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchInbox(); }, [fetchInbox]);
 
-  const filtered = conversations.filter(c =>
-    !search || (c.participantName || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = conversations.filter(c => {
+    const name = c.resolvedName || resolveParticipantName(c);
+    return !search || name.toLowerCase().includes(search.toLowerCase());
+  });
+
   const totalUnread = conversations.reduce((s, c) => s + (c.unreadCount || 0), 0);
 
   const fmtRelative = (iso) => {
@@ -1133,56 +1180,59 @@ export function InboxTab() {
         ) : (
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
-              {filtered.map((conv, idx) => (
-                <motion.div key={conv.conversationId}
-                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.97 }} transition={{ delay: idx * 0.04 }}
-                  whileHover={{ y: -2 }} onClick={() => setActiveChat(conv)}
-                  className="flex items-center gap-4 rounded-2xl bg-white border cursor-pointer p-4 transition-all"
-                  style={{
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                    borderColor: conv.unreadCount > 0 ? `${BRAND}50` : 'rgba(229,231,235,0.8)',
-                  }}>
-                  <div className="relative flex-shrink-0">
-                    <div className="h-12 w-12 rounded-full flex items-center justify-center text-base font-bold text-white"
-                      style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
-                      {(conv.participantName || 'T').charAt(0).toUpperCase()}
-                    </div>
-                    {conv.unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
-                        style={{ background: '#ef4444' }}>
-                        {conv.unreadCount}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-extrabold text-gray-900' : 'font-bold text-gray-900'}`}>
-                        {conv.participantName || 'Unknown'}
-                      </p>
-                      {conv.lastMessageAt && (
-                        <p className="text-[10px] text-gray-400 font-medium flex-shrink-0">
-                          {fmtRelative(conv.lastMessageAt)}
-                        </p>
+              {filtered.map((conv, idx) => {
+                const name = conv.resolvedName || resolveParticipantName(conv);
+                return (
+                  <motion.div key={conv.conversationId || idx}
+                    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.97 }} transition={{ delay: idx * 0.04 }}
+                    whileHover={{ y: -2 }} onClick={() => setActiveChat(conv)}
+                    className="flex items-center gap-4 rounded-2xl bg-white border cursor-pointer p-4 transition-all"
+                    style={{
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                      borderColor: conv.unreadCount > 0 ? `${BRAND}50` : 'rgba(229,231,235,0.8)',
+                    }}>
+                    <div className="relative flex-shrink-0">
+                      <div className="h-12 w-12 rounded-full flex items-center justify-center text-base font-bold text-white"
+                        style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                      {conv.unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+                          style={{ background: '#ef4444' }}>
+                          {conv.unreadCount}
+                        </span>
                       )}
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={`text-xs truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-700' : 'text-gray-500'}`}>
-                        {conv.lastMessage || 'No messages yet — tap to open'}
-                      </p>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
-                        style={{ background: `${BRAND}20`, color: BRAND_DARK }}>
-                        Chat
-                      </span>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-extrabold text-gray-900' : 'font-bold text-gray-900'}`}>
+                          {name}
+                        </p>
+                        {conv.lastMessageAt && (
+                          <p className="text-[10px] text-gray-400 font-medium flex-shrink-0">
+                            {fmtRelative(conv.lastMessageAt)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`text-xs truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-700' : 'text-gray-500'}`}>
+                          {conv.lastMessage || 'No messages yet — tap to open'}
+                        </p>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                          style={{ background: `${BRAND}20`, color: BRAND_DARK }}>
+                          Chat
+                        </span>
+                      </div>
+                      {conv.lastMessageAt && (
+                        <p className="text-[10px] text-gray-400 mt-0.5">{fmtTime(conv.lastMessageAt)}</p>
+                      )}
                     </div>
-                    {conv.lastMessageAt && (
-                      <p className="text-[10px] text-gray-400 mt-0.5">{fmtTime(conv.lastMessageAt)}</p>
-                    )}
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                </motion.div>
-              ))}
+                    <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
         )}
@@ -1192,8 +1242,8 @@ export function InboxTab() {
         {activeChat && (
           <TradeChatScreen
             conversationId={activeChat.conversationId}
-            title={activeChat.participantName || 'Trade Chat'}
-            otherPartyName={activeChat.participantName}
+            title={activeChat.resolvedName || resolveParticipantName(activeChat)}
+            otherPartyName={activeChat.resolvedName || resolveParticipantName(activeChat)}
             otherPartyId={activeChat.participantId || activeChat.otherUserId || activeChat.partnerId}
             dealId={activeChat.dealId || activeChat.tradeDealId || activeChat.tradeProposalId || activeChat.proposalId || activeChat.tradeIntentId || activeChat.intentId}
             tradeProposalId={activeChat.tradeProposalId || activeChat.proposalId}
@@ -1573,6 +1623,94 @@ export const ProposalCard = forwardRef(function ProposalCard(
   const canAccept = isOwner && proposal.status === 'PENDING';
   const canChat = proposal.status === 'ACCEPTED' && typeof onOpenChat === 'function';
 
+  // Resolved metadata for informative card layout
+  const rawItemTitle =
+    proposal.intentTitle ||
+    proposal.tradeIntentTitle ||
+    proposal.title ||
+    proposal.productName ||
+    proposal.commodity ||
+    proposal.commodityName ||
+    proposal.crop ||
+    proposal.cropName ||
+    proposal.item ||
+    proposal.itemName ||
+    proposal.tradeIntent?.title ||
+    proposal.intent?.title ||
+    proposal.tradeIntent?.commodity ||
+    proposal.intent?.commodity ||
+    proposal.tradeIntent?.productName ||
+    proposal.intent?.productName ||
+    proposal.tradeIntent?.cropName ||
+    proposal.intent?.cropName ||
+    proposal.category ||
+    proposal.tradeIntentCategory ||
+    proposal.intentCategory ||
+    proposal.intent?.category;
+
+  const intentTitle = rawItemTitle
+    ? rawItemTitle
+    : (proposal.leadName ? `Lead: ${proposal.leadName}` : `Trade Intent #${proposal.tradeIntentId || proposal.intentId || proposal.id}`);
+
+  const commodityTag =
+    proposal.commodity ||
+    proposal.commodityName ||
+    proposal.crop ||
+    proposal.cropName ||
+    proposal.productName ||
+    (rawItemTitle && rawItemTitle !== intentTitle ? rawItemTitle : null);
+
+  const intentType = String(
+    proposal.intentType ||
+    proposal.tradeIntentType ||
+    proposal.type ||
+    proposal.intent?.intentType ||
+    'TRADE'
+  ).toUpperCase();
+
+  const category =
+    proposal.category ||
+    proposal.tradeIntentCategory ||
+    proposal.intentCategory ||
+    proposal.intent?.category;
+
+  const proposerName =
+    proposal.proposerName ||
+    proposal.proposerMemberName ||
+    proposal.proposerUserName ||
+    proposal.createdByName ||
+    proposal.senderName ||
+    'Proposer';
+
+  const quantity = Number(
+    proposal.quantityRequested ||
+    proposal.offeredQuantity ||
+    proposal.quantity ||
+    proposal.qty ||
+    0
+  );
+
+  const price = Number(
+    proposal.price ||
+    proposal.pricePerUnit ||
+    proposal.offeredPrice ||
+    proposal.rate ||
+    0
+  );
+
+  const timeline =
+    proposal.timelineDays ||
+    proposal.timeline ||
+    proposal.deliveryTimeline ||
+    30;
+
+  const totalValue =
+    (quantity * price) > 0
+      ? quantity * price
+      : Number(proposal.totalValue || proposal.totalPrice || 0);
+
+  const isBuy = intentType === 'BUY';
+
   return (
     <motion.div ref={ref} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }} whileHover={{ y: -3 }}
@@ -1586,59 +1724,132 @@ export const ProposalCard = forwardRef(function ProposalCard(
         <div className="absolute inset-0 opacity-5 rounded-2xl"
           style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }} />
       )}
-      <div className="h-1 w-full" style={{
+      <div className="h-1.5 w-full" style={{
         background: proposal.status === 'ACCEPTED' || proposal.status === 'COMPLETED'
           ? `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})`
           : proposal.status === 'PENDING'
             ? 'linear-gradient(90deg, #f59e0b, #d97706)'
             : 'linear-gradient(90deg, #ef4444, #dc2626)',
       }} />
+
       <div className="relative z-10 p-5">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-              style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
-              {(proposal.proposerName || 'P').charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <p className="font-bold text-sm text-gray-900 truncate">{proposal.proposerName}</p>
-              <p className="text-xs text-gray-500">Proposal #{proposal.proposalId || proposal.id} · Intent #{proposal.tradeIntentId}</p>
-            </div>
+        {/* Top Badges (BUY/SELL badge, Commodity, Category, Status) */}
+        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
+              isBuy ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+            }`}>
+              {isBuy ? <ShoppingCart className="h-3 w-3" /> : <Store className="h-3 w-3" />}
+              {intentType}
+            </span>
+
+            {commodityTag && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
+                <Wheat className="h-3 w-3 text-amber-600" />
+                {commodityTag}
+              </span>
+            )}
+
+            {category && (
+              <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 border border-gray-200">
+                {category}
+              </span>
+            )}
           </div>
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold flex-shrink-0 ${st.color} ${st.bg} ${st.border}`}>
+          <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold flex-shrink-0 ${st.color} ${st.bg} ${st.border}`}>
             <StatusIcon className="h-3 w-3" /> {st.label}
           </span>
         </div>
-        <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${BRAND}40, transparent)` }} />
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {[
-            { icon: Package, label: 'Quantity', value: fmt(proposal.quantityRequested), plain: true },
-            { icon: DollarSign, label: 'Price/Unit', value: `₹${fmt(proposal.price)}`, style: true },
-            { icon: Calendar, label: 'Timeline', value: `${proposal.timelineDays} days`, plain: true },
-            { icon: Clock, label: 'Deadline', value: fmtDate(proposal.deadlineDate), plain: true },
-          ].map(item => (
-            <div key={item.label} className="rounded-xl bg-gray-50 p-3">
-              <div className="flex items-center gap-1.5 mb-1">
-                <item.icon className="h-3 w-3 text-gray-400" />
-                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{item.label}</p>
+
+        {/* Intent Title & Proposer Info */}
+        <div className="mb-4">
+          <h3 className="font-extrabold text-base text-gray-900 leading-snug line-clamp-2" title={intentTitle}>
+            {intentTitle}
+          </h3>
+          <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-600 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <div className="h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
+                {proposerName.charAt(0).toUpperCase()}
               </div>
-              <p className="text-sm font-bold" style={item.style ? { color: BRAND_DARK } : { color: '#111827' }}>
-                {item.value}
-              </p>
+              <span className="font-semibold text-gray-800">{proposerName}</span>
             </div>
-          ))}
+            <span className="text-gray-300">•</span>
+            <span className="text-gray-500">Proposal #{proposal.proposalId || proposal.id}</span>
+            {proposal.tradeIntentId && (
+              <>
+                <span className="text-gray-300">•</span>
+                <span className="text-gray-500">Intent #{proposal.tradeIntentId}</span>
+              </>
+            )}
+          </div>
+          {proposal.leadName && (
+            <p className="text-xs font-medium text-amber-700 mt-1 flex items-center gap-1">
+              <Building2 className="h-3 w-3 text-amber-600" /> Lead: {proposal.leadName}
+            </p>
+          )}
         </div>
-        <div className="rounded-xl px-4 py-3 mb-4 flex items-center justify-between"
+
+        <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${BRAND}40, transparent)` }} />
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-2 gap-2.5 mb-4">
+          <div className="rounded-xl bg-gray-50 p-2.5 border border-gray-100">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Package className="h-3.5 w-3.5 text-emerald-600" />
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Quantity</p>
+            </div>
+            <p className="text-sm font-extrabold text-gray-900">
+              {fmt(quantity)} {proposal.unit || 'units'}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-2.5 border border-gray-100">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Price / Unit</p>
+            </div>
+            <p className="text-sm font-extrabold" style={{ color: BRAND_DARK }}>
+              ₹{fmt(price)}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-2.5 border border-gray-100">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Calendar className="h-3.5 w-3.5 text-blue-600" />
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Timeline</p>
+            </div>
+            <p className="text-xs font-bold text-gray-800">
+              {timeline} Days
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-2.5 border border-gray-100">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Clock className="h-3.5 w-3.5 text-amber-600" />
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Deadline</p>
+            </div>
+            <p className="text-xs font-bold text-gray-800 truncate">
+              {fmtDate(proposal.deadlineDate || proposal.createdAt)}
+            </p>
+          </div>
+        </div>
+
+        {/* Total Value Banner */}
+        <div className="rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between"
           style={{ background: `${BRAND}12`, border: `1px solid ${BRAND}30` }}>
-          <span className="text-xs font-semibold text-gray-600">Total Value</span>
-          <span className="text-sm font-extrabold" style={{ color: BRAND_DARK }}>
-            ₹{fmt((proposal.quantityRequested || 0) * (proposal.price || 0))}
+          <span className="text-xs font-bold text-gray-700">Total Proposed Value</span>
+          <span className="text-base font-extrabold" style={{ color: BRAND_DARK }}>
+            ₹{fmt(totalValue)}
           </span>
         </div>
+
         <div className="flex items-center justify-between text-[10px] text-gray-400 mb-4">
           <span>Created: {fmtDateTime(proposal.createdAt)}</span>
-          <span>Updated: {fmtDateTime(proposal.updatedAt)}</span>
+          {proposal.updatedAt && <span>Updated: {fmtDateTime(proposal.updatedAt)}</span>}
         </div>
+
+        {/* Action Buttons */}
         {canAccept && (
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
             onClick={() => {
@@ -1652,6 +1863,7 @@ export const ProposalCard = forwardRef(function ProposalCard(
               : <><BadgeCheck className="h-4 w-4" /> Accept Proposal</>}
           </motion.button>
         )}
+
         {proposal.status === 'ACCEPTED' && (
           <div className="space-y-2.5">
             <div className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold"
@@ -1947,11 +2159,20 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
     setError('');
     try {
       const myUserData = getUserData() || {};
-      const myIdStr = String(myUserData?.id || myUserData?.userId || myUserData?.memberId || '').trim().toLowerCase();
+      const myIdStr = String(
+        myUserData?.id ||
+        myUserData?.userId ||
+        myUserData?.memberId ||
+        myUserData?.member_id ||
+        myUserData?.user_id ||
+        myUserData?.profile?.id ||
+        myUserData?.profile?.memberId ||
+        ''
+      ).trim().toLowerCase();
 
+      // 1. Target intents from member intents
       let targetIntents = myIntents || [];
 
-      // If myIntents is empty, fetch my intents directly
       if (!targetIntents || targetIntents.length === 0) {
         try {
           const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
@@ -1970,17 +2191,52 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
         }
       }
 
-      // Fetch received proposals for all target intents
+      // 2. Fetch BP pipeline leads to get BP leads and their intents/proposals
+      let bpLeads = [];
+      try {
+        const pipelineData = await fetchMyPipeline();
+        let rawLeads = [];
+        const boardObj = pipelineData?.pipeline?.board || pipelineData?.board;
+        if (boardObj && typeof boardObj === 'object' && !Array.isArray(boardObj)) {
+          Object.values(boardObj).forEach(arr => {
+            if (Array.isArray(arr)) rawLeads.push(...arr);
+          });
+        }
+        if (rawLeads.length === 0) {
+          rawLeads =
+            pipelineData?.pipeline?.leads ||
+            pipelineData?.leads ||
+            pipelineData?.pipeline?.content ||
+            pipelineData?.pipeline ||
+            pipelineData?.content ||
+            (Array.isArray(pipelineData) ? pipelineData : []);
+        }
+        bpLeads = Array.isArray(rawLeads) ? rawLeads : [];
+      } catch (e) {
+        console.warn('Failed to fetch BP pipeline leads inside ReceivedProposalsContent:', e);
+      }
+
+      // Collect intent IDs from member intents and BP leads
+      const leadIntentIds = bpLeads
+        .map(l => l?.tradeIntentId || l?.tradeIntent?.id || l?.intentId || l?.intent?.id)
+        .filter(Boolean);
+
+      const allIntentIds = Array.from(new Set([
+        ...targetIntents.map(i => i?.id || i?.tradeIntentId || i?.intentId).filter(Boolean),
+        ...leadIntentIds,
+      ]));
+
+      // 3. Fetch proposals for all trade intents
       let intentProps = [];
-      if (targetIntents && targetIntents.length > 0) {
+      if (allIntentIds.length > 0) {
         const results = await Promise.all(
-          targetIntents.map(async (intent) => {
+          allIntentIds.map(async (intentId) => {
             try {
               const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
                 method: 'POST',
                 body: JSON.stringify({
                   memberRequestType: 'FETCH_PROPOSALS_FOR_INTENT',
-                  tradeIntentId: intent.id,
+                  tradeIntentId: Number(intentId),
                 }),
               });
               const list = data?.proposals?.content || data?.proposals || data?.content || (Array.isArray(data) ? data : []);
@@ -1993,7 +2249,29 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
         intentProps = results.flat();
       }
 
-      // Also fetch member proposals list to catch any assigned received proposals
+      // 4. Fetch proposals for BP leads via FETCH_LEAD_PROPOSALS
+      let leadProps = [];
+      if (bpLeads.length > 0) {
+        const leadResults = await Promise.all(
+          bpLeads.map(async (lead) => {
+            const leadId = lead?.id || lead?.leadId;
+            if (!leadId) return [];
+
+            const embedded = lead.proposals || lead.tradeProposals || [];
+            let fetched = [];
+            try {
+              const data = await fetchLeadProposals(leadId);
+              const list = data?.proposals?.content || data?.proposals || data?.content || data?.leadProposals || (Array.isArray(data) ? data : []);
+              fetched = Array.isArray(list) ? list : [];
+            } catch (e) {}
+
+            return [...(Array.isArray(embedded) ? embedded : []), ...fetched];
+          })
+        );
+        leadProps = leadResults.flat();
+      }
+
+      // 5. Fetch member proposals list
       let memberProps = [];
       try {
         const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
@@ -2008,17 +2286,81 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
         memberProps = Array.isArray(list) ? list : [];
       } catch (e) {}
 
-      // Combine candidates and filter received proposals (where proposer is NOT current user)
-      const combined = [...intentProps, ...memberProps];
+      // Build metadata map for intents and leads
+      const intentMetaMap = new Map();
+      targetIntents.forEach(i => {
+        const id = String(i?.id || i?.tradeIntentId || i?.intentId || '');
+        if (id) {
+          intentMetaMap.set(id, {
+            title: i.title || i.name || i.productName,
+            intentType: i.intentType || i.type,
+            category: i.category,
+          });
+        }
+      });
+      bpLeads.forEach(l => {
+        const id = String(l?.tradeIntentId || l?.tradeIntent?.id || l?.intentId || l?.intent?.id || '');
+        const leadName = l?.companyName || l?.contactPerson || l?.leadName;
+        if (id && !intentMetaMap.has(id)) {
+          intentMetaMap.set(id, {
+            title: l?.tradeIntent?.title || (leadName ? `Lead: ${leadName}` : 'Lead Trade Intent'),
+            intentType: l?.tradeIntent?.intentType || 'BUY',
+            category: l?.tradeIntent?.category || l?.category,
+            leadName,
+          });
+        }
+      });
+
+      // Combine ALL candidates and enrich with metadata
+      const targetIntentIdSet = new Set(allIntentIds.map(id => String(id)));
+      const bpLeadIdSet = new Set(bpLeads.map(l => String(l?.id || l?.leadId)).filter(Boolean));
+      const directReceivedPropIds = new Set([
+        ...intentProps.map(ip => String(ip?.proposalId || ip?.id || ip?.tradeProposalId || '')).filter(Boolean),
+        ...leadProps.map(lp => String(lp?.proposalId || lp?.id || lp?.tradeProposalId || '')).filter(Boolean),
+      ]);
+
+      const combined = [...intentProps, ...leadProps, ...memberProps];
       const map = new Map();
       combined.forEach((p) => {
-        const id = p.proposalId || p.id || p.tradeProposalId;
-        const pProposerId = String(p.proposerId || p.proposerMemberId || p.proposerUserId || p.userId || '').trim().toLowerCase();
+        const id = String(p.proposalId || p.id || p.tradeProposalId || '');
+        if (!id) return;
 
-        if (id && !map.has(id)) {
-          // Include in Received if intentProps OR if proposer is NOT the current logged in user
-          if (intentProps.some(ip => (ip.proposalId || ip.id || ip.tradeProposalId) === id) || (myIdStr && pProposerId && pProposerId !== myIdStr)) {
-            map.set(id, p);
+        const pProposerId = String(
+          p.proposerId || p.proposerMemberId || p.proposerUserId || p.userId || p.createdBy || ''
+        ).trim().toLowerCase();
+
+        const pIntentId = String(p.tradeIntentId || p.intentId || '');
+        const pLeadId = String(p.leadId || p.lead_id || '');
+        const pIntentOwnerId = String(
+          p.intentOwnerId || p.receiverId || p.memberId || p.ownerId || p.businessPartnerId || ''
+        ).trim().toLowerCase();
+
+        if (!map.has(id)) {
+          const isDirectReceived = directReceivedPropIds.has(id);
+          const isTargetIntent = pIntentId && targetIntentIdSet.has(pIntentId);
+          const isTargetLead = pLeadId && bpLeadIdSet.has(pLeadId);
+          const isMeOwner = Boolean(myIdStr && pIntentOwnerId && pIntentOwnerId === myIdStr);
+          const isNotMeProposer = Boolean(myIdStr && pProposerId ? pProposerId !== myIdStr : true);
+
+          const meta = intentMetaMap.get(pIntentId) || {};
+          const enrichedP = {
+            ...p,
+            intentTitle: p.intentTitle || p.tradeIntentTitle || p.title || p.productName || p.tradeIntent?.title || p.intent?.title || meta.title,
+            intentType: p.intentType || p.tradeIntentType || p.type || p.intent?.intentType || meta.intentType,
+            category: p.category || p.tradeIntentCategory || p.intent?.category || meta.category,
+            leadName: p.leadName || meta.leadName,
+          };
+
+          if (
+            isDirectReceived ||
+            isTargetIntent ||
+            isTargetLead ||
+            isMeOwner ||
+            (isNotMeProposer && (isTargetIntent || isTargetLead || isMeOwner || !pProposerId))
+          ) {
+            map.set(id, enrichedP);
+          } else if (!myIdStr && (isDirectReceived || isTargetIntent || isTargetLead)) {
+            map.set(id, enrichedP);
           }
         }
       });
@@ -2049,7 +2391,20 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
       setSuccessMsg('✓ Proposal accepted! You can now chat with the proposer.');
       await fetchAllReceivedProposals();
     } catch (err) {
-      setError(err.message || 'Failed to accept proposal');
+      try {
+        await authenticatedFetch(`${BASE_URL}/cs-network/business-partner`, {
+          method: 'POST',
+          body: JSON.stringify({
+            businessPartnerRequestType: 'ACCEPT_TRADE_PROPOSAL',
+            tradeProposalId: Number(proposalId),
+            proposalId: Number(proposalId),
+          }),
+        });
+        setSuccessMsg('✓ Proposal accepted! You can now chat with the proposer.');
+        await fetchAllReceivedProposals();
+      } catch (err2) {
+        setError(err.message || err2.message || 'Failed to accept proposal');
+      }
     } finally {
       setAccepting(null);
     }
@@ -2241,7 +2596,16 @@ export function SentProposalsContent() {
     setLoading(true); setError('');
     try {
       const myUserData = getUserData() || {};
-      const myIdStr = String(myUserData?.id || myUserData?.userId || myUserData?.memberId || '').trim().toLowerCase();
+      const myIdStr = String(
+        myUserData?.id ||
+        myUserData?.userId ||
+        myUserData?.memberId ||
+        myUserData?.member_id ||
+        myUserData?.user_id ||
+        myUserData?.profile?.id ||
+        myUserData?.profile?.memberId ||
+        ''
+      ).trim().toLowerCase();
 
       const body = {
         memberRequestType: 'FETCH_PROPOSALS_FOR_MEMBER',
@@ -2258,16 +2622,55 @@ export function SentProposalsContent() {
 
       // Filter sent proposals (where proposer is the current logged in user)
       const filteredSent = rawList.filter(p => {
-        const pProposerId = String(p.proposerId || p.proposerMemberId || p.proposerUserId || p.userId || '').trim().toLowerCase();
+        const pProposerId = String(p.proposerId || p.proposerMemberId || p.proposerUserId || p.userId || p.createdBy || '').trim().toLowerCase();
         if (myIdStr && pProposerId) {
           return pProposerId === myIdStr;
         }
         return true;
       });
 
-      setProposals(filteredSent);
+      // Fetch intent details for sent proposals if title is missing
+      const intentIds = Array.from(new Set(filteredSent.map(p => p.tradeIntentId || p.intentId).filter(Boolean)));
+      const intentMetaMap = new Map();
+
+      if (intentIds.length > 0) {
+        await Promise.all(
+          intentIds.map(async (intentId) => {
+            try {
+              const res = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  memberRequestType: 'FETCH_INTENT',
+                  tradeIntentId: Number(intentId),
+                  intentId: Number(intentId),
+                }),
+              });
+              const item = res?.tradeIntent || res?.intent || res;
+              if (item && (item.title || item.name)) {
+                intentMetaMap.set(String(intentId), {
+                  title: item.title || item.name || item.productName,
+                  intentType: item.intentType || item.type,
+                  category: item.category,
+                });
+              }
+            } catch (e) {}
+          })
+        );
+      }
+
+      const enrichedSent = filteredSent.map(p => {
+        const meta = intentMetaMap.get(String(p.tradeIntentId || p.intentId || '')) || {};
+        return {
+          ...p,
+          intentTitle: p.intentTitle || p.tradeIntentTitle || p.title || p.productName || meta.title,
+          intentType: p.intentType || p.tradeIntentType || p.type || meta.intentType,
+          category: p.category || p.tradeIntentCategory || meta.category,
+        };
+      });
+
+      setProposals(enrichedSent);
       setTotalPages(data?.totalPages || 1);
-      setTotalRecords(filteredSent.length);
+      setTotalRecords(enrichedSent.length);
     } catch (err) { setError(err.message || 'Failed to load your proposals'); }
     finally { setLoading(false); }
   }, [statusFilter]);

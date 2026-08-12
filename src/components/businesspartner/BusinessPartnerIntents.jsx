@@ -272,16 +272,14 @@ export default function BusinessPartnerIntents({
         ) : (
           <>
             <div className="intents-grid">
-              <AnimatePresence mode="popLayout">
                 {filteredIntents.map(intent => (
                   <IntentCard
-                    key={intent.id}
+                    key={intent.id || intent.tradeIntentId || intent.intentId}
                     intent={intent}
                     onView={setSelectedIntent}
-                    onRaiseProposal={activeProposalLead ? setProposalIntent : null}
+                    onRaiseProposal={setProposalIntent}
                   />
                 ))}
-              </AnimatePresence>
             </div>
 
             {/* Pagination (market only) */}

@@ -147,7 +147,23 @@ export const deleteLead = async (leadId) => {
  * Automatically advances lead stage to NEGOTIATION if currently prior to NEGOTIATION.
  */
 export const createProposalForLead = async (leadId, { tradeIntentId, quantityRequested, pricePerUnit, timelineDays }) => {
-  const body = {
+  if (tradeIntentId) {
+    try {
+      await apiCall('/member', {
+        body: {
+          memberRequestType: 'CREATE_PROPOSAL',
+          tradeIntentId: Number(tradeIntentId),
+          quantityRequested: Number(quantityRequested),
+          pricePerUnit: Number(pricePerUnit),
+          timelineDays: Number(timelineDays),
+        },
+      });
+    } catch (e) {
+      console.warn('Member CREATE_PROPOSAL error during lead proposal:', e);
+    }
+  }
+
+  const bpBody = {
     businessPartnerRequestType: 'CREATE_PROPOSAL_FOR_LEAD',
     leadId: Number(leadId),
     ...(tradeIntentId && { tradeIntentId: Number(tradeIntentId) }),
@@ -156,22 +172,35 @@ export const createProposalForLead = async (leadId, { tradeIntentId, quantityReq
     timelineDays: Number(timelineDays),
   };
 
-  return apiCall('/business-partner', { body });
+  return apiCall('/business-partner', { body: bpBody });
 };
 
 /**
- * Raises a Trade Proposal against a Trade Intent.
+ * Raises a Trade Proposal against a Trade Intent using standard member endpoint.
  */
 export const createProposalForIntent = async (intentId, { quantityRequested, pricePerUnit, timelineDays }) => {
   const body = {
-    businessPartnerRequestType: 'CREATE_PROPOSAL',
+    memberRequestType: 'CREATE_PROPOSAL',
     tradeIntentId: Number(intentId),
     quantityRequested: Number(quantityRequested),
     pricePerUnit: Number(pricePerUnit),
     timelineDays: Number(timelineDays),
   };
 
-  return apiCall('/business-partner', { body });
+  try {
+    return await apiCall('/member', { body });
+  } catch (err) {
+    // Fallback to business partner endpoint if needed
+    return await apiCall('/business-partner', {
+      body: {
+        businessPartnerRequestType: 'CREATE_PROPOSAL',
+        tradeIntentId: Number(intentId),
+        quantityRequested: Number(quantityRequested),
+        pricePerUnit: Number(pricePerUnit),
+        timelineDays: Number(timelineDays),
+      },
+    });
+  }
 };
 
 /**
