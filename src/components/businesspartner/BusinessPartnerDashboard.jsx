@@ -25,6 +25,8 @@ import { Toast }               from '../businesspartner/common/Toast';
 import { ProposalsTab, InboxTab, TradeChatScreen } from '../../screens/BuyerSellerDashboard';
 import { BusinessPartnerCommissions } from './BusinessPartnerCommissions';
 import { BusinessPartnerDeals }       from './BusinessPartnerDeals';
+import TrustLeaderboardTab            from '../globalAdmin/tabs/TrustLeaderboardTab';
+
 
 import { THEME, PIPELINE_STAGES, NAV_ITEMS, BASE_URL } from '../constants/BpConstants';
 import { getInitials } from '../../utils/BpHelpers';
@@ -39,6 +41,8 @@ import {
 
 const navItems = [
   { id: 'pipeline',         label: 'Pipeline',      icon: LayoutGrid    },
+  { id: 'leaderboard',      label: 'Leaderboards', icon: Trophy        },
+  { id: 'directory',        label: 'Directory',     icon: UsersIcon     },
   { id: 'trade_intents',    label: 'Trade Intents', icon: BarChart3     },
   { id: 'partnerships',     label: 'Partnerships',  icon: Building2     },
   { id: 'proposals',        label: 'Proposals',     icon: FileText      },
@@ -49,6 +53,7 @@ const navItems = [
   { id: 'events',           label: 'Events',        icon: CalendarClock },
   { id: 'my_registrations', label: 'My Tickets',    icon: Ticket        },
 ];
+
 
 export default function BusinessPartnerDashboard({ onLogout }) {
   /* ── Nav ── */
@@ -115,32 +120,54 @@ export default function BusinessPartnerDashboard({ onLogout }) {
 
     try {
       const data = await fetchMyPipeline();
-      const rawLeads = data?.leads || data?.content || data?.data || [];
 
-      if (Array.isArray(rawLeads)) {
-        const grouped = {};
-        const counts = {};
-        PIPELINE_STAGES.forEach(s => { grouped[s.id] = []; counts[s.id] = 0; });
+      const grouped = {};
+      const counts = {};
+      PIPELINE_STAGES.forEach(s => { grouped[s.id] = []; counts[s.id] = 0; });
+
+      // 1. Board Object Parsing
+      const boardObj = data?.pipeline?.board || data?.board;
+      let hasBoardLeads = false;
+      if (boardObj && typeof boardObj === 'object' && !Array.isArray(boardObj)) {
+        Object.keys(grouped).forEach(stage => {
+          const arr = Array.isArray(boardObj[stage]) ? boardObj[stage] : [];
+          grouped[stage] = arr;
+          counts[stage] = arr.length;
+          if (arr.length > 0) hasBoardLeads = true;
+        });
+      }
+
+      // 2. Lead Array Parsing (fallback if board object wasn't provided or empty)
+      if (!hasBoardLeads) {
+        let rawLeads = [];
+        if (Array.isArray(data?.pipeline?.leads)) {
+          rawLeads = data.pipeline.leads;
+        } else if (Array.isArray(data?.leads)) {
+          rawLeads = data.leads;
+        } else if (Array.isArray(data?.pipeline?.content)) {
+          rawLeads = data.pipeline.content;
+        } else if (Array.isArray(data?.pipeline)) {
+          rawLeads = data.pipeline;
+        } else if (Array.isArray(data?.content)) {
+          rawLeads = data.content;
+        } else if (Array.isArray(data?.data)) {
+          rawLeads = data.data;
+        } else if (Array.isArray(data)) {
+          rawLeads = data;
+        }
 
         rawLeads.forEach(lead => {
-          const st = lead.stage || 'NEW_LEAD';
+          const st = lead.stage || lead.leadStage || 'NEW_LEAD';
           if (!grouped[st]) grouped[st] = [];
           grouped[st].push(lead);
           counts[st] = (counts[st] || 0) + 1;
         });
-
-        setLeads(grouped);
-        setStageCounts(counts);
-        loadedOnceRef.current = true;
-        setError('');
-      } else {
-        const eb = {};
-        PIPELINE_STAGES.forEach(s => { eb[s.id] = []; });
-        setLeads(eb);
-        setStageCounts({});
-        loadedOnceRef.current = true;
-        setError('');
       }
+
+      setLeads(grouped);
+      setStageCounts(counts);
+      loadedOnceRef.current = true;
+      setError('');
     } catch (err) {
       if (!loadedOnceRef.current) setError(err.message || 'Failed to load pipeline');
     } finally {
@@ -149,6 +176,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
       setRefreshing(false);
     }
   }, []);
+
 
   /* ════════ Fetch Trade Intents ════════ */
   const fetchIntents = useCallback(async (pg = 0) => {
@@ -180,11 +208,14 @@ export default function BusinessPartnerDashboard({ onLogout }) {
         `${BASE_URL}/cs-network/member`,
         {
           method: 'POST',
-          body: JSON.stringify({ memberRequestType: 'FETCH_INTENT', page: 0, size: 20 }),
+          body: JSON.stringify({ memberRequestType: 'FETCH_MY_INTENT' }),
         }
       );
-      const content = data?.intents?.content || data?.intents || [];
-      setMyIntents(Array.isArray(content) ? content : []);
+      const list =
+        data?.myIntents?.content || data?.myIntents ||
+        data?.intents?.content  || data?.intents   ||
+        data?.content || (Array.isArray(data) ? data : []);
+      setMyIntents(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('My intents error:', err);
     } finally {
@@ -506,7 +537,13 @@ export default function BusinessPartnerDashboard({ onLogout }) {
             />
           )}
 
+          {/* ══ Tab: Leaderboard ══ */}
+          {activeNav === 'leaderboard' && (
+            <TrustLeaderboardTab userRole="BUSINESS_PARTNER" />
+          )}
+
           {/* ══ Tab: Partnerships ══ */}
+
           {activeNav === 'partnerships' && (
             <PartnershipsTab />
           )}

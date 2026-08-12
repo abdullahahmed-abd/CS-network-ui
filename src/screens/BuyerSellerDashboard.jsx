@@ -12,7 +12,7 @@ import {
   Menu, FileText, Send, Clock, CheckCheck,
   Users, ArrowRight, BadgeCheck,
   Calendar, DollarSign, MessageCircle, Paperclip,
-  Inbox, Ticket, Video, Building2, Award,
+  Inbox, Ticket, Video, Building2, Award, UserPlus,
 } from 'lucide-react';
 import { Client } from '@stomp/stompjs';
 import {
@@ -28,13 +28,15 @@ import { EventsTab } from './EventsComponents';
 import MyRegistrationsTab from './MyRegistrationsTab';
 import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
 import MeetingsTab from '../components/meetings/MeetingsTab';
+import TrustLeaderboardTab from '../components/globalAdmin/tabs/TrustLeaderboardTab';
+
 import ScheduleMeetingModal from '../components/meetings/ScheduleMeetingModal';
 import DirectoryTab from '../components/directory/DirectoryTab';
 import PartnershipsTab from '../components/partnerships/PartnershipsTab';
 import { BusinessPartnerDeals as DealsTab } from '../components/businesspartner/BusinessPartnerDeals';
 
 const BASE_URL = 'https://connectsouq.sundukpay.com';
-const WS_URL   = BASE_URL.replace(/^http/, 'ws') + '/cs-network/ws';
+const WS_URL = BASE_URL.replace(/^http/, 'ws') + '/cs-network/ws';
 
 // ─────────────────────────────────────────────
 // chatFetch
@@ -52,7 +54,7 @@ const chatFetch = async (url, formData) => {
     });
 
   let token = getAccessToken();
-  let res   = await doRequest(token);
+  let res = await doRequest(token);
 
   if (res.status === 401) {
     console.log('🔒 chatFetch 401 — refreshing token...');
@@ -70,37 +72,37 @@ const chatFetch = async (url, formData) => {
 };
 
 const CATEGORIES = [
-  'Wheat','Rice','Corn','Barley','Soybean',
-  'Cotton','Sugar','Coffee','Cocoa','Palm Oil',
-  'Vegetables','Fruits','Pulses','Spices','Other',
+  'Wheat', 'Rice', 'Corn', 'Barley', 'Soybean',
+  'Cotton', 'Sugar', 'Coffee', 'Cocoa', 'Palm Oil',
+  'Vegetables', 'Fruits', 'Pulses', 'Spices', 'Other',
 ];
-const UNITS = ['KG','TON','QUINTAL','POUND','LITER','BARREL'];
+const UNITS = ['KG', 'TON', 'QUINTAL', 'POUND', 'LITER', 'BARREL'];
 const COUNTRIES = [
-  'India','UAE','Saudi Arabia','USA','UK',
-  'Australia','Canada','Germany','France','Singapore',
+  'India', 'UAE', 'Saudi Arabia', 'USA', 'UK',
+  'Australia', 'Canada', 'Germany', 'France', 'Singapore',
 ];
 const BUSINESS_SECTORS = [
-  'Agriculture','Food Processing','Trading','Export/Import',
-  'Retail','Wholesale','Manufacturing','Logistics',
+  'Agriculture', 'Food Processing', 'Trading', 'Export/Import',
+  'Retail', 'Wholesale', 'Manufacturing', 'Logistics',
 ];
 
 const STATUS_CONFIG = {
-  OPEN:    { color:'text-emerald-700', bg:'bg-emerald-50/60', border:'border-emerald-200/70', dot:'bg-emerald-500',  label:'Open'    },
-  CLOSED:  { color:'text-gray-600',    bg:'bg-gray-50/60',    border:'border-gray-200/70',    dot:'bg-gray-400',     label:'Closed'  },
-  EXPIRED: { color:'text-red-600',     bg:'bg-red-50/60',     border:'border-red-200/70',     dot:'bg-red-500',      label:'Expired' },
-  MATCHED: { color:'text-blue-700',    bg:'bg-blue-50/60',    border:'border-blue-200/70',    dot:'bg-blue-500',     label:'Matched' },
+  OPEN: { color: 'text-emerald-700', bg: 'bg-emerald-50/60', border: 'border-emerald-200/70', dot: 'bg-emerald-500', label: 'Open' },
+  CLOSED: { color: 'text-gray-600', bg: 'bg-gray-50/60', border: 'border-gray-200/70', dot: 'bg-gray-400', label: 'Closed' },
+  EXPIRED: { color: 'text-red-600', bg: 'bg-red-50/60', border: 'border-red-200/70', dot: 'bg-red-500', label: 'Expired' },
+  MATCHED: { color: 'text-blue-700', bg: 'bg-blue-50/60', border: 'border-blue-200/70', dot: 'bg-blue-500', label: 'Matched' },
 };
 
 const PROPOSAL_STATUS_CONFIG = {
-  PENDING:  { color:'text-amber-700',   bg:'bg-amber-50',   border:'border-amber-200',   dot:'bg-amber-500',   label:'Pending',  icon: Clock      },
-  ACCEPTED: { color:'text-emerald-700', bg:'bg-emerald-50', border:'border-emerald-200', dot:'bg-emerald-500', label:'Accepted', icon: CheckCheck },
-  REJECTED: { color:'text-red-600',     bg:'bg-red-50',     border:'border-red-200',     dot:'bg-red-500',     label:'Rejected', icon: X          },
+  PENDING: { color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500', label: 'Pending', icon: Clock },
+  ACCEPTED: { color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500', label: 'Accepted', icon: CheckCheck },
+  REJECTED: { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', dot: 'bg-red-500', label: 'Rejected', icon: X },
 };
 
-const BRAND        = '#A2CB8B';
-const BRAND_DARK   = '#7aab65';
-const BRAND_LIGHT  = '#e8f5e2';
-const BUYER_COLOR  = '#3b82f6';
+const BRAND = '#A2CB8B';
+const BRAND_DARK = '#7aab65';
+const BRAND_LIGHT = '#e8f5e2';
+const BUYER_COLOR = '#3b82f6';
 const SELLER_COLOR = '#f97316';
 
 const fmt = (n) =>
@@ -139,10 +141,10 @@ const brandBtn = {
 function AuthImage({ conversationId, messageId, alt, className, onClick }) {
   const [blobUrl, setBlobUrl] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [failed,  setFailed]  = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    let cancelled  = false;
+    let cancelled = false;
     let currentUrl = null;
 
     const load = async () => {
@@ -200,7 +202,7 @@ function AuthImage({ conversationId, messageId, alt, className, onClick }) {
   if (loading)
     return (
       <div className={`${className} flex items-center justify-center bg-gray-100`}
-           style={{ minHeight: 180, minWidth: 240 }}>
+        style={{ minHeight: 180, minWidth: 240 }}>
         <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
       </div>
     );
@@ -208,14 +210,14 @@ function AuthImage({ conversationId, messageId, alt, className, onClick }) {
   if (failed || !blobUrl)
     return (
       <div className={`${className} flex items-center justify-center bg-gray-100 text-gray-400 text-xs p-4`}
-           style={{ minHeight: 180, minWidth: 240 }}>
+        style={{ minHeight: 180, minWidth: 240 }}>
         Failed to load image
       </div>
     );
 
   return (
     <img src={blobUrl} alt={alt} className={className}
-         onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }} />
+      onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }} />
   );
 }
 
@@ -244,31 +246,31 @@ function AuthFileLink({ conversationId, messageId, fileName, children }) {
         );
 
       let token = getAccessToken();
-      let res   = await doFetch(token);
+      let res = await doFetch(token);
 
       if (res.status === 401) {
         token = await refreshAccessToken();
-        res   = await doFetch(token);
+        res = await doFetch(token);
       }
 
       if (!res.ok) throw new Error('Download failed');
       const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
       a.href = url; a.download = fileName || `file-${messageId}`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch { alert('Failed to download file'); }
-    finally  { setDownloading(false); }
+    finally { setDownloading(false); }
   };
 
   return (
     <button onClick={handleDownload} disabled={downloading} className="w-full text-left">
       {downloading
         ? <div className="flex items-center gap-2 px-4 py-3">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-xs">Downloading...</span>
-          </div>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-xs">Downloading...</span>
+        </div>
         : children}
     </button>
   );
@@ -282,27 +284,31 @@ export function TradeChatScreen({
   dealId, tradeProposalId, tradeIntentId,
   isOwner = false, onClose, onDealCompleted
 }) {
-  const [messages,           setMessages]           = useState([]);
-  const [input,              setInput]              = useState('');
-  const [connected,          setConnected]          = useState(false);
-  const [connecting,         setConnecting]         = useState(true);
-  const [historyLoading,     setHistoryLoading]     = useState(true);
-  const [error,              setError]              = useState('');
-  const [sending,            setSending]            = useState(false);
-  const [uploading,          setUploading]          = useState(false);
-  const [imagePreview,       setImagePreview]       = useState(null);
-  const [showScheduleModal,  setShowScheduleModal]  = useState(false);
-  const [completingDeal,     setCompletingDeal]     = useState(false);
-  const [dealSuccessMsg,     setDealSuccessMsg]     = useState('');
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [connected, setConnected] = useState(false);
+  const [connecting, setConnecting] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [completingDeal, setCompletingDeal] = useState(false);
+  const [dealSuccessMsg, setDealSuccessMsg] = useState('');
+  const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+  const [targetParticipantId, setTargetParticipantId] = useState('');
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState('');
 
   const clientRef = useRef(null);
   const bottomRef = useRef(null);
-  const inputRef  = useRef(null);
-  const fileRef   = useRef(null);
+  const inputRef = useRef(null);
+  const fileRef = useRef(null);
 
-  const user          = getUserData() || {};
+  const user = getUserData() || {};
   const currentUserId = String(user.id || user.userId || user.memberId || '');
-  const currentName   = user.fullName || '';
+  const currentName = user.fullName || '';
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 400); }, []);
@@ -314,7 +320,7 @@ export function TradeChatScreen({
       const fd = new FormData();
       fd.append('chatRequestType', 'FETCH_CHAT');
       fd.append('conversationId', String(conversationId));
-      const res  = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
+      const res = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to load history');
       setMessages(data?.messageResponses || []);
@@ -385,7 +391,7 @@ export function TradeChatScreen({
               if (msg.messageId && prev.some(m => m.messageId === msg.messageId)) return prev;
               return [...prev, msg];
             });
-          } catch {}
+          } catch { }
         });
       },
 
@@ -393,14 +399,14 @@ export function TradeChatScreen({
         console.warn('⚠️ STOMP error:', f.headers?.message);
         setConnected(false);
         setConnecting(false);
-        try { client.deactivate(); } catch {}
+        try { client.deactivate(); } catch { }
       },
 
       onWebSocketError: (e) => {
         console.warn('⚠️ Ngrok WebSocket proxy restricted. Switching chat to real-time REST mode.');
         setConnected(false);
         setConnecting(false);
-        try { client.deactivate(); } catch {}
+        try { client.deactivate(); } catch { }
       },
 
       onDisconnect: () => {
@@ -413,7 +419,7 @@ export function TradeChatScreen({
     client.activate();
 
     return () => {
-      try { client.deactivate(); } catch {}
+      try { client.deactivate(); } catch { }
     };
   }, [conversationId]);
 
@@ -481,7 +487,7 @@ export function TradeChatScreen({
       fd.append('chatRequestType', 'UPLOAD_MEDIA');
       fd.append('conversationId', String(conversationId));
       fd.append('file', file);
-      const res  = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
+      const res = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
       const uploaded = data?.messageResponse || data?.messageResponses?.[0];
@@ -546,6 +552,64 @@ export function TradeChatScreen({
       setError(err.message || 'Failed to mark deal completed');
     } finally {
       setCompletingDeal(false);
+    }
+  };
+
+  const handleInviteParticipant = async (e) => {
+    if (e) e.preventDefault();
+    if (!targetParticipantId || !targetParticipantId.trim()) {
+      setInviteError('Please enter a valid Participant ID.');
+      return;
+    }
+
+    setInviting(true);
+    setInviteError('');
+    try {
+      let fetchedDealId = dealId;
+      if (!fetchedDealId && conversationId) {
+        try {
+          const inboxFd = new FormData();
+          inboxFd.append('chatRequestType', 'FETCH_INBOX');
+          const inboxRes = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, inboxFd);
+          const inboxData = await inboxRes.json();
+          const convs = inboxData?.conversations || [];
+          const match = convs.find(c => String(c.conversationId) === String(conversationId));
+          if (match?.dealId) fetchedDealId = match.dealId;
+        } catch (e) {}
+      }
+
+      const fd = new FormData();
+      fd.append('chatRequestType', 'INVITE_PARTICIPANT');
+      fd.append('conversationId', String(conversationId));
+      fd.append('participantId', String(targetParticipantId.trim()));
+      if (fetchedDealId) {
+        fd.append('dealId', String(fetchedDealId));
+      }
+
+      console.log('🚀 [INVITE_PARTICIPANT] Sending HTTP POST request to /cs-network/chat-operations with FormData:', {
+        chatRequestType: 'INVITE_PARTICIPANT',
+        conversationId: String(conversationId),
+        participantId: String(targetParticipantId.trim()),
+        ...(fetchedDealId && { dealId: String(fetchedDealId) }),
+      });
+
+      const res = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
+      const data = await res.json();
+      console.log('✅ [INVITE_PARTICIPANT] Response:', data);
+
+      if (!res.ok || data?.status >= 400 || (data?.error && data?.error !== 'OK')) {
+        throw new Error(data?.message || data?.error || 'Failed to add lead / invite participant');
+      }
+
+      setDealSuccessMsg(data?.message || '✓ Lead participant added to conversation successfully!');
+      setShowAddLeadModal(false);
+      setTargetParticipantId('');
+      fetchHistory();
+    } catch (err) {
+      console.error('❌ [INVITE_PARTICIPANT] Error:', err);
+      setInviteError(err.message || 'Failed to invite participant.');
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -621,13 +685,13 @@ export function TradeChatScreen({
     return false;
   };
 
-  const getSenderName  = (msg) => msg.senderName || msg.createdByName || msg.sender?.fullName || 'Trader';
-  const getMsgTime     = (msg) => fmtTime(msg.sentAt || msg.createdAt || msg.timestamp);
-  const isImageMsg     = (msg) => (msg.fileType || '').toLowerCase().startsWith('image/');
-  const formatFileSize = (b)   => {
+  const getSenderName = (msg) => msg.senderName || msg.createdByName || msg.sender?.fullName || 'Trader';
+  const getMsgTime = (msg) => fmtTime(msg.sentAt || msg.createdAt || msg.timestamp);
+  const isImageMsg = (msg) => (msg.fileType || '').toLowerCase().startsWith('image/');
+  const formatFileSize = (b) => {
     if (!b) return '';
-    if (b < 1024)         return b + ' B';
-    if (b < 1024 * 1024)  return (b / 1024).toFixed(1) + ' KB';
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
     return (b / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
@@ -643,7 +707,7 @@ export function TradeChatScreen({
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
       >
         <div className="flex-shrink-0 px-5 py-4 flex items-center justify-between gap-3"
-             style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
+          style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-10 w-10 rounded-full bg-white/25 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
               {(otherPartyName || 'T').charAt(0).toUpperCase()}
@@ -651,9 +715,8 @@ export function TradeChatScreen({
             <div className="min-w-0">
               <p className="text-white font-bold text-sm truncate">{otherPartyName || title || 'Trade Chat'}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                  connected ? 'bg-emerald-300' : connecting ? 'bg-yellow-300 animate-pulse' : 'bg-red-400'
-                }`} />
+                <span className={`h-2 w-2 rounded-full flex-shrink-0 ${connected ? 'bg-emerald-300' : connecting ? 'bg-yellow-300 animate-pulse' : 'bg-red-400'
+                  }`} />
                 <span className="text-white/80 text-[11px] font-medium">
                   {connected ? 'Connected' : connecting ? 'Connecting...' : 'Disconnected'}
                 </span>
@@ -672,6 +735,17 @@ export function TradeChatScreen({
                 <span className="hidden sm:inline">{dealSuccessMsg ? 'Completed ✓' : 'Mark Complete'}</span>
               </button>
             )}
+            <button
+              onClick={() => {
+                setInviteError('');
+                setShowAddLeadModal(true);
+              }}
+              className="flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-3 py-1.5 transition shadow-sm"
+              title="Add Lead / Invite Participant to this chat"
+            >
+              <UserPlus className="h-4 w-4 text-white" />
+              <span className="hidden sm:inline">Add Lead</span>
+            </button>
             <button
               onClick={() => setShowScheduleModal(true)}
               className="flex items-center gap-1.5 rounded-xl bg-white/20 px-3 py-1.5 text-white hover:bg-white/30 transition text-xs font-semibold shadow-sm"
@@ -706,7 +780,7 @@ export function TradeChatScreen({
         </AnimatePresence>
 
         <div className="flex-1 overflow-y-auto px-4 py-5 space-y-3"
-             style={{ background: 'linear-gradient(180deg, #f8fdf5 0%, #f0f9eb 100%)' }}>
+          style={{ background: 'linear-gradient(180deg, #f8fdf5 0%, #f0f9eb 100%)' }}>
           {historyLoading && (
             <div className="flex flex-col items-center justify-center py-8 gap-3">
               <Loader2 className="h-6 w-6 animate-spin" style={{ color: BRAND_DARK }} />
@@ -726,9 +800,9 @@ export function TradeChatScreen({
           )}
           <AnimatePresence initial={false}>
             {messages.map((msg, idx) => {
-              const mine     = isMine(msg);
+              const mine = isMine(msg);
               const showName = !mine && (idx === 0 || isMine(messages[idx - 1]));
-              const isFile   = msg.messageType === 'FILE' || !!msg.fileUrl;
+              const isFile = msg.messageType === 'FILE' || !!msg.fileUrl;
               return (
                 <motion.div key={msg.messageId ? `msg-${msg.messageId}-${idx}` : `msg-idx-${idx}`}
                   initial={{ opacity: 0, y: 10, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -737,7 +811,7 @@ export function TradeChatScreen({
                   <div className={`max-w-[78%] ${mine ? 'flex flex-col items-end' : 'flex gap-2 items-end'}`}>
                     {!mine && (
                       <div className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 mb-1"
-                           style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }}>
+                        style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }}>
                         {getSenderName(msg).charAt(0).toUpperCase()}
                       </div>
                     )}
@@ -746,9 +820,8 @@ export function TradeChatScreen({
                         <p className="text-[10px] font-bold text-gray-500 mb-1 ml-1">{getSenderName(msg)}</p>
                       )}
                       {isFile ? (
-                        <div className={`rounded-2xl overflow-hidden shadow-md ${
-                          mine ? 'rounded-tr-none text-white' : 'rounded-tl-none bg-white border border-gray-200 text-gray-900'
-                        }`} style={mine ? { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' } : { background: '#ffffff' }}>
+                        <div className={`rounded-2xl overflow-hidden shadow-md ${mine ? 'rounded-tr-none text-white' : 'rounded-tl-none bg-white border border-gray-200 text-gray-900'
+                          }`} style={mine ? { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' } : { background: '#ffffff' }}>
                           {isImageMsg(msg) ? (
                             <AuthImage
                               conversationId={msg.conversationId} messageId={msg.messageId}
@@ -756,8 +829,8 @@ export function TradeChatScreen({
                               className="max-w-[280px] max-h-[280px] object-cover hover:opacity-90 transition rounded-2xl"
                               onClick={() => setImagePreview({
                                 conversationId: msg.conversationId,
-                                messageId:      msg.messageId,
-                                fileName:       msg.fileName,
+                                messageId: msg.messageId,
+                                fileName: msg.fileName,
                               })} />
                           ) : (
                             <AuthFileLink conversationId={msg.conversationId} messageId={msg.messageId} fileName={msg.fileName}>
@@ -781,9 +854,8 @@ export function TradeChatScreen({
                           )}
                         </div>
                       ) : (
-                        <div className={`rounded-2xl px-4 py-2.5 shadow-md ${
-                          mine ? 'rounded-tr-none text-white' : 'rounded-tl-none bg-white border border-gray-200 text-gray-900'
-                        }`} style={mine ? { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' } : { background: '#ffffff' }}>
+                        <div className={`rounded-2xl px-4 py-2.5 shadow-md ${mine ? 'rounded-tr-none text-white' : 'rounded-tl-none bg-white border border-gray-200 text-gray-900'
+                          }`} style={mine ? { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' } : { background: '#ffffff' }}>
                           <p className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${mine ? 'text-white' : 'text-gray-900'}`}>
                             {msg.content}
                           </p>
@@ -826,7 +898,7 @@ export function TradeChatScreen({
                 className="w-full resize-none rounded-2xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ minHeight: '48px', maxHeight: '120px' }}
                 onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; e.target.style.background = '#fff'; }}
-                onBlur={e  => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }}
+                onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }}
               />
             </div>
             <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -876,6 +948,82 @@ export function TradeChatScreen({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showAddLeadModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-4 border border-gray-100"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+                    <UserPlus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-gray-900 text-base">Add Lead / Invite Participant</h3>
+                    <p className="text-xs text-gray-500">Invite a user to conversation #{conversationId}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAddLeadModal(false)}
+                  className="p-1 rounded-full text-gray-400 hover:text-gray-600 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {inviteError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 text-red-600 text-xs font-semibold border border-red-200">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{inviteError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleInviteParticipant} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                    Participant ID <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter User / Participant ID (e.g. 5)"
+                    value={targetParticipantId}
+                    onChange={(e) => setTargetParticipantId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
+                    autoFocus
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Enter the numeric User ID of the target participant to add them to this chat.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddLeadModal(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={inviting}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-sm disabled:opacity-50"
+                  >
+                    {inviting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                    <span>{inviting ? 'Adding...' : 'Add Lead'}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -885,41 +1033,41 @@ export function TradeChatScreen({
 // ══════════════════════════════════════════════
 export function InboxTab() {
   const [conversations, setConversations] = useState([]);
-  const [loading,       setLoading]       = useState(false);
-  const [error,         setError]         = useState('');
-  const [activeChat,    setActiveChat]    = useState(null);
-  const [search,        setSearch]        = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [activeChat, setActiveChat] = useState(null);
+  const [search, setSearch] = useState('');
 
   const fetchInbox = useCallback(async () => {
     setLoading(true); setError('');
     try {
       const fd = new FormData();
       fd.append('chatRequestType', 'FETCH_INBOX');
-      const res  = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
+      const res = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to fetch inbox');
       setConversations(data?.conversations || []);
     } catch (err) { setError(err.message || 'Failed to load inbox'); }
-    finally       { setLoading(false); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchInbox(); }, [fetchInbox]);
 
-  const filtered    = conversations.filter(c =>
+  const filtered = conversations.filter(c =>
     !search || (c.participantName || '').toLowerCase().includes(search.toLowerCase())
   );
   const totalUnread = conversations.reduce((s, c) => s + (c.unreadCount || 0), 0);
 
   const fmtRelative = (iso) => {
     if (!iso) return '';
-    const diff  = Date.now() - new Date(iso).getTime();
-    const mins  = Math.floor(diff / 60000);
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
-    const days  = Math.floor(diff / 86400000);
-    if (mins  < 1)  return 'just now';
-    if (mins  < 60) return `${mins}m ago`;
+    const days = Math.floor(diff / 86400000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
     if (hours < 24) return `${hours}h ago`;
-    if (days  < 7)  return `${days}d ago`;
+    if (days < 7) return `${days}d ago`;
     return fmtDate(iso);
   };
 
@@ -932,7 +1080,7 @@ export function InboxTab() {
               <h2 className="text-base font-extrabold text-gray-900">Inbox</h2>
               {totalUnread > 0 && (
                 <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white"
-                      style={{ background: BRAND_DARK }}>
+                  style={{ background: BRAND_DARK }}>
                   {totalUnread}
                 </span>
               )}
@@ -951,7 +1099,7 @@ export function InboxTab() {
             onChange={e => setSearch(e.target.value)}
             className="w-full rounded-xl border border-white/60 bg-white/40 backdrop-blur pl-10 pr-4 py-2.5 text-sm text-gray-800 outline-none transition"
             onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = `0 0 0 2px ${BRAND}40`; }}
-            onBlur={e  => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; }}
+            onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; }}
           />
         </div>
 
@@ -992,17 +1140,17 @@ export function InboxTab() {
                   whileHover={{ y: -2 }} onClick={() => setActiveChat(conv)}
                   className="flex items-center gap-4 rounded-2xl bg-white border cursor-pointer p-4 transition-all"
                   style={{
-                    boxShadow:   '0 4px 20px rgba(0,0,0,0.06)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
                     borderColor: conv.unreadCount > 0 ? `${BRAND}50` : 'rgba(229,231,235,0.8)',
                   }}>
                   <div className="relative flex-shrink-0">
                     <div className="h-12 w-12 rounded-full flex items-center justify-center text-base font-bold text-white"
-                         style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
+                      style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
                       {(conv.participantName || 'T').charAt(0).toUpperCase()}
                     </div>
                     {conv.unreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
-                            style={{ background: '#ef4444' }}>
+                        style={{ background: '#ef4444' }}>
                         {conv.unreadCount}
                       </span>
                     )}
@@ -1024,7 +1172,7 @@ export function InboxTab() {
                         {conv.lastMessage || 'No messages yet — tap to open'}
                       </p>
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
-                            style={{ background: `${BRAND}20`, color: BRAND_DARK }}>
+                        style={{ background: `${BRAND}20`, color: BRAND_DARK }}>
                         Chat
                       </span>
                     </div>
@@ -1074,12 +1222,12 @@ function WindOpsShell({
 
   return (
     <div className="min-h-screen w-full p-3 sm:p-6 font-[Manrope,sans-serif]"
-         style={{ background: `linear-gradient(135deg, ${BRAND_LIGHT} 0%, #f0f9eb 50%, ${BRAND_LIGHT} 100%)` }}>
+      style={{ background: `linear-gradient(135deg, ${BRAND_LIGHT} 0%, #f0f9eb 50%, ${BRAND_LIGHT} 100%)` }}>
       <div className="mx-auto flex min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-3rem)] lg:h-[calc(100vh-3rem)] max-w-[1400px] overflow-hidden rounded-[28px] sm:rounded-[34px] border border-white/40 bg-white/25 backdrop-blur-xl"
-           style={{ boxShadow: `0 30px 90px ${BRAND}40` }}>
+        style={{ boxShadow: `0 30px 90px ${BRAND}40` }}>
 
         <aside className="hidden lg:flex w-60 flex-shrink-0 flex-col p-6 text-white"
-               style={{ background: `linear-gradient(180deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
+          style={{ background: `linear-gradient(180deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
           <div className="flex items-center gap-3 mb-10">
             <div className="h-10 w-10 rounded-2xl bg-white/20 grid place-items-center">
               <Wheat className="h-5 w-5" />
@@ -1249,7 +1397,7 @@ function WindOpsShell({
                 <input placeholder="Search" value={searchValue} onChange={e => onSearchChange(e.target.value)}
                   className="w-full rounded-xl border border-white/60 bg-white/40 backdrop-blur px-10 py-2.5 text-sm text-gray-800 outline-none transition"
                   onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = `0 0 0 2px ${BRAND}40`; }}
-                  onBlur={e  => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; }}
+                  onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; }}
                 />
               </div>
             </div>
@@ -1322,7 +1470,7 @@ function InfoRow({ icon: Icon, label, value, highlight }) {
   return (
     <div className="flex items-center gap-3">
       <div className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0"
-           style={{ background: `${BRAND}18`, color: BRAND_DARK }}>
+        style={{ background: `${BRAND}18`, color: BRAND_DARK }}>
         <Icon className="h-3.5 w-3.5" />
       </div>
       <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
@@ -1335,7 +1483,7 @@ function InfoRow({ icon: Icon, label, value, highlight }) {
 
 // ── IntentCard ──
 const IntentCard = forwardRef(function IntentCard({ intent, onView, onSendProposal, isOwn }, ref) {
-  const st    = STATUS_CONFIG[intent.status] || STATUS_CONFIG.OPEN;
+  const st = STATUS_CONFIG[intent.status] || STATUS_CONFIG.OPEN;
   const isBuy = intent.intentType === 'BUY';
   const showPropose = intent.status === 'OPEN' && !!onSendProposal && !isOwn;
 
@@ -1356,7 +1504,7 @@ const IntentCard = forwardRef(function IntentCard({ intent, onView, onSendPropos
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <div className="h-11 w-11 rotate-45 rounded-lg flex items-center justify-center shadow-md flex-shrink-0"
-                 style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)`, boxShadow: `0 6px 16px ${BRAND}55` }}>
+              style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)`, boxShadow: `0 6px 16px ${BRAND}55` }}>
               <div className="-rotate-45">
                 {isBuy ? <ShoppingCart className="h-5 w-5 text-white" /> : <Store className="h-5 w-5 text-white" />}
               </div>
@@ -1371,19 +1519,21 @@ const IntentCard = forwardRef(function IntentCard({ intent, onView, onSendPropos
               <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} /> {st.label}
             </span>
             <span className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                  style={{ background: isBuy
-                    ? `linear-gradient(135deg, ${BUYER_COLOR}, #2563eb)`
-                    : `linear-gradient(135deg, ${SELLER_COLOR}, #ea580c)` }}>
+              style={{
+                background: isBuy
+                  ? `linear-gradient(135deg, ${BUYER_COLOR}, #2563eb)`
+                  : `linear-gradient(135deg, ${SELLER_COLOR}, #ea580c)`
+              }}>
               {isBuy ? 'BUY' : 'SELL'}
             </span>
           </div>
         </div>
         <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${BRAND}55, transparent)` }} />
         <div className="space-y-2.5 mb-4">
-          <InfoRow icon={Package}      label="Quantity"     value={`${fmt(intent.quantity)} ${intent.unit}`} />
-          <InfoRow icon={TrendingUp}   label="Price / Unit" value={fmtCurrency(intent.pricePerUnit, intent.currency)} />
-          <InfoRow icon={BarChart3}    label="Total Value"  value={fmtCurrency(intent.totalValue, intent.currency)} highlight />
-          <InfoRow icon={CheckCircle2} label="Expires"      value={fmtDate(intent.expiresAt)} />
+          <InfoRow icon={Package} label="Quantity" value={`${fmt(intent.quantity)} ${intent.unit}`} />
+          <InfoRow icon={TrendingUp} label="Price / Unit" value={fmtCurrency(intent.pricePerUnit, intent.currency)} />
+          <InfoRow icon={BarChart3} label="Total Value" value={fmtCurrency(intent.totalValue, intent.currency)} highlight />
+          <InfoRow icon={CheckCircle2} label="Expires" value={fmtDate(intent.expiresAt)} />
         </div>
         <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: `${BRAND}25` }}>
           <div className="min-w-0 flex-1">
@@ -1418,10 +1568,10 @@ export const ProposalCard = forwardRef(function ProposalCard(
     console.log('🔍 [PROPOSAL_CARD] Proposal item rendered:', proposal);
   }, [proposal]);
 
-  const st         = PROPOSAL_STATUS_CONFIG[proposal.status] || PROPOSAL_STATUS_CONFIG.PENDING;
+  const st = PROPOSAL_STATUS_CONFIG[proposal.status] || PROPOSAL_STATUS_CONFIG.PENDING;
   const StatusIcon = st.icon;
-  const canAccept  = isOwner && proposal.status === 'PENDING';
-  const canChat    = proposal.status === 'ACCEPTED' && !!proposal.conversationId && typeof onOpenChat === 'function';
+  const canAccept = isOwner && proposal.status === 'PENDING';
+  const canChat = proposal.status === 'ACCEPTED' && typeof onOpenChat === 'function';
 
   return (
     <motion.div ref={ref} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -1429,25 +1579,25 @@ export const ProposalCard = forwardRef(function ProposalCard(
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       className="relative overflow-hidden rounded-2xl bg-white border"
       style={{
-        boxShadow:   '0 8px 32px rgba(0,0,0,0.07)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.07)',
         borderColor: proposal.status === 'ACCEPTED' || proposal.status === 'COMPLETED' ? `${BRAND}40` : 'rgba(229,231,235,0.8)',
       }}>
       {(proposal.status === 'ACCEPTED' || proposal.status === 'COMPLETED') && (
         <div className="absolute inset-0 opacity-5 rounded-2xl"
-             style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }} />
+          style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }} />
       )}
       <div className="h-1 w-full" style={{
         background: proposal.status === 'ACCEPTED' || proposal.status === 'COMPLETED'
           ? `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})`
           : proposal.status === 'PENDING'
-          ? 'linear-gradient(90deg, #f59e0b, #d97706)'
-          : 'linear-gradient(90deg, #ef4444, #dc2626)',
+            ? 'linear-gradient(90deg, #f59e0b, #d97706)'
+            : 'linear-gradient(90deg, #ef4444, #dc2626)',
       }} />
       <div className="relative z-10 p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                 style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
+              style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_DARK} 100%)` }}>
               {(proposal.proposerName || 'P').charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -1462,10 +1612,10 @@ export const ProposalCard = forwardRef(function ProposalCard(
         <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${BRAND}40, transparent)` }} />
         <div className="grid grid-cols-2 gap-3 mb-4">
           {[
-            { icon: Package,    label: 'Quantity',   value: fmt(proposal.quantityRequested), plain: true  },
-            { icon: DollarSign, label: 'Price/Unit', value: `₹${fmt(proposal.price)}`,       style: true  },
-            { icon: Calendar,   label: 'Timeline',   value: `${proposal.timelineDays} days`, plain: true  },
-            { icon: Clock,      label: 'Deadline',   value: fmtDate(proposal.deadlineDate),  plain: true  },
+            { icon: Package, label: 'Quantity', value: fmt(proposal.quantityRequested), plain: true },
+            { icon: DollarSign, label: 'Price/Unit', value: `₹${fmt(proposal.price)}`, style: true },
+            { icon: Calendar, label: 'Timeline', value: `${proposal.timelineDays} days`, plain: true },
+            { icon: Clock, label: 'Deadline', value: fmtDate(proposal.deadlineDate), plain: true },
           ].map(item => (
             <div key={item.label} className="rounded-xl bg-gray-50 p-3">
               <div className="flex items-center gap-1.5 mb-1">
@@ -1479,7 +1629,7 @@ export const ProposalCard = forwardRef(function ProposalCard(
           ))}
         </div>
         <div className="rounded-xl px-4 py-3 mb-4 flex items-center justify-between"
-             style={{ background: `${BRAND}12`, border: `1px solid ${BRAND}30` }}>
+          style={{ background: `${BRAND}12`, border: `1px solid ${BRAND}30` }}>
           <span className="text-xs font-semibold text-gray-600">Total Value</span>
           <span className="text-sm font-extrabold" style={{ color: BRAND_DARK }}>
             ₹{fmt((proposal.quantityRequested || 0) * (proposal.price || 0))}
@@ -1505,10 +1655,10 @@ export const ProposalCard = forwardRef(function ProposalCard(
         {proposal.status === 'ACCEPTED' && (
           <div className="space-y-2.5">
             <div className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold"
-                 style={{ background: BRAND_LIGHT, color: BRAND_DARK }}>
+              style={{ background: BRAND_LIGHT, color: BRAND_DARK }}>
               <CheckCheck className="h-4 w-4" /> Proposal Accepted
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-2">
               {canChat && (
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
@@ -1556,34 +1706,34 @@ export const ProposalCard = forwardRef(function ProposalCard(
 // ── CreateProposalModal ──
 function CreateProposalModal({ intent, onClose, onSuccess }) {
   const [form, setForm] = useState({
-    quantityRequested: intent?.quantity     ? String(intent.quantity)     : '',
-    pricePerUnit:      intent?.pricePerUnit ? String(intent.pricePerUnit) : '',
-    timelineDays:      '30',
+    quantityRequested: intent?.quantity ? String(intent.quantity) : '',
+    pricePerUnit: intent?.pricePerUnit ? String(intent.pricePerUnit) : '',
+    timelineDays: '30',
   });
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [error, setError] = useState('');
   const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
     if (!form.quantityRequested) return setError('Quantity is required');
-    if (!form.pricePerUnit)      return setError('Price per unit is required');
-    if (!form.timelineDays)      return setError('Timeline is required');
+    if (!form.pricePerUnit) return setError('Price per unit is required');
+    if (!form.timelineDays) return setError('Timeline is required');
     setLoading(true);
     try {
       await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
         method: 'POST',
         body: JSON.stringify({
           memberRequestType: 'CREATE_PROPOSAL',
-          tradeIntentId:     intent.id,
+          tradeIntentId: intent.id,
           quantityRequested: Number(form.quantityRequested),
-          pricePerUnit:      Number(form.pricePerUnit),
-          timelineDays:      Number(form.timelineDays),
+          pricePerUnit: Number(form.pricePerUnit),
+          timelineDays: Number(form.timelineDays),
         }),
       });
       onSuccess?.(); onClose();
     } catch (err) { setError(err.message || 'Failed to create proposal'); }
-    finally       { setLoading(false); }
+    finally { setLoading(false); }
   };
 
   const estimatedTotal = (Number(form.quantityRequested) || 0) * (Number(form.pricePerUnit) || 0);
@@ -1627,7 +1777,7 @@ function CreateProposalModal({ intent, onClose, onSuccess }) {
                   value={form.quantityRequested} onChange={e => update('quantityRequested', e.target.value)}
                   className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 pr-16 text-sm text-gray-800 outline-none transition-all"
                   onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; e.target.style.background = '#fff'; }}
-                  onBlur={e  => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }} />
+                  onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }} />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400">{intent?.unit}</span>
               </div>
             </div>
@@ -1639,7 +1789,7 @@ function CreateProposalModal({ intent, onClose, onSuccess }) {
                   value={form.pricePerUnit} onChange={e => update('pricePerUnit', e.target.value)}
                   className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 pl-8 pr-4 py-3 text-sm text-gray-800 outline-none transition-all"
                   onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; e.target.style.background = '#fff'; }}
-                  onBlur={e  => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }} />
+                  onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }} />
               </div>
               {intent?.pricePerUnit && form.pricePerUnit && (
                 <p className={`text-xs mt-1 font-medium ${Number(form.pricePerUnit) <= intent.pricePerUnit ? 'text-emerald-600' : 'text-orange-600'}`}>
@@ -1666,7 +1816,7 @@ function CreateProposalModal({ intent, onClose, onSuccess }) {
                 onChange={e => update('timelineDays', e.target.value)}
                 className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition-all"
                 onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; e.target.style.background = '#fff'; }}
-                onBlur={e  => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }} />
+                onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }} />
             </div>
             {estimatedTotal > 0 && (
               <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
@@ -1736,12 +1886,12 @@ function IntentDetailModal({ intent, onClose, onSendProposal, onViewProposals, i
           {intent.description && <p className="text-sm text-gray-600 leading-relaxed">{intent.description}</p>}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Category',  value: intent.category },
-              { label: 'Quantity',  value: `${fmt(intent.quantity)} ${intent.unit}` },
-              { label: 'Price/Unit',value: fmtCurrency(intent.pricePerUnit, intent.currency) },
-              { label: 'Total',     value: fmtCurrency(intent.totalValue, intent.currency) },
-              { label: 'Expires',   value: fmtDate(intent.expiresAt) },
-              { label: 'Created',   value: fmtDate(intent.createdAt) },
+              { label: 'Category', value: intent.category },
+              { label: 'Quantity', value: `${fmt(intent.quantity)} ${intent.unit}` },
+              { label: 'Price/Unit', value: fmtCurrency(intent.pricePerUnit, intent.currency) },
+              { label: 'Total', value: fmtCurrency(intent.totalValue, intent.currency) },
+              { label: 'Expires', value: fmtDate(intent.expiresAt) },
+              { label: 'Created', value: fmtDate(intent.createdAt) },
             ].map(item => (
               <div key={item.label} className="rounded-xl bg-gray-50 p-3">
                 <p className="text-xs text-gray-500 mb-0.5">{item.label}</p>
@@ -1783,44 +1933,97 @@ function IntentDetailModal({ intent, onClose, onSendProposal, onViewProposals, i
 
 // ── ReceivedProposalsContent ──
 export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = false, onRefreshMyIntents }) {
-  const [proposals,        setProposals]        = useState([]);
+  const [proposals, setProposals] = useState([]);
   const [proposalsLoading, setProposalsLoading] = useState(false);
-  const [accepting,        setAccepting]        = useState(null);
-  const [error,            setError]            = useState('');
-  const [successMsg,       setSuccessMsg]       = useState('');
-  const [chatProposal,     setChatProposal]     = useState(null);
-  const [completingId,     setCompletingId]     = useState(null);
-  const [statusFilter,     setStatusFilter]     = useState('ALL');
+  const [accepting, setAccepting] = useState(null);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [chatProposal, setChatProposal] = useState(null);
+  const [completingId, setCompletingId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   const fetchAllReceivedProposals = useCallback(async () => {
     setProposalsLoading(true);
     setError('');
     try {
-      if (!myIntents || myIntents.length === 0) {
-        setProposals([]);
-        setProposalsLoading(false);
-        return;
+      const myUserData = getUserData() || {};
+      const myIdStr = String(myUserData?.id || myUserData?.userId || myUserData?.memberId || '').trim().toLowerCase();
+
+      let targetIntents = myIntents || [];
+
+      // If myIntents is empty, fetch my intents directly
+      if (!targetIntents || targetIntents.length === 0) {
+        try {
+          const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+            method: 'POST',
+            body: JSON.stringify({ memberRequestType: 'FETCH_MY_INTENT' }),
+          });
+          const list =
+            data?.myIntents?.content || data?.myIntents ||
+            data?.intents?.content || data?.intents ||
+            data?.content || (Array.isArray(data) ? data : []);
+          if (Array.isArray(list) && list.length > 0) {
+            targetIntents = list;
+          }
+        } catch (e) {
+          console.warn('Failed to fetch my intents inside ReceivedProposalsContent:', e);
+        }
       }
 
-      const results = await Promise.all(
-        myIntents.map(async (intent) => {
-          try {
-            const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
-              method: 'POST',
-              body: JSON.stringify({
-                memberRequestType: 'FETCH_PROPOSALS_FOR_INTENT',
-                tradeIntentId: intent.id,
-              }),
-            });
-            return data?.proposals || [];
-          } catch (e) {
-            return [];
-          }
-        })
-      );
+      // Fetch received proposals for all target intents
+      let intentProps = [];
+      if (targetIntents && targetIntents.length > 0) {
+        const results = await Promise.all(
+          targetIntents.map(async (intent) => {
+            try {
+              const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  memberRequestType: 'FETCH_PROPOSALS_FOR_INTENT',
+                  tradeIntentId: intent.id,
+                }),
+              });
+              const list = data?.proposals?.content || data?.proposals || data?.content || (Array.isArray(data) ? data : []);
+              return Array.isArray(list) ? list : [];
+            } catch (e) {
+              return [];
+            }
+          })
+        );
+        intentProps = results.flat();
+      }
 
-      const allProps = results.flat();
-      setProposals(allProps);
+      // Also fetch member proposals list to catch any assigned received proposals
+      let memberProps = [];
+      try {
+        const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+          method: 'POST',
+          body: JSON.stringify({
+            memberRequestType: 'FETCH_PROPOSALS_FOR_MEMBER',
+            page: 0,
+            size: 100,
+          }),
+        });
+        const list = data?.proposals?.content || data?.proposals || data?.content || (Array.isArray(data) ? data : []);
+        memberProps = Array.isArray(list) ? list : [];
+      } catch (e) {}
+
+      // Combine candidates and filter received proposals (where proposer is NOT current user)
+      const combined = [...intentProps, ...memberProps];
+      const map = new Map();
+      combined.forEach((p) => {
+        const id = p.proposalId || p.id || p.tradeProposalId;
+        const pProposerId = String(p.proposerId || p.proposerMemberId || p.proposerUserId || p.userId || '').trim().toLowerCase();
+
+        if (id && !map.has(id)) {
+          // Include in Received if intentProps OR if proposer is NOT the current logged in user
+          if (intentProps.some(ip => (ip.proposalId || ip.id || ip.tradeProposalId) === id) || (myIdStr && pProposerId && pProposerId !== myIdStr)) {
+            map.set(id, p);
+          }
+        }
+      });
+
+      setProposals(Array.from(map.values()));
     } catch (err) {
       setError(err.message || 'Failed to load received proposals');
     } finally {
@@ -1853,34 +2056,72 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
   };
 
   const handleMarkProposalCompleted = async (prop) => {
-    const targetId = prop.dealId || prop.tradeDealId || prop.tradeProposalId || prop.proposalId || prop.id || prop.tradeIntentId;
-    if (!targetId) {
+    setCompletingId(prop.proposalId || prop.id);
+    setError('');
+
+    let inboxDealId = null;
+    try {
+      const fd = new FormData();
+      fd.append('chatRequestType', 'FETCH_INBOX');
+      const res = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
+      const data = await res.json();
+      const convs = data?.conversations || [];
+      const match = convs.find(c => {
+        if (prop.conversationId && String(c.conversationId) === String(prop.conversationId)) return true;
+        if (prop.tradeIntentId && String(c.tradeIntentId || c.intentId) === String(prop.tradeIntentId)) return true;
+        return false;
+      }) || convs[0];
+      if (match?.dealId) inboxDealId = match.dealId;
+    } catch (e) {}
+
+    const candidateIds = Array.from(new Set([
+      inboxDealId,
+      prop.dealId,
+      prop.tradeDealId,
+      prop.deal_id,
+      prop.tradeIntentId,
+      prop.intentId,
+      prop.tradeProposalId,
+      prop.proposalId,
+      prop.id,
+    ].filter(Boolean)));
+
+    if (candidateIds.length === 0) {
       setError('Unable to mark complete: Proposal or Deal ID is missing.');
+      setCompletingId(null);
       return;
     }
 
-    setCompletingId(prop.proposalId || prop.id);
-    setError('');
-    try {
-      const payload = {
-        memberRequestType: 'MARK_DEAL_COMPLETED',
-        dealId: Number(targetId),
-        ...((prop.tradeProposalId || prop.proposalId || prop.id) && { tradeProposalId: Number(prop.tradeProposalId || prop.proposalId || prop.id) }),
-        ...((prop.tradeIntentId || prop.intentId) && { tradeIntentId: Number(prop.tradeIntentId || prop.intentId) }),
-      };
+    let lastError = null;
+    let succeeded = false;
 
-      const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+    for (const candidateId of candidateIds) {
+      try {
+        const payload = {
+          memberRequestType: 'MARK_DEAL_COMPLETED',
+          dealId: Number(candidateId),
+        };
 
-      setSuccessMsg(data?.message || '✓ Deal marked as completed! Commission ledger generated.');
-      await fetchAllReceivedProposals();
-    } catch (err) {
-      setError(err.message || 'Failed to mark deal completed');
-    } finally {
-      setCompletingId(null);
+        const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+
+        setSuccessMsg(data?.message || '✓ Deal marked as completed! Commission ledger generated.');
+        succeeded = true;
+        await fetchAllReceivedProposals();
+        break;
+      } catch (err) {
+        console.warn(`MARK_DEAL_COMPLETED failed with candidate dealId=${candidateId}:`, err);
+        lastError = err;
+      }
     }
+
+    if (!succeeded && lastError) {
+      setError(lastError.message || 'Failed to mark deal completed');
+    }
+
+    setCompletingId(null);
   };
 
   const filteredProposals = proposals.filter(p => {
@@ -1888,7 +2129,7 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
     return p.status === statusFilter;
   });
 
-  const pendingCount  = proposals.filter(p => p.status === 'PENDING').length;
+  const pendingCount = proposals.filter(p => p.status === 'PENDING').length;
   const acceptedCount = proposals.filter(p => p.status === 'ACCEPTED').length;
 
   return (
@@ -1931,10 +2172,10 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
       </div>
 
       <div className="mb-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={FileText}   label="Total Received" value={proposals.length}   delay={0.05} />
-        <StatCard icon={Clock}      label="Pending Approval" value={pendingCount}    delay={0.1}  accent="#f59e0b" />
-        <StatCard icon={CheckCheck} label="Accepted"       value={acceptedCount}    delay={0.15} accent="#10b981" />
-        <StatCard icon={Award}      label="Completed"      value={proposals.filter(p=>p.status==='COMPLETED').length} delay={0.2} accent="#6366f1" />
+        <StatCard icon={FileText} label="Total Received" value={proposals.length} delay={0.05} />
+        <StatCard icon={Clock} label="Pending Approval" value={pendingCount} delay={0.1} accent="#f59e0b" />
+        <StatCard icon={CheckCheck} label="Accepted" value={acceptedCount} delay={0.15} accent="#10b981" />
+        <StatCard icon={Award} label="Completed" value={proposals.filter(p => p.status === 'COMPLETED').length} delay={0.2} accent="#6366f1" />
       </div>
 
       {proposalsLoading || myIntentsLoading ? (
@@ -1987,36 +2228,53 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
 
 // ── SentProposalsContent ──
 export function SentProposalsContent() {
-  const [proposals,    setProposals]    = useState([]);
-  const [loading,      setLoading]      = useState(false);
-  const [error,        setError]        = useState('');
+  const [proposals, setProposals] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [page,         setPage]         = useState(0);
-  const [totalPages,   setTotalPages]   = useState(1);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [chatProposal, setChatProposal] = useState(null);
 
   const fetchMyProposals = useCallback(async (pg = 0, status = statusFilter) => {
     setLoading(true); setError('');
     try {
+      const myUserData = getUserData() || {};
+      const myIdStr = String(myUserData?.id || myUserData?.userId || myUserData?.memberId || '').trim().toLowerCase();
+
       const body = {
         memberRequestType: 'FETCH_PROPOSALS_FOR_MEMBER',
-        page: pg, size: 10, sortBy: 'createdAt', sortDirection: 'desc',
+        page: pg, size: 20, sortBy: 'createdAt', sortDirection: 'desc',
       };
       if (status !== 'ALL') body.proposalStatus = status;
+
       const data = await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
         method: 'POST', body: JSON.stringify(body),
       });
-      setProposals(data?.proposals || []);
+
+      const list = data?.proposals?.content || data?.proposals || data?.content || (Array.isArray(data) ? data : []);
+      const rawList = Array.isArray(list) ? list : [];
+
+      // Filter sent proposals (where proposer is the current logged in user)
+      const filteredSent = rawList.filter(p => {
+        const pProposerId = String(p.proposerId || p.proposerMemberId || p.proposerUserId || p.userId || '').trim().toLowerCase();
+        if (myIdStr && pProposerId) {
+          return pProposerId === myIdStr;
+        }
+        return true;
+      });
+
+      setProposals(filteredSent);
       setTotalPages(data?.totalPages || 1);
-      setTotalRecords(data?.totalRecords || 0);
+      setTotalRecords(filteredSent.length);
     } catch (err) { setError(err.message || 'Failed to load your proposals'); }
-    finally       { setLoading(false); }
+    finally { setLoading(false); }
   }, [statusFilter]);
 
   useEffect(() => { fetchMyProposals(page, statusFilter); }, [page, statusFilter, fetchMyProposals]);
 
-  const pagePendingCount  = proposals.filter(p => p.status === 'PENDING').length;
+  const pagePendingCount = proposals.filter(p => p.status === 'PENDING').length;
   const pageAcceptedCount = proposals.filter(p => p.status === 'ACCEPTED').length;
   const pageRejectedCount = proposals.filter(p => p.status === 'REJECTED').length;
 
@@ -2041,10 +2299,10 @@ export function SentProposalsContent() {
       </div>
 
       <div className="mb-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={FileText}   label="Total Records" value={totalRecords}       delay={0.05} />
-        <StatCard icon={Clock}      label="Pending"        value={pagePendingCount}  delay={0.1}  accent="#f59e0b" />
-        <StatCard icon={CheckCheck} label="Accepted"       value={pageAcceptedCount} delay={0.15} accent="#10b981" />
-        <StatCard icon={X}          label="Rejected"       value={pageRejectedCount} delay={0.2}  accent="#ef4444" />
+        <StatCard icon={FileText} label="Total Records" value={totalRecords} delay={0.05} />
+        <StatCard icon={Clock} label="Pending" value={pagePendingCount} delay={0.1} accent="#f59e0b" />
+        <StatCard icon={CheckCheck} label="Accepted" value={pageAcceptedCount} delay={0.15} accent="#10b981" />
+        <StatCard icon={X} label="Rejected" value={pageRejectedCount} delay={0.2} accent="#ef4444" />
       </div>
 
       {error && (
@@ -2077,7 +2335,7 @@ export function SentProposalsContent() {
             <AnimatePresence mode="popLayout">
               {proposals.map(proposal => (
                 <ProposalCard key={proposal.proposalId} proposal={proposal}
-                  onAccept={() => {}} isOwner={false} accepting={null}
+                  onAccept={() => { }} isOwner={false} accepting={null}
                   onOpenChat={setChatProposal} />
               ))}
             </AnimatePresence>
@@ -2128,10 +2386,10 @@ export function ProposalsTab({ myIntents, myIntentsLoading, onRefreshMyIntents }
 
       <div className="mb-6">
         <div className="inline-flex rounded-2xl p-1.5 gap-1"
-             style={{ background: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.6)', backdropFilter: 'blur(8px)' }}>
+          style={{ background: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.6)', backdropFilter: 'blur(8px)' }}>
           {[
-            { id: 'received', label: 'Received', icon: Inbox, desc: 'On your intents'    },
-            { id: 'sent',     label: 'Sent',     icon: Send,  desc: "To others' intents" },
+            { id: 'received', label: 'Received', icon: Inbox, desc: 'On your intents' },
+            { id: 'sent', label: 'Sent', icon: Send, desc: "To others' intents" },
           ].map(tab => {
             const active = subTab === tab.id;
             return (
@@ -2145,7 +2403,7 @@ export function ProposalsTab({ myIntents, myIntentsLoading, onRefreshMyIntents }
                 <div className="text-left">
                   <p className="leading-none">{tab.label}</p>
                   <p className="text-[10px] font-medium mt-0.5 leading-none"
-                     style={{ color: active ? 'rgba(255,255,255,0.8)' : '#9ca3af' }}>
+                    style={{ color: active ? 'rgba(255,255,255,0.8)' : '#9ca3af' }}>
                     {tab.desc}
                   </p>
                 </div>
@@ -2191,8 +2449,8 @@ function FilterPanel({ filters, onChange, onReset, onApply }) {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Country', key: 'country',        options: COUNTRIES       },
-          { label: 'Sector',  key: 'businessSector', options: BUSINESS_SECTORS },
+          { label: 'Country', key: 'country', options: COUNTRIES },
+          { label: 'Sector', key: 'businessSector', options: BUSINESS_SECTORS },
         ].map(f => (
           <div key={f.key} className="lg:col-span-1">
             <label className="block text-xs font-semibold text-gray-700 mb-1">{f.label}</label>
@@ -2207,10 +2465,10 @@ function FilterPanel({ filters, onChange, onReset, onApply }) {
           </div>
         ))}
         {[
-          { label: 'Keyword',         key: 'search',       placeholder: 'e.g. Rice' },
-          { label: 'Min Price',       key: 'minPrice',     placeholder: 'e.g. 100', type: 'number' },
-          { label: 'Max Price',       key: 'maxPrice',     placeholder: 'e.g. 500', type: 'number' },
-          { label: 'Timeline (days)', key: 'timelineDays', placeholder: 'e.g. 7',   type: 'number' },
+          { label: 'Keyword', key: 'search', placeholder: 'e.g. Rice' },
+          { label: 'Min Price', key: 'minPrice', placeholder: 'e.g. 100', type: 'number' },
+          { label: 'Max Price', key: 'maxPrice', placeholder: 'e.g. 500', type: 'number' },
+          { label: 'Timeline (days)', key: 'timelineDays', placeholder: 'e.g. 7', type: 'number' },
         ].map(f => (
           <div key={f.key} className="lg:col-span-1">
             <label className="block text-xs font-semibold text-gray-700 mb-1">{f.label}</label>
@@ -2260,7 +2518,7 @@ function FilterPanel({ filters, onChange, onReset, onApply }) {
 function FilterChip({ label, onRemove }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-white/35 backdrop-blur px-3 py-1 text-xs font-semibold"
-          style={{ color: BRAND_DARK }}>
+      style={{ color: BRAND_DARK }}>
       {label}
       <button onClick={onRemove} className="rounded-full p-0.5 hover:bg-white/50"><X className="h-3 w-3" /></button>
     </span>
@@ -2275,7 +2533,7 @@ function ModalInput({ label, onChange, type, min, ...props }) {
       <input type={type} min={minVal} {...props} onChange={e => onChange(e.target.value)}
         className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition-all"
         onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.background = '#fff'; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; }}
-        onBlur={e  => { e.target.style.borderColor = ''; e.target.style.background = ''; e.target.style.boxShadow = ''; }}
+        onBlur={e => { e.target.style.borderColor = ''; e.target.style.background = ''; e.target.style.boxShadow = ''; }}
       />
     </div>
   );
@@ -2289,7 +2547,7 @@ function ModalSelect({ label, options, onChange, ...props }) {
         <select {...props} onChange={e => onChange(e.target.value)}
           className="w-full appearance-none rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 pr-10 text-sm text-gray-800 outline-none transition-all"
           onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.background = '#fff'; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; }}
-          onBlur={e  => { e.target.style.borderColor = ''; e.target.style.background = ''; e.target.style.boxShadow = ''; }}>
+          onBlur={e => { e.target.style.borderColor = ''; e.target.style.background = ''; e.target.style.boxShadow = ''; }}>
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -2302,43 +2560,43 @@ function ModalSelect({ label, options, onChange, ...props }) {
 
 // ── CreateIntentModal ──
 function CreateIntentModal({ roles, onClose, onSuccess }) {
-  const canBuy  = roles.includes('BUYER');
+  const canBuy = roles.includes('BUYER');
   const canSell = roles.includes('SELLER');
   const [form, setForm] = useState({
-    intentType:  canBuy ? 'BUY' : 'SELL',
+    intentType: canBuy ? 'BUY' : 'SELL',
     category: 'Wheat', title: '', description: '',
     quantity: '', unit: 'KG', pricePerUnit: '', currency: 'INR', expiresAt: '',
   });
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [error, setError] = useState('');
   const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
     if (!form.title.trim()) return setError('Title is required');
-    if (!form.quantity)      return setError('Quantity is required');
-    if (!form.pricePerUnit)  return setError('Price per unit is required');
-    if (!form.expiresAt)     return setError('Expiry date is required');
+    if (!form.quantity) return setError('Quantity is required');
+    if (!form.pricePerUnit) return setError('Price per unit is required');
+    if (!form.expiresAt) return setError('Expiry date is required');
     setLoading(true);
     try {
       await authenticatedFetch(`${BASE_URL}/cs-network/member`, {
         method: 'POST',
         body: JSON.stringify({
           memberRequestType: 'CREATE_INTENT', franchiseId: 2,
-          intentType:   form.intentType,  category:     form.category,
-          title:        form.title,        description:  form.description,
-          quantity:     Number(form.quantity), unit:     form.unit,
+          intentType: form.intentType, category: form.category,
+          title: form.title, description: form.description,
+          quantity: Number(form.quantity), unit: form.unit,
           pricePerUnit: Number(form.pricePerUnit), currency: form.currency,
-          expiresAt:    new Date(form.expiresAt).toISOString(),
+          expiresAt: new Date(form.expiresAt).toISOString(),
         }),
       });
       onSuccess?.(); onClose();
     } catch (err) { setError(err.message || 'Something went wrong'); }
-    finally       { setLoading(false); }
+    finally { setLoading(false); }
   };
 
   const availableTypes = [];
-  if (canBuy)  availableTypes.push('BUY');
+  if (canBuy) availableTypes.push('BUY');
   if (canSell) availableTypes.push('SELL');
   if (!availableTypes.length) availableTypes.push('BUY', 'SELL');
 
@@ -2366,7 +2624,7 @@ function CreateIntentModal({ roles, onClose, onSuccess }) {
               <label className="block text-sm font-semibold text-gray-700 mb-2">Intent Type</label>
               {availableTypes.length === 1 ? (
                 <div className="rounded-xl border-2 py-3 text-center text-sm font-bold"
-                     style={{ borderColor: BRAND, background: BRAND_LIGHT, color: BRAND_DARK }}>{form.intentType}</div>
+                  style={{ borderColor: BRAND, background: BRAND_LIGHT, color: BRAND_DARK }}>{form.intentType}</div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {availableTypes.map(type => {
@@ -2395,7 +2653,7 @@ function CreateIntentModal({ roles, onClose, onSuccess }) {
                 onChange={e => update('description', e.target.value)}
                 className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition-all resize-none"
                 onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.background = '#fff'; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; }}
-                onBlur={e  => { e.target.style.borderColor = ''; e.target.style.background = ''; e.target.style.boxShadow = ''; }} />
+                onBlur={e => { e.target.style.borderColor = ''; e.target.style.background = ''; e.target.style.boxShadow = ''; }} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <ModalInput label="Quantity" type="number" placeholder="e.g. 5000" value={form.quantity} onChange={v => update('quantity', v)} />
@@ -2451,30 +2709,30 @@ const DEFAULT_FILTERS = {
 // Main Dashboard
 // ══════════════════════════════════════════════
 export default function BuyerSellerDashboard({ roles = [], onLogout }) {
-  const isBuyer  = roles.includes('BUYER');
+  const isBuyer = roles.includes('BUYER');
   const isSeller = roles.includes('SELLER');
-  const isBoth   = isBuyer && isSeller;
+  const isBoth = isBuyer && isSeller;
   const defaultFilterType = isBoth ? 'ALL' : isBuyer ? 'SELL' : 'BUY';
 
-  const [activeTab,      setActiveTab]      = useState('market');
-  const [intents,        setIntents]        = useState([]);
-  const [myIntents,      setMyIntents]      = useState([]);
-  const [myIntentIds,    setMyIntentIds]    = useState(new Set());
-  const [loading,        setLoading]        = useState(false);
-  const [myLoading,      setMyLoading]      = useState(false);
-  const [error,          setError]          = useState('');
-  const [showCreate,     setShowCreate]     = useState(false);
+  const [activeTab, setActiveTab] = useState('market');
+  const [intents, setIntents] = useState([]);
+  const [myIntents, setMyIntents] = useState([]);
+  const [myIntentIds, setMyIntentIds] = useState(new Set());
+  const [loading, setLoading] = useState(false);
+  const [myLoading, setMyLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
   const [selectedIntent, setSelectedIntent] = useState(null);
-  const [filterType,     setFilterType]     = useState(defaultFilterType);
-  const [page,           setPage]           = useState(0);
-  const [totalPages,     setTotalPages]     = useState(1);
-  const [showFilters,    setShowFilters]    = useState(false);
-  const [filters,        setFilters]        = useState(DEFAULT_FILTERS);
+  const [filterType, setFilterType] = useState(defaultFilterType);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
-  const [notifications]                     = useState(3);
+  const [notifications] = useState(3);
   const [proposalTargetIntent, setProposalTargetIntent] = useState(null);
-  const [viewProposalsIntent,  setViewProposalsIntent]  = useState(null);
-  const [inboxUnread,    setInboxUnread]    = useState(0);
+  const [viewProposalsIntent, setViewProposalsIntent] = useState(null);
+  const [inboxUnread, setInboxUnread] = useState(0);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [userProfile, setUserProfile] = useState(() => getUserData() || {});
 
@@ -2496,16 +2754,16 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
     }
   };
 
-  const user      = userProfile;
+  const user = userProfile;
   const roleBadge = isBoth
-    ? { label: 'Buyer & Seller', bg: `linear-gradient(135deg, ${BUYER_COLOR}, ${SELLER_COLOR})`,  color: '#fff' }
+    ? { label: 'Buyer & Seller', bg: `linear-gradient(135deg, ${BUYER_COLOR}, ${SELLER_COLOR})`, color: '#fff' }
     : isBuyer
-    ? { label: 'Buyer',          bg: `linear-gradient(135deg, ${BUYER_COLOR}, #2563eb)`,            color: '#fff' }
-    : { label: 'Seller',         bg: `linear-gradient(135deg, ${SELLER_COLOR}, #ea580c)`,           color: '#fff' };
+      ? { label: 'Buyer', bg: `linear-gradient(135deg, ${BUYER_COLOR}, #2563eb)`, color: '#fff' }
+      : { label: 'Seller', bg: `linear-gradient(135deg, ${SELLER_COLOR}, #ea580c)`, color: '#fff' };
 
   const activeFilterCount = Object.entries(appliedFilters).filter(([k, v]) => {
-    if (k === 'sortBy'        && v === 'pricePerUnit') return false;
-    if (k === 'sortDirection' && v === 'asc')          return false;
+    if (k === 'sortBy' && v === 'pricePerUnit') return false;
+    if (k === 'sortDirection' && v === 'asc') return false;
     return v !== '';
   }).length;
 
@@ -2514,13 +2772,13 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
       memberRequestType: 'FETCH_INTENT',
       page: pg, size: 10, sortBy: af.sortBy, sortDirection: af.sortDirection,
     };
-    if (ft !== 'ALL')         body.intentType      = ft;
-    if (af.country)           body.country         = af.country;
-    if (af.businessSector)    body.businessSector  = af.businessSector;
-    if (af.search)            body.search          = af.search;
-    if (af.minPrice !== '')   body.minPrice        = Number(af.minPrice);
-    if (af.maxPrice !== '')   body.maxPrice        = Number(af.maxPrice);
-    if (af.timelineDays !=='') body.timelineDays   = Number(af.timelineDays);
+    if (ft !== 'ALL') body.intentType = ft;
+    if (af.country) body.country = af.country;
+    if (af.businessSector) body.businessSector = af.businessSector;
+    if (af.search) body.search = af.search;
+    if (af.minPrice !== '') body.minPrice = Number(af.minPrice);
+    if (af.maxPrice !== '') body.maxPrice = Number(af.maxPrice);
+    if (af.timelineDays !== '') body.timelineDays = Number(af.timelineDays);
     return body;
   }, []);
 
@@ -2533,7 +2791,7 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
       setIntents(data?.intents?.content || []);
       setTotalPages(data?.intents?.totalPages || 1);
     } catch (err) { setError(err.message || 'Failed to load market intents'); }
-    finally       { setLoading(false); }
+    finally { setLoading(false); }
   }, [appliedFilters, filterType, buildFetchBody]);
 
   const fetchMyIntents = useCallback(async () => {
@@ -2544,12 +2802,12 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
       });
       const list =
         data?.myIntents?.content || data?.myIntents ||
-        data?.intents?.content  || data?.intents   ||
+        data?.intents?.content || data?.intents ||
         data?.content || (Array.isArray(data) ? data : []);
       setMyIntents(list);
       setMyIntentIds(new Set(list.map(i => i.id)));
     } catch (err) { console.error('fetchMyIntents error:', err); }
-    finally       { setMyLoading(false); }
+    finally { setMyLoading(false); }
   }, []);
 
   const fetchInboxUnread = useCallback(async () => {
@@ -2558,10 +2816,10 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
       fd.append('chatRequestType', 'FETCH_INBOX');
       const res = await chatFetch(`${BASE_URL}/cs-network/chat-operations`, fd);
       if (!res.ok) return;
-      const data  = await res.json();
+      const data = await res.json();
       const total = (data?.conversations || []).reduce((s, c) => s + (c.unreadCount || 0), 0);
       setInboxUnread(total);
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => { fetchIntents(page, appliedFilters, filterType); }, [page, appliedFilters, filterType]);
@@ -2579,42 +2837,43 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
   };
 
   const totalValue = intents.reduce((s, i) => s + (i.totalValue || 0), 0);
-  const openCount  = intents.filter(i => i.status === 'OPEN').length;
-  const buyCount   = intents.filter(i => i.intentType === 'BUY').length;
-  const sellCount  = intents.filter(i => i.intentType === 'SELL').length;
+  const openCount = intents.filter(i => i.status === 'OPEN').length;
+  const buyCount = intents.filter(i => i.intentType === 'BUY').length;
+  const sellCount = intents.filter(i => i.intentType === 'SELL').length;
 
   const marketStats = isBoth
     ? [
-        { icon: TrendingUp,   label: 'Total Market Value', value: fmtCurrency(totalValue), delay: 0.05 },
-        { icon: CheckCircle2, label: 'Open Intents',        value: openCount,               delay: 0.10 },
-        { icon: ShoppingCart, label: 'Buy Intents',         value: buyCount,                delay: 0.15, accent: BUYER_COLOR  },
-        { icon: Store,        label: 'Sell Intents',        value: sellCount,               delay: 0.20, accent: SELLER_COLOR },
-      ]
+      { icon: TrendingUp, label: 'Total Market Value', value: fmtCurrency(totalValue), delay: 0.05 },
+      { icon: CheckCircle2, label: 'Open Intents', value: openCount, delay: 0.10 },
+      { icon: ShoppingCart, label: 'Buy Intents', value: buyCount, delay: 0.15, accent: BUYER_COLOR },
+      { icon: Store, label: 'Sell Intents', value: sellCount, delay: 0.20, accent: SELLER_COLOR },
+    ]
     : isBuyer
-    ? [
-        { icon: TrendingUp,   label: 'Total Market Value', value: fmtCurrency(totalValue), delay: 0.05 },
-        { icon: CheckCircle2, label: 'Open Intents',        value: openCount,               delay: 0.10 },
-        { icon: ShoppingCart, label: 'Buy Intents',         value: buyCount,                delay: 0.15, accent: BUYER_COLOR },
+      ? [
+        { icon: TrendingUp, label: 'Total Market Value', value: fmtCurrency(totalValue), delay: 0.05 },
+        { icon: CheckCircle2, label: 'Open Intents', value: openCount, delay: 0.10 },
+        { icon: ShoppingCart, label: 'Buy Intents', value: buyCount, delay: 0.15, accent: BUYER_COLOR },
       ]
-    : [
-        { icon: TrendingUp,   label: 'Total Market Value', value: fmtCurrency(totalValue), delay: 0.05 },
-        { icon: CheckCircle2, label: 'Open Intents',        value: openCount,               delay: 0.10 },
-        { icon: Store,        label: 'Sell Intents',        value: sellCount,               delay: 0.15, accent: SELLER_COLOR },
+      : [
+        { icon: TrendingUp, label: 'Total Market Value', value: fmtCurrency(totalValue), delay: 0.05 },
+        { icon: CheckCircle2, label: 'Open Intents', value: openCount, delay: 0.10 },
+        { icon: Store, label: 'Sell Intents', value: sellCount, delay: 0.15, accent: SELLER_COLOR },
       ];
 
-  // ⭐ UPDATED NAV_ITEMS - Added Directory, Meetings & Events
   const NAV_ITEMS = [
-    { id: 'market',           label: 'Market',       icon: BarChart3, badge: 0           },
-    { id: 'my_intents',       label: 'My Intents',   icon: Package,   badge: 0           },
-    { id: 'proposals',        label: 'Proposals',    icon: FileText,  badge: 0           },
-    { id: 'deals',            label: 'Deals',        icon: CheckCheck,badge: 0           },
-    { id: 'directory',        label: 'Directory',    icon: Users,     badge: 0           },
-    { id: 'events',           label: 'Events',       icon: Calendar,  badge: 0           },
-    { id: 'my_registrations', label: 'My Tickets',   icon: Ticket,    badge: 0           },
-    { id: 'meetings',         label: 'Meetings',     icon: Video,     badge: 0           },
-    { id: 'partnerships',     label: 'Partnerships', icon: Building2, badge: 0           },
-    { id: 'inbox',            label: 'Inbox',        icon: Inbox,     badge: inboxUnread },
+    { id: 'market', label: 'Market', icon: BarChart3, badge: 0 },
+    { id: 'leaderboard', label: 'Leaderboards', icon: Award, badge: 0 },
+    { id: 'my_intents', label: 'My Intents', icon: Package, badge: 0 },
+    { id: 'proposals', label: 'Proposals', icon: FileText, badge: 0 },
+    { id: 'deals', label: 'Deals', icon: CheckCheck, badge: 0 },
+    { id: 'directory', label: 'Directory', icon: Users, badge: 0 },
+    { id: 'events', label: 'Events', icon: Calendar, badge: 0 },
+    { id: 'my_registrations', label: 'My Tickets', icon: Ticket, badge: 0 },
+    { id: 'meetings', label: 'Meetings', icon: Video, badge: 0 },
+    { id: 'partnerships', label: 'Partnerships', icon: Building2, badge: 0 },
+    { id: 'inbox', label: 'Inbox', icon: Inbox, badge: inboxUnread },
   ];
+
 
   const isOwnerOfSelected = selectedIntent ? myIntentIds.has(selectedIntent.id) : false;
 
@@ -2640,13 +2899,13 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
       >
         {/* Welcome Banner */}
         <div className="mb-6 rounded-2xl border border-white/60 backdrop-blur-md p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
-             style={{ background: `linear-gradient(135deg, ${BRAND}55 0%, ${BRAND_LIGHT} 100%)` }}>
+          style={{ background: `linear-gradient(135deg, ${BRAND}55 0%, ${BRAND_LIGHT} 100%)` }}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <p className="text-sm text-gray-700 font-semibold">Welcome back,</p>
                 <span className="rounded-full px-3 py-0.5 text-[11px] font-bold"
-                      style={{ background: roleBadge.bg, color: roleBadge.color }}>
+                  style={{ background: roleBadge.bg, color: roleBadge.color }}>
                   {roleBadge.label}
                 </span>
               </div>
@@ -2655,8 +2914,8 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
                 {isBoth
                   ? 'Browse buy & sell intents and manage your trade portfolio'
                   : isBuyer
-                  ? 'Browse buy intents and find sellers for your needs'
-                  : 'Post sell intents and connect with buyers worldwide'}
+                    ? 'Browse buy intents and find sellers for your needs'
+                    : 'Post sell intents and connect with buyers worldwide'}
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -2688,8 +2947,10 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
                   <button key={type} onClick={() => { setFilterType(type); setPage(0); }}
                     className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-all"
                     style={filterType === type
-                      ? { background: type === 'BUY' ? BUYER_COLOR : type === 'SELL' ? SELLER_COLOR : BRAND,
-                          color: '#fff', boxShadow: `0 4px 14px ${BRAND}55` }
+                      ? {
+                        background: type === 'BUY' ? BUYER_COLOR : type === 'SELL' ? SELLER_COLOR : BRAND,
+                        color: '#fff', boxShadow: `0 4px 14px ${BRAND}55`
+                      }
                       : { border: '1px solid rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(8px)', color: '#374151' }}>
                     {type}
                   </button>
@@ -2702,7 +2963,7 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
                   <Filter className="h-4 w-4" /> Filters
                   {activeFilterCount > 0 && (
                     <span className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                          style={{ background: BRAND }}>
+                      style={{ background: BRAND }}>
                       {activeFilterCount}
                     </span>
                   )}
@@ -2722,11 +2983,11 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
 
               {activeFilterCount > 0 && (
                 <div className="mb-4 flex flex-wrap gap-2">
-                  {appliedFilters.country        && <FilterChip label={`Country: ${appliedFilters.country}`}   onRemove={() => { setFilters(p=>({...p,country:''}));        setAppliedFilters(p=>({...p,country:''})); }} />}
-                  {appliedFilters.businessSector && <FilterChip label={`Sector: ${appliedFilters.businessSector}`} onRemove={() => { setFilters(p=>({...p,businessSector:''})); setAppliedFilters(p=>({...p,businessSector:''})); }} />}
-                  {appliedFilters.minPrice!==''  && <FilterChip label={`Min ₹${appliedFilters.minPrice}`}      onRemove={() => { setFilters(p=>({...p,minPrice:''}));        setAppliedFilters(p=>({...p,minPrice:''})); }} />}
-                  {appliedFilters.maxPrice!==''  && <FilterChip label={`Max ₹${appliedFilters.maxPrice}`}      onRemove={() => { setFilters(p=>({...p,maxPrice:''}));        setAppliedFilters(p=>({...p,maxPrice:''})); }} />}
-                  {appliedFilters.timelineDays!=='' && <FilterChip label={`${appliedFilters.timelineDays} days`} onRemove={() => { setFilters(p=>({...p,timelineDays:''}));   setAppliedFilters(p=>({...p,timelineDays:''})); }} />}
+                  {appliedFilters.country && <FilterChip label={`Country: ${appliedFilters.country}`} onRemove={() => { setFilters(p => ({ ...p, country: '' })); setAppliedFilters(p => ({ ...p, country: '' })); }} />}
+                  {appliedFilters.businessSector && <FilterChip label={`Sector: ${appliedFilters.businessSector}`} onRemove={() => { setFilters(p => ({ ...p, businessSector: '' })); setAppliedFilters(p => ({ ...p, businessSector: '' })); }} />}
+                  {appliedFilters.minPrice !== '' && <FilterChip label={`Min ₹${appliedFilters.minPrice}`} onRemove={() => { setFilters(p => ({ ...p, minPrice: '' })); setAppliedFilters(p => ({ ...p, minPrice: '' })); }} />}
+                  {appliedFilters.maxPrice !== '' && <FilterChip label={`Max ₹${appliedFilters.maxPrice}`} onRemove={() => { setFilters(p => ({ ...p, maxPrice: '' })); setAppliedFilters(p => ({ ...p, maxPrice: '' })); }} />}
+                  {appliedFilters.timelineDays !== '' && <FilterChip label={`${appliedFilters.timelineDays} days`} onRemove={() => { setFilters(p => ({ ...p, timelineDays: '' })); setAppliedFilters(p => ({ ...p, timelineDays: '' })); }} />}
                   <button onClick={handleResetFilters} className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-100 transition">
                     Clear all
                   </button>
@@ -2851,7 +3112,13 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
           </motion.div>
         )}
 
+        {/* ══ LEADERBOARD TAB ══ */}
+        {activeTab === 'leaderboard' && (
+          <TrustLeaderboardTab userRole={isBoth ? 'MEMBER' : isBuyer ? 'BUYER' : 'SELLER'} />
+        )}
+
         {/* ══ PROPOSALS TAB ══ */}
+
         {activeTab === 'proposals' && (
           <ProposalsTab
             myIntents={myIntents}
@@ -2903,14 +3170,14 @@ export default function BuyerSellerDashboard({ roles = [], onLogout }) {
       <AnimatePresence>
         {proposalTargetIntent && (
           <CreateProposalModal intent={proposalTargetIntent}
-            onClose={() => setProposalTargetIntent(null)} onSuccess={() => {}} />
+            onClose={() => setProposalTargetIntent(null)} onSuccess={() => { }} />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {viewProposalsIntent && (
           <IntentDetailModal intent={viewProposalsIntent} onClose={() => setViewProposalsIntent(null)}
-            isOwner={true} onSendProposal={() => {}} onViewProposals={() => {}} />
+            isOwner={true} onSendProposal={() => { }} onViewProposals={() => { }} />
         )}
       </AnimatePresence>
 

@@ -396,4 +396,23 @@ export const awardTrustPoints = ({ targetUserId, awardReason, tokenAmount, trust
     },
   });
 
+export const fetchMyTrustProfile = (page = 1, size = 50) =>
+  apiCall('/trust-score', {
+    body: {
+      requestType: 'GET_MY_PROFILE',
+      page: Number(page),
+      size: Number(size),
+    },
+  });
+
+export const transferTrustTokens = ({ targetUserId, amount }) =>
+  apiCall('/trust-score', {
+    body: {
+      requestType: 'TRANSFER_TOKENS',
+      targetUserId: String(targetUserId),
+      amount: String(amount),
+    },
+  });
+
+
 

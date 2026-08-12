@@ -42,11 +42,11 @@ export default function MemberCard({ member, onViewProfile, onUpgradeClick }) {
 
   const initials = fullName
     ? fullName
-        .split(' ')
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
     : 'M';
 
   const sectorDisplay =

@@ -23,6 +23,10 @@ import MyRegistrationsTab from './MyRegistrationsTab';
 import MeetingsTab from '../components/meetings/MeetingsTab';
 import PartnershipsTab from '../components/partnerships/PartnershipsTab';
 import { ProposalsTab, ReceivedProposalsContent } from './BuyerSellerDashboard';
+import TrustLeaderboardTab from '../components/globalAdmin/tabs/TrustLeaderboardTab';
+import DirectoryTab from '../components/directory/DirectoryTab';
+
+
 
 const BASE_URL = 'https://connectsouq.sundukpay.com';
 
@@ -124,6 +128,8 @@ const INTENT_STATUS = {
 
 const navItems = [
   { id: 'partnerships', label: 'Partnerships', icon: Building2 },
+  { id: 'leaderboard', label: 'Leaderboards', icon: Trophy },
+  { id: 'directory', label: 'Directory', icon: Users },
   { id: 'pipeline', label: 'Pipeline', icon: LayoutGrid },
   { id: 'trade_intents', label: 'Trade Intents', icon: BarChart3 },
   { id: 'my_intents', label: 'My Intents', icon: Package },
@@ -134,6 +140,8 @@ const navItems = [
   { id: 'events', label: 'Events', icon: Calendar },
   { id: 'my_registrations', label: 'My Tickets', icon: Ticket },
 ];
+
+
 
 /* ═══════════════════ GREEN-THEMED CSS (Updated) ═══════════════════ */
 const STYLES = `
@@ -3151,7 +3159,13 @@ export default function BusinessPartnerDashboard({ onLogout }) {
 
   const handleProfileUpdated = (updated) => {
     if (updated) {
-      setUserProfile((prev) => ({ ...prev, ...updated }));
+      setUserProfile((prev) => {
+        const merged = { ...prev, ...updated };
+        try {
+          localStorage.setItem('cs_userData', JSON.stringify(merged));
+        } catch (e) {}
+        return merged;
+      });
     }
   };
 
@@ -3169,15 +3183,54 @@ export default function BusinessPartnerDashboard({ onLogout }) {
         method: 'POST',
         body: JSON.stringify({ businessPartnerRequestType: 'FETCH_MY_PIPELINE' }),
       });
-      if (data?.pipeline?.board) {
-        setLeads(data.pipeline.board);
-        setStageCounts(data.pipeline.stageCounts || {});
-        loadedOnceRef.current = true; setError('');
-      } else {
-        const eb = {}; PIPELINE_STAGES.forEach(s => { eb[s.id] = []; });
-        setLeads(eb); setStageCounts({});
-        loadedOnceRef.current = true; setError('');
+
+      const grouped = {};
+      const counts = {};
+      PIPELINE_STAGES.forEach(s => { grouped[s.id] = []; counts[s.id] = 0; });
+
+      // 1. Board Object Parsing
+      const boardObj = data?.pipeline?.board || data?.board;
+      let hasBoardLeads = false;
+      if (boardObj && typeof boardObj === 'object' && !Array.isArray(boardObj)) {
+        Object.keys(grouped).forEach(stage => {
+          const arr = Array.isArray(boardObj[stage]) ? boardObj[stage] : [];
+          grouped[stage] = arr;
+          counts[stage] = arr.length;
+          if (arr.length > 0) hasBoardLeads = true;
+        });
       }
+
+      // 2. Lead Array Parsing (fallback if board object wasn't provided or empty)
+      if (!hasBoardLeads) {
+        let rawLeads = [];
+        if (Array.isArray(data?.pipeline?.leads)) {
+          rawLeads = data.pipeline.leads;
+        } else if (Array.isArray(data?.leads)) {
+          rawLeads = data.leads;
+        } else if (Array.isArray(data?.pipeline?.content)) {
+          rawLeads = data.pipeline.content;
+        } else if (Array.isArray(data?.pipeline)) {
+          rawLeads = data.pipeline;
+        } else if (Array.isArray(data?.content)) {
+          rawLeads = data.content;
+        } else if (Array.isArray(data?.data)) {
+          rawLeads = data.data;
+        } else if (Array.isArray(data)) {
+          rawLeads = data;
+        }
+
+        rawLeads.forEach(lead => {
+          const st = lead.stage || lead.leadStage || 'NEW_LEAD';
+          if (!grouped[st]) grouped[st] = [];
+          grouped[st].push(lead);
+          counts[st] = (counts[st] || 0) + 1;
+        });
+      }
+
+      setLeads(grouped);
+      setStageCounts(counts);
+      loadedOnceRef.current = true;
+      setError('');
     } catch (err) {
       if (loadedOnceRef.current) return;
       setError(err.message || 'Failed to load pipeline');
@@ -3186,6 +3239,11 @@ export default function BusinessPartnerDashboard({ onLogout }) {
       setLoading(false); setRefreshing(false);
     }
   }, []);
+
+  const handleLeadCreated = (newLead) => {
+    setShowAddLead(false);
+    fetchPipeline(true);
+  };
 
   // ═══════════════ Fetch Trade Intents ═══════════════
   const fetchIntents = useCallback(async (pg = 0) => {
@@ -3484,8 +3542,29 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               <span className="dot" />
             </div>
 
-            <div className="profile-avatar" style={{ width: 40, height: 40, borderRadius: 12 }}>
-              {getInitials(userData?.fullName || 'BP')}
+            <div
+              className="profile-avatar cursor-pointer hover:ring-2 hover:ring-emerald-500 transition-all flex items-center justify-center overflow-hidden"
+              style={{ width: 40, height: 40, borderRadius: 12, cursor: 'pointer' }}
+              onClick={() => setProfileModalOpen(true)}
+              title="Click to view / edit My Profile"
+            >
+              {(() => {
+                const photoSrc = resolvePhotoUrl(userData?.profilePhotoUrl || userData?.profilePicture);
+                return photoSrc ? (
+                  <img
+                    src={photoSrc}
+                    alt={userData?.fullName || 'BP'}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                    }}
+                    className="w-full h-full object-cover"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  getInitials(userData?.fullName || 'BP')
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -3858,7 +3937,17 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           {/* My Registrations / Tickets Tab */}
           {activeNav === 'my_registrations' && <MyRegistrationsTab />}
 
+          {/* Leaderboard Tab */}
+          {activeNav === 'leaderboard' && (
+            <TrustLeaderboardTab userRole="BUSINESS_PARTNER" />
+          )}
+
+          {/* Directory Tab */}
+          {activeNav === 'directory' && <DirectoryTab />}
+
+
           {/* Other Tabs (Coming Soon) */}
+
           {['my_leads', 'deals', 'commissions'].includes(activeNav) && (
             <div className="coming-soon">
               <div className="coming-soon-icon">

@@ -302,6 +302,45 @@ export default function MyProfileModal({ isOpen, onClose, onProfileUpdated }) {
                   </div>
                 </div>
 
+                {/* Franchise Scope & Membership (Backend 4 Fields) */}
+                {(profile.franchiseName || profile.franchiseType || profile.franchiseId || profile.franchiseMembershipType) && (
+                  <div className="sm:col-span-2 p-4 rounded-2xl bg-gradient-to-r from-emerald-50/60 to-teal-50/60 border border-emerald-100 shadow-xs space-y-2">
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-emerald-800 flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Franchise & Network Membership
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700 font-medium">
+                      {profile.franchiseName && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400 font-normal">Franchise:</span>
+                          <span className="font-extrabold text-slate-900">{profile.franchiseName}</span>
+                          {profile.franchiseId && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              ID #{profile.franchiseId}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {profile.franchiseType && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400 font-normal">Franchise Type:</span>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-800 uppercase tracking-wider">
+                            {profile.franchiseType}
+                          </span>
+                        </div>
+                      )}
+                      {profile.franchiseMembershipType && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400 font-normal">Membership Role:</span>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-800 uppercase tracking-wider">
+                            {profile.franchiseMembershipType}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Location & Language */}
                 <div className="sm:col-span-2 p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
                   <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block">

@@ -167,11 +167,26 @@ export default function MemberProfileModal({ memberId, onClose, onUpgradeClick }
                     </span>
                   </p>
 
-                  {member.franchiseName && (
-                    <p className="text-xs text-emerald-700 font-medium inline-flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/70">
-                      <Building2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{member.franchiseName}</span>
-                    </p>
+                  {(member.franchiseName || member.franchiseType || member.franchiseId || member.franchiseMembershipType) && (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      {member.franchiseName && (
+                        <p className="text-xs text-emerald-800 font-bold inline-flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/70">
+                          <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{member.franchiseName}</span>
+                          {member.franchiseId && <span className="text-[10px] text-emerald-600 font-normal">#{member.franchiseId}</span>}
+                        </p>
+                      )}
+                      {member.franchiseType && (
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200/60 uppercase">
+                          {member.franchiseType}
+                        </span>
+                      )}
+                      {member.franchiseMembershipType && (
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-teal-50 text-teal-700 border border-teal-200/60 uppercase">
+                          {member.franchiseMembershipType}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
