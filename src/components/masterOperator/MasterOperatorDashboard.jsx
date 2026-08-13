@@ -22,7 +22,7 @@ const T = {
     800: '#065F46', 900: '#064E3B',
   },
   border: { light: 'rgba(16,185,129,0.12)', medium: 'rgba(16,185,129,0.2)' },
-  text: { primary: '#1C1917', secondary: '#57534E', muted: '#78716C', light: '#A8A29E' },
+  text: { primary: '#1C1917', secondary: '#57534E', muted: '#000000', light: '#A8A29E' },
 };
 
 export { T };

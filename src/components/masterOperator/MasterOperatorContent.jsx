@@ -422,19 +422,19 @@ function InviteLinkCard({ inviteData, onRefresh, refreshLoading, onCopy, accent 
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 }}>
         <div style={{ background: 'rgba(0,0,0,0.02)', padding: '10px', borderRadius: T.radius.md, textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>{usesCount}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#000000" }}>{usesCount}</div>
           <div style={{ fontSize: 10, color: T.text.muted }}>Uses</div>
         </div>
         <div style={{ background: 'rgba(0,0,0,0.02)', padding: '10px', borderRadius: T.radius.md, textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>{maxUses}</div>
+          <div style={{ fontSize: 16, fontWeight: 800,color:"#000000" }}>{maxUses}</div>
           <div style={{ fontSize: 10, color: T.text.muted }}>Max Uses</div>
         </div>
         <div style={{ background: 'rgba(0,0,0,0.02)', padding: '10px', borderRadius: T.radius.md, textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>{usesRemaining}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#000000" }}>{usesRemaining}</div>
           <div style={{ fontSize: 10, color: T.text.muted }}>Remaining</div>
         </div>
         <div style={{ background: 'rgba(0,0,0,0.02)', padding: '10px', borderRadius: T.radius.md, textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>{daysRemaining}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#000000" }}>{daysRemaining}</div>
           <div style={{ fontSize: 10, color: T.text.muted }}>Days Left</div>
         </div>
       </div>
