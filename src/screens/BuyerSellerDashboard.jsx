@@ -572,7 +572,7 @@ export function TradeChatScreen({
           const convs = inboxData?.conversations || [];
           const match = convs.find(c => String(c.conversationId) === String(conversationId));
           if (match?.dealId) fetchedDealId = match.dealId;
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const fd = new FormData();
@@ -1747,9 +1747,8 @@ export const ProposalCard = forwardRef(function ProposalCard(
         {/* Top Badges (BUY/SELL badge, Commodity, Category, Status) */}
         <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${
-              isBuy ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-            }`}>
+            <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${isBuy ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+              }`}>
               {isBuy ? <ShoppingCart className="h-3 w-3" /> : <Store className="h-3 w-3" />}
               {intentType}
             </span>
@@ -2274,7 +2273,7 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
               const data = await fetchLeadProposals(leadId);
               const list = data?.proposals?.content || data?.proposals || data?.content || data?.leadProposals || (Array.isArray(data) ? data : []);
               fetched = Array.isArray(list) ? list : [];
-            } catch (e) {}
+            } catch (e) { }
 
             return [...(Array.isArray(embedded) ? embedded : []), ...fetched];
           })
@@ -2295,7 +2294,7 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
         });
         const list = data?.proposals?.content || data?.proposals || data?.content || (Array.isArray(data) ? data : []);
         memberProps = Array.isArray(list) ? list : [];
-      } catch (e) {}
+      } catch (e) { }
 
       // Build metadata map for intents and leads
       const intentMetaMap = new Map();
@@ -2438,7 +2437,7 @@ export function ReceivedProposalsContent({ myIntents = [], myIntentsLoading = fa
         return false;
       }) || convs[0];
       if (match?.dealId) inboxDealId = match.dealId;
-    } catch (e) {}
+    } catch (e) { }
 
     const candidateIds = Array.from(new Set([
       inboxDealId,
@@ -2664,7 +2663,7 @@ export function SentProposalsContent() {
                   category: item.category,
                 });
               }
-            } catch (e) {}
+            } catch (e) { }
           })
         );
       }

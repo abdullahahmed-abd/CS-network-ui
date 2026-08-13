@@ -28,20 +28,20 @@ import { fetchMyProfile } from '../../api/profileOperationsApi';
 const BASE_URL = 'https://connectsouq.sundukpay.com';
 
 // ── BP status localStorage key ──
-const BP_STATUS_KEY    = 'bpApplicationStatus';
+const BP_STATUS_KEY = 'bpApplicationStatus';
 const BP_FRANCHISE_KEY = 'bpFranchiseName';
 
 export default function App() {
-  const [screen, setScreen]                   = useState('auth');
-  const [booting, setBooting]                 = useState(true);
-  const [resumeAuthFlow, setResumeAuthFlow]   = useState(null);
-  const [userData, setUserData]               = useState(null);
-  const [selectedRoles, setSelectedRoles]     = useState([]);
-  const [inviteData, setInviteData]           = useState(null);
+  const [screen, setScreen] = useState('auth');
+  const [booting, setBooting] = useState(true);
+  const [resumeAuthFlow, setResumeAuthFlow] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [inviteData, setInviteData] = useState(null);
 
   // ── BP Modal state ──
-  const [bpModalOpen, setBpModalOpen]         = useState(false);
-  const [bpStatus, setBpStatus]               = useState(null);
+  const [bpModalOpen, setBpModalOpen] = useState(false);
+  const [bpStatus, setBpStatus] = useState(null);
   const [bpFranchiseName, setBpFranchiseName] = useState('');
 
   const didInit = useRef(false);
@@ -58,10 +58,10 @@ export default function App() {
 
     // ── Operator check ──
     const isOperator =
-      roles.includes('OPERATOR')         ||
-      roles.includes('MASTER_OPERATOR')  ||
+      roles.includes('OPERATOR') ||
+      roles.includes('MASTER_OPERATOR') ||
       roles.includes('GENERAL_OPERATOR') ||
-      user?.isOperator === true          ||
+      user?.isOperator === true ||
       user?.membershipType === 'OPERATOR';
 
     if (isOperator) {
@@ -89,7 +89,7 @@ export default function App() {
   // ─────────────────────────────────────────────────────────
   const saveBpStatus = (status, franchiseName = '') => {
     if (status) {
-      setItem(BP_STATUS_KEY,    status);
+      setItem(BP_STATUS_KEY, status);
       setItem(BP_FRANCHISE_KEY, franchiseName || '');
     } else {
       removeItem(BP_STATUS_KEY);
@@ -138,7 +138,7 @@ export default function App() {
     if (didInit.current) return;
     didInit.current = true;
 
-    const params      = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(window.location.search);
     const currentPath = window.location.pathname;
 
     // ── Invitation link ──
@@ -154,14 +154,14 @@ export default function App() {
 
     // ── Payment success ──
     const isPaymentSuccess =
-      currentPath === '/payment/success'       ||
-      currentPath === '/payment-success'       ||
-      params.get('payment') === 'success'      ||
+      currentPath === '/payment/success' ||
+      currentPath === '/payment-success' ||
+      params.get('payment') === 'success' ||
       params.get('paymentStatus') === 'success';
 
     if (isPaymentSuccess) {
       window.history.replaceState({}, '', '/');
-      setItem('formFilled',    'true');
+      setItem('formFilled', 'true');
       setItem('planPurchased', 'true');
       setScreen('payment_success');
       setBooting(false);
@@ -170,13 +170,13 @@ export default function App() {
 
     // ── Payment failed ──
     const isPaymentFailed =
-      currentPath === '/payment/failed'             ||
-      currentPath === '/payment-failed'             ||
-      currentPath === '/payment/cancelled'          ||
-      currentPath === '/payment/cancel'             ||
-      params.get('payment') === 'failed'            ||
-      params.get('payment') === 'cancelled'         ||
-      params.get('paymentStatus') === 'failed'      ||
+      currentPath === '/payment/failed' ||
+      currentPath === '/payment-failed' ||
+      currentPath === '/payment/cancelled' ||
+      currentPath === '/payment/cancel' ||
+      params.get('payment') === 'failed' ||
+      params.get('payment') === 'cancelled' ||
+      params.get('paymentStatus') === 'failed' ||
       params.get('paymentStatus') === 'cancelled';
 
     if (isPaymentFailed) {
@@ -187,21 +187,21 @@ export default function App() {
     }
 
     // ── OAuth params ──
-    const userId           = params.get('userId')       || params.get('userid');
+    const userId = params.get('userId') || params.get('userid');
     const phoneVerifiedRaw = params.get('phoneVerified') || params.get('verified');
-    const formFilledRaw    =
+    const formFilledRaw =
       params.get('isFormFill') || params.get('formFilled') ||
-      params.get('fromFill')   || params.get('formfill');
-    const accessToken    = params.get('accessToken')  || params.get('access_token')  || params.get('token');
-    const refreshToken   = params.get('refreshToken') || params.get('refresh_token') || params.get('refresh');
-    const fullName       = params.get('fullName');
-    const email          = params.get('email');
-    const isOperatorRaw  = params.get('isOperator');
+      params.get('fromFill') || params.get('formfill');
+    const accessToken = params.get('accessToken') || params.get('access_token') || params.get('token');
+    const refreshToken = params.get('refreshToken') || params.get('refresh_token') || params.get('refresh');
+    const fullName = params.get('fullName');
+    const email = params.get('email');
+    const isOperatorRaw = params.get('isOperator');
     const membershipType = params.get('membershipType');
-    const franchiseType  = params.get('franchiseType');   // 'GENERAL' | 'SECTOR' | 'MASTER'
-    const franchiseId    = params.get('franchiseId');
-    const bpAppStatus    = params.get('businessPartnerApplicationStatus');
-    const franchiseName  = params.get('franchiseName') || '';
+    const franchiseType = params.get('franchiseType');   // 'GENERAL' | 'SECTOR' | 'MASTER'
+    const franchiseId = params.get('franchiseId');
+    const bpAppStatus = params.get('businessPartnerApplicationStatus');
+    const franchiseName = params.get('franchiseName') || '';
 
     const rolesArray = params.getAll('roles').length > 0
       ? params.getAll('roles')
@@ -212,59 +212,36 @@ export default function App() {
       .map(r => r.trim().toUpperCase())
       .filter(Boolean);
 
-    const storedToken     = getItem('accessToken');
-    const hasOAuthData    = userId || phoneVerifiedRaw !== null ||
+    const storedToken = getItem('accessToken');
+    const hasOAuthData = userId || phoneVerifiedRaw !== null ||
       formFilledRaw !== null || accessToken || refreshToken;
 
     // ── CASE 1: No OAuth params (returning user / page refresh) ──
     if (!hasOAuthData) {
-      const savedUser      = getUserData() || {};
-      const savedRoles     = savedUser?.roles || [];
+      const savedUser = getUserData() || {};
+      const savedRoles = savedUser?.roles || [];
       const storedBpStatus = getItem(BP_STATUS_KEY);
 
-      // Check BOTH localStorage and JS-readable cookies for token
-      const anyToken = storedToken || getCookie('accessToken') || getCookie('token') || getCookie('jwt') || getCookie('access_token');
-
-      if (anyToken) {
+      if (storedToken) {
         const formFilled = getItem('formFilled');
-        const hasRoles   = savedRoles.length > 0;
-        // Token exists — user is authenticated. If roles exist, use them; otherwise fallback
-        const effectiveRoles = hasRoles ? savedRoles : ['BUSINESS_PARTNER', 'MEMBER'];
+        if (formFilled === 'true') {
+          setSelectedRoles(savedRoles);
 
-        if (formFilled !== 'true') setItem('formFilled', 'true');
-        setSelectedRoles(effectiveRoles);
+          const isOperatorUser =
+            savedRoles.includes('OPERATOR') ||
+            savedRoles.includes('MASTER_OPERATOR') ||
+            savedRoles.includes('GENERAL_OPERATOR') ||
+            savedUser?.isOperator ||
+            savedUser?.membershipType === 'OPERATOR';
 
-        // Silent profile sync (doesn't wipe session on failure)
-        fetchMyProfile()
-          .then((res) => {
-            const profile  = res?.profile || {};
-            const rawRoles = profile?.roles || profile?.memberRoles || [];
-            const roleList = Array.isArray(rawRoles) ? rawRoles : [rawRoles].filter(Boolean);
-            if (roleList.length > 0 || profile?.userId || profile?.email) {
-              const mergedRoles = [...new Set([...effectiveRoles, ...roleList])];
-              const mergedUser  = { ...savedUser, ...profile, roles: mergedRoles };
-              saveUserData(mergedUser);
-              setSelectedRoles(mergedRoles);
-            }
-          })
-          .catch((err) => {
-            console.warn('Silent profile sync error on reload:', err);
-          });
-
-        const isOperatorUser =
-          effectiveRoles.includes('OPERATOR')         ||
-          effectiveRoles.includes('MASTER_OPERATOR')  ||
-          effectiveRoles.includes('GENERAL_OPERATOR') ||
-          savedUser?.isOperator                       ||
-          savedUser?.membershipType === 'OPERATOR';
-
-        if (storedBpStatus === 'PENDING' && effectiveRoles.includes('MEMBER') && !isOperatorUser) {
-          setScreen('auth');
+          if (storedBpStatus === 'PENDING' && savedRoles.includes('MEMBER') && !isOperatorUser) {
+            setScreen('auth');
+          } else {
+            setScreen(getScreenFromRoles(savedRoles, savedUser));
+          }
         } else {
-          setScreen(getScreenFromRoles(effectiveRoles, savedUser));
+          setScreen('auth');
         }
-        setBooting(false);
-        return;
       } else {
         setScreen('auth');
       }
@@ -275,63 +252,41 @@ export default function App() {
     // ── CASE 2: Fresh OAuth redirect ──
     window.history.replaceState({}, '', window.location.pathname);
 
-    // Google OAuth logins are pre-verified and fully set up
-    const phoneVerified = true;
-    const formFilled    = true;
+    const phoneVerified = phoneVerifiedRaw !== null ? toBool(phoneVerifiedRaw) : true;
+    const formFilled = formFilledRaw !== null ? toBool(formFilledRaw) : true;
 
     if (userId) setItem('userId', userId);
-    setItem('phoneVerified', 'true');
-    setItem('formFilled', 'true');
+    setItem('phoneVerified', String(phoneVerified));
+    setItem('formFilled', String(formFilled));
 
-    if (accessToken) {
-      saveTokens(accessToken, refreshToken || null);
-    }
+    if (accessToken) saveTokens(accessToken, refreshToken || null);
 
-    const savedUser  = getUserData() || {};
+    const savedUser = getUserData() || {};
     const savedRoles = savedUser?.roles || [];
-    const finalRoles = urlRoles.length > 0
-      ? urlRoles
-      : (savedRoles.length > 0 ? savedRoles : ['BUSINESS_PARTNER', 'MEMBER']);
+    const finalRoles = urlRoles.length > 0 ? urlRoles : savedRoles;
 
     const isOperator = isOperatorRaw !== null
       ? toBool(isOperatorRaw)
       : (membershipType === 'OPERATOR' || savedUser?.isOperator || false);
 
     const user = {
-      userId:         userId || savedUser.userId || '',
-      fullName:       fullName      || savedUser.fullName      || '',
-      email:          email         || savedUser.email         || '',
-      phoneVerified:  true,
-      formFilled:     true,
-      roles:          finalRoles,
+      userId: userId || savedUser.userId || '',
+      fullName: fullName || savedUser.fullName || '',
+      email: email || savedUser.email || '',
+      phoneVerified,
+      formFilled,
+      roles: finalRoles,
       isOperator,
       membershipType: membershipType || savedUser.membershipType || (isOperator ? 'OPERATOR' : ''),
-      franchiseType:  franchiseType  || savedUser.franchiseType  || '',
-      franchiseId:    franchiseId    || savedUser.franchiseId    || null,
+      franchiseType: franchiseType || savedUser.franchiseType || '',
+      franchiseId: franchiseId || savedUser.franchiseId || null,
     };
 
-    saveUserData(user);
-    setSelectedRoles(finalRoles);
+    if (userId || fullName || email || finalRoles.length || isOperator) saveUserData(user);
+    if (finalRoles.length) setSelectedRoles(finalRoles);
     if (bpAppStatus) saveBpStatus(bpAppStatus, franchiseName);
 
-    fetchMyProfile()
-      .then((res) => {
-        const profile    = res?.profile || {};
-        const rawRoles   = profile?.roles || profile?.memberRoles || finalRoles;
-        const roleList   = Array.isArray(rawRoles) ? rawRoles : [rawRoles].filter(Boolean);
-        const mergedUser = { ...user, ...profile, roles: [...new Set([...finalRoles, ...roleList])] };
-        const allRoles   = mergedUser.roles;
-
-        saveUserData(mergedUser);
-        setSelectedRoles(allRoles);
-        setScreen(getScreenFromRoles(allRoles, mergedUser));
-      })
-      .catch((err) => {
-        console.warn('Google OAuth profile fetch fallback:', err);
-        setScreen(getScreenFromRoles(finalRoles, user));
-      })
-      .finally(() => setBooting(false));
-    return;
+    navigateTo(phoneVerified, formFilled, user, bpAppStatus, franchiseName);
   }, []);
 
   // ─────────────────────────────────────────────────────────
@@ -340,12 +295,12 @@ export default function App() {
   const navigateTo = (
     phoneVerified,
     formFilled,
-    user        = {},
-    bpAppStatus  = null,
+    user = {},
+    bpAppStatus = null,
     franchiseName = ''
   ) => {
     const pendingInvite = getItem('pendingInviteToken');
-    const savedUser     = getUserData() || {};
+    const savedUser = getUserData() || {};
 
     if (!phoneVerified) {
       setResumeAuthFlow('signup_phone');
@@ -359,19 +314,19 @@ export default function App() {
       setScreen('form');
 
     } else if (phoneVerified && formFilled) {
-      const urlRoles   = user?.roles   || [];
+      const urlRoles = user?.roles || [];
       const savedRoles = savedUser?.roles || [];
       const finalRoles = urlRoles.length > 0 ? urlRoles : savedRoles;
 
       setSelectedRoles(finalRoles);
 
       const isOperatorUser =
-        finalRoles.includes('OPERATOR')         ||
-        finalRoles.includes('MASTER_OPERATOR')  ||
+        finalRoles.includes('OPERATOR') ||
+        finalRoles.includes('MASTER_OPERATOR') ||
         finalRoles.includes('GENERAL_OPERATOR') ||
-        user?.isOperator    ||
+        user?.isOperator ||
         savedUser?.isOperator ||
-        user?.membershipType   === 'OPERATOR'   ||
+        user?.membershipType === 'OPERATOR' ||
         savedUser?.membershipType === 'OPERATOR';
 
       if (bpAppStatus && finalRoles.includes('MEMBER') && !isOperatorUser) {
@@ -450,7 +405,7 @@ export default function App() {
       setBpFranchiseName(newFranchiseName);
 
       if (isApproved) {
-        const savedUser    = getUserData() || {};
+        const savedUser = getUserData() || {};
         const updatedRoles = [...new Set([...(savedUser.roles || []), 'BUSINESS_PARTNER'])];
         saveUserData({ ...savedUser, roles: updatedRoles });
         setSelectedRoles(updatedRoles);
@@ -491,15 +446,15 @@ export default function App() {
 
     } else if (
       roles.includes('GENERAL_OPERATOR') ||
-      roles.includes('OPERATOR')         ||
-      currentUser?.isOperator            ||
+      roles.includes('OPERATOR') ||
+      currentUser?.isOperator ||
       currentUser?.membershipType === 'OPERATOR'
     ) {
       // ✅ General or Sector operator → franchise_operator_dashboard
       setScreen('franchise_operator_dashboard');
 
     } else if (roles.includes('BUSINESS_PARTNER')) {
-      const bpAppStatus   = data?.businessPartnerApplicationStatus || 'PENDING';
+      const bpAppStatus = data?.businessPartnerApplicationStatus || 'PENDING';
       const franchiseName = data?.franchiseName || '';
 
       saveBpStatus(bpAppStatus, franchiseName);
@@ -556,7 +511,7 @@ export default function App() {
     setItem('planPurchased', 'true');
     setItem('formFilled', 'true');
 
-    const savedUser  = getUserData() || {};
+    const savedUser = getUserData() || {};
     const savedRoles = (savedUser?.roles && savedUser.roles.length > 0)
       ? savedUser.roles
       : (selectedRoles.length > 0 ? selectedRoles : ['MEMBER']);
@@ -577,7 +532,7 @@ export default function App() {
     setItem('planPurchased', 'true');
     setItem('formFilled', 'true');
 
-    const savedUser  = getUserData() || {};
+    const savedUser = getUserData() || {};
     const savedRoles = (savedUser?.roles && savedUser.roles.length > 0)
       ? savedUser.roles
       : (selectedRoles.length > 0 ? selectedRoles : ['MEMBER']);
@@ -591,7 +546,7 @@ export default function App() {
     setScreen(getScreenFromRoles(savedRoles, savedUser));
   };
 
-  const handlePaymentRetry  = () => {
+  const handlePaymentRetry = () => {
     setSelectedRoles((getUserData() || {})?.roles || []);
     setScreen('plans');
   };
@@ -606,7 +561,7 @@ export default function App() {
   // ─────────────────────────────────────────────────────────
   const handleInvitationBack = () => {
     removeItem('pendingInviteToken');
-    const savedUser  = getUserData() || {};
+    const savedUser = getUserData() || {};
     const savedRoles = savedUser?.roles || [];
     setSelectedRoles(savedRoles);
     const target = getScreenFromRoles(savedRoles, savedUser);
@@ -625,7 +580,7 @@ export default function App() {
   };
 
   const handleOperatorFormComplete = () => {
-    const savedUser  = getUserData() || {};
+    const savedUser = getUserData() || {};
     const savedRoles = savedUser?.roles || [];
     setSelectedRoles(savedRoles);
     setInviteData(null);
@@ -636,7 +591,7 @@ export default function App() {
   // ── Auth handlers ──
   // ─────────────────────────────────────────────────────────
   const handleAuthComplete = () => {
-    const savedUser  = getUserData() || {};
+    const savedUser = getUserData() || {};
     const savedRoles = savedUser?.roles || [];
     setSelectedRoles(savedRoles);
 
@@ -652,10 +607,10 @@ export default function App() {
 
     const storedBpStatus = getItem(BP_STATUS_KEY);
     const isOperatorUser =
-      savedRoles.includes('OPERATOR')         ||
-      savedRoles.includes('MASTER_OPERATOR')  ||
+      savedRoles.includes('OPERATOR') ||
+      savedRoles.includes('MASTER_OPERATOR') ||
       savedRoles.includes('GENERAL_OPERATOR') ||
-      savedUser?.isOperator                   ||
+      savedUser?.isOperator ||
       savedUser?.membershipType === 'OPERATOR';
 
     if (
@@ -705,7 +660,7 @@ export default function App() {
   // ─────────────────────────────────────────────────────────
   const BpPendingScreen = () => {
     const [refreshing, setRefreshing] = useState(false);
-    const [msg, setMsg]               = useState('');
+    const [msg, setMsg] = useState('');
 
     const handleCheckStatus = async () => {
       setRefreshing(true);

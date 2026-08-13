@@ -137,7 +137,7 @@ export const clearTokens = () => {
 };
 
 export const hasValidSession = () => {
-  const accessToken  = getAccessToken();
+  const accessToken = getAccessToken();
   const refreshToken = getRefreshToken();
   return !!(accessToken || refreshToken);
 };
@@ -181,7 +181,7 @@ const triggerSessionExpired = () => {
 // Refresh token — with lock to prevent
 // multiple simultaneous refresh calls
 // ─────────────────────────────────────────
-let isRefreshing   = false;
+let isRefreshing = false;
 let refreshPromise = null;
 
 export const refreshAccessToken = async () => {
@@ -246,7 +246,7 @@ export const refreshAccessToken = async () => {
       console.error('❌ Token refresh error:', err.message);
       throw err;
     } finally {
-      isRefreshing   = false;
+      isRefreshing = false;
       refreshPromise = null;
     }
   })();

@@ -333,3 +333,34 @@ export const fetchDownlinePreview = async ({ franchiseId, page = 0, size = 100 }
     });
   }
 };
+
+/**
+ * 4. FETCH_MEETINGS
+ * Fetches paginated meetings feed with role-scoped filters.
+ */
+export const fetchMeetings = async (params = {}) => {
+  const body = {
+    requestType: 'FETCH_MEETINGS',
+    ...(params.statusFilter && { statusFilter: params.statusFilter }),
+    ...(params.scheduledByMe === true && { scheduledByMe: true }),
+    ...(params.invitedToMe === true && { invitedToMe: true }),
+    ...(params.search?.trim() && { search: params.search.trim() }),
+    ...(params.scheduledAfter && { scheduledAfter: params.scheduledAfter }),
+    ...(params.scheduledBefore && { scheduledBefore: params.scheduledBefore }),
+    ...(params.locationTypeFilter && { locationTypeFilter: params.locationTypeFilter }),
+    ...(params.audienceScopeFilter && { audienceScopeFilter: params.audienceScopeFilter }),
+    ...(params.targetFranchiseId && { targetFranchiseId: Number(params.targetFranchiseId) }),
+    ...(params.upcomingOnly === true && { upcomingOnly: true }),
+    page: typeof params.page === 'number' ? params.page : 0,
+    size: typeof params.size === 'number' ? params.size : 20,
+  };
+
+  try {
+    return await apiCall('/meetings', { method: 'POST', body });
+  } catch (err) {
+    return await authenticatedFetch('/meetings', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+};

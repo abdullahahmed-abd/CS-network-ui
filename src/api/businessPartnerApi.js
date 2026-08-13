@@ -143,24 +143,14 @@ export const deleteLead = async (leadId) => {
 };
 
 /**
- * Raises a Trade Proposal against the Trade Intent attached to this lead.
- * Automatically advances lead stage to NEGOTIATION if currently prior to NEGOTIATION.
+ * 1. Business Partner — Create Proposal for Lead
+ * Endpoint: POST /cs-network/business-partner
+ * Request: { businessPartnerRequestType: "CREATE_PROPOSAL_FOR_LEAD", leadId, tradeIntentId, quantityRequested, pricePerUnit, timelineDays }
+ * NOTE: Single endpoint call only. Does NOT call /member to avoid duplicate proposals.
  */
 export const createProposalForLead = async (leadId, { tradeIntentId, quantityRequested, pricePerUnit, timelineDays }) => {
-  if (tradeIntentId) {
-    try {
-      await apiCall('/member', {
-        body: {
-          memberRequestType: 'CREATE_PROPOSAL',
-          tradeIntentId: Number(tradeIntentId),
-          quantityRequested: Number(quantityRequested),
-          pricePerUnit: Number(pricePerUnit),
-          timelineDays: Number(timelineDays),
-        },
-      });
-    } catch (e) {
-      console.warn('Member CREATE_PROPOSAL error during lead proposal:', e);
-    }
+  if (!leadId) {
+    throw new Error('leadId is required when creating a proposal for a lead.');
   }
 
   const bpBody = {
@@ -176,7 +166,10 @@ export const createProposalForLead = async (leadId, { tradeIntentId, quantityReq
 };
 
 /**
- * Raises a Trade Proposal against a Trade Intent using standard member endpoint.
+ * 2. Normal User — Create Proposal for Intent
+ * Endpoint: POST /cs-network/member
+ * Request: { memberRequestType: "CREATE_PROPOSAL", tradeIntentId, quantityRequested, pricePerUnit, timelineDays }
+ * NOTE: Single endpoint call only. Does NOT call /business-partner to avoid duplicate proposals.
  */
 export const createProposalForIntent = async (intentId, { quantityRequested, pricePerUnit, timelineDays }) => {
   const body = {
@@ -187,24 +180,45 @@ export const createProposalForIntent = async (intentId, { quantityRequested, pri
     timelineDays: Number(timelineDays),
   };
 
-  try {
-    return await apiCall('/member', { body });
-  } catch (err) {
-    // Fallback to business partner endpoint if needed
-    return await apiCall('/business-partner', {
-      body: {
-        businessPartnerRequestType: 'CREATE_PROPOSAL',
-        tradeIntentId: Number(intentId),
-        quantityRequested: Number(quantityRequested),
-        pricePerUnit: Number(pricePerUnit),
-        timelineDays: Number(timelineDays),
-      },
-    });
-  }
+  return apiCall('/member', { body });
 };
 
 /**
- * Returns all Trade Proposals for the intent attached to this lead.
+ * 3. Normal User — Fetch Proposals for Member
+ * Endpoint: POST /cs-network/member
+ * Request: { memberRequestType: "FETCH_PROPOSALS_FOR_MEMBER", page, size, sortBy, sortDirection, proposalStatus }
+ */
+export const fetchMemberProposals = async ({ page = 0, size = 10, sortBy = 'createdAt', sortDirection = 'desc', proposalStatus } = {}) => {
+  const body = {
+    memberRequestType: 'FETCH_PROPOSALS_FOR_MEMBER',
+    page,
+    size,
+    sortBy,
+    sortDirection,
+    ...(proposalStatus && { proposalStatus }),
+  };
+
+  return apiCall('/member', { body });
+};
+
+/**
+ * 4. Normal User — Fetch Proposals for a Specific Intent
+ * Endpoint: POST /cs-network/member
+ * Request: { memberRequestType: "FETCH_PROPOSALS_FOR_INTENT", tradeIntentId }
+ */
+export const fetchProposalsForIntent = async (tradeIntentId) => {
+  const body = {
+    memberRequestType: 'FETCH_PROPOSALS_FOR_INTENT',
+    tradeIntentId: Number(tradeIntentId),
+  };
+
+  return apiCall('/member', { body });
+};
+
+/**
+ * 5. Business Partner — Fetch Proposals for a Lead
+ * Endpoint: POST /cs-network/business-partner
+ * Request: { businessPartnerRequestType: "FETCH_LEAD_PROPOSALS", leadId }
  */
 export const fetchLeadProposals = async (leadId) => {
   const body = {
