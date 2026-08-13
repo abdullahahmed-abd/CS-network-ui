@@ -558,10 +558,6 @@ export function TradeChatScreen({
 
   const handleInviteParticipant = async (e) => {
     if (e) e.preventDefault();
-    if (!targetParticipantId || !targetParticipantId.trim()) {
-      setInviteError('Please enter a valid Participant ID.');
-      return;
-    }
 
     setInviting(true);
     setInviteError('');
@@ -582,7 +578,6 @@ export function TradeChatScreen({
       const fd = new FormData();
       fd.append('chatRequestType', 'INVITE_PARTICIPANT');
       fd.append('conversationId', String(conversationId));
-      fd.append('participantId', String(targetParticipantId.trim()));
       if (fetchedDealId) {
         fd.append('dealId', String(fetchedDealId));
       }
@@ -590,7 +585,6 @@ export function TradeChatScreen({
       console.log('🚀 [INVITE_PARTICIPANT] Sending HTTP POST request to /cs-network/chat-operations with FormData:', {
         chatRequestType: 'INVITE_PARTICIPANT',
         conversationId: String(conversationId),
-        participantId: String(targetParticipantId.trim()),
         ...(fetchedDealId && { dealId: String(fetchedDealId) }),
       });
 
@@ -599,10 +593,10 @@ export function TradeChatScreen({
       console.log('✅ [INVITE_PARTICIPANT] Response:', data);
 
       if (!res.ok || data?.status >= 400 || (data?.error && data?.error !== 'OK')) {
-        throw new Error(data?.message || data?.error || 'Failed to add lead / invite participant');
+        throw new Error(data?.message || data?.error || 'Failed to invite participant');
       }
 
-      setDealSuccessMsg(data?.message || '✓ Lead participant added to conversation successfully!');
+      setDealSuccessMsg(data?.message || '✓ Participant invited to conversation successfully!');
       setShowAddLeadModal(false);
       setTargetParticipantId('');
       fetchHistory();
@@ -742,10 +736,10 @@ export function TradeChatScreen({
                 setShowAddLeadModal(true);
               }}
               className="flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-3 py-1.5 transition shadow-sm"
-              title="Add Lead / Invite Participant to this chat"
+              title="Invite Participant to this chat"
             >
               <UserPlus className="h-4 w-4 text-white" />
-              <span className="hidden sm:inline">Add Lead</span>
+              <span className="hidden sm:inline">Invite Participant</span>
             </button>
             <button
               onClick={() => setShowScheduleModal(true)}
@@ -966,8 +960,8 @@ export function TradeChatScreen({
                     <UserPlus className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-gray-900 text-base">Add Lead / Invite Participant</h3>
-                    <p className="text-xs text-gray-500">Invite a user to conversation #{conversationId}</p>
+                    <h3 className="font-extrabold text-gray-900 text-base">Invite Participant</h3>
+                    <p className="text-xs text-gray-500">Invite participant to conversation #{conversationId}</p>
                   </div>
                 </div>
                 <button
@@ -986,20 +980,9 @@ export function TradeChatScreen({
               )}
 
               <form onSubmit={handleInviteParticipant} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                    Participant ID <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter User / Participant ID (e.g. 5)"
-                    value={targetParticipantId}
-                    onChange={(e) => setTargetParticipantId(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition"
-                    autoFocus
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">
-                    Enter the numeric User ID of the target participant to add them to this chat.
+                <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100">
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                    Clicking <span className="font-extrabold text-emerald-700">Invite Participant</span> will send an invitation request to add a participant to conversation <span className="font-bold text-gray-800">#{conversationId}</span>. The backend will handle participant processing automatically.
                   </p>
                 </div>
 
@@ -1017,7 +1000,7 @@ export function TradeChatScreen({
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-sm disabled:opacity-50"
                   >
                     {inviting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
-                    <span>{inviting ? 'Adding...' : 'Add Lead'}</span>
+                    <span>{inviting ? 'Inviting...' : 'Invite Participant'}</span>
                   </button>
                 </div>
               </form>
@@ -1041,6 +1024,34 @@ export function InboxTab() {
 
   const resolveParticipantName = (conv) => {
     if (!conv) return 'Trade Partner';
+
+    if (Array.isArray(conv.participants) && conv.participants.length > 0) {
+      const user = getUserData() || {};
+      const storedUserId = getItem('userId');
+      const myIdList = [
+        user.id,
+        user.userId,
+        user.memberId,
+        user.sub,
+        user.user_id,
+        storedUserId,
+      ].filter(Boolean).map(v => String(v).trim().toLowerCase());
+
+      const others = conv.participants.filter(p => {
+        const pUserId = String(p.userId || p.participantId || '').trim().toLowerCase();
+        return !myIdList.includes(pUserId);
+      });
+
+      const listToUse = others.length > 0 ? others : conv.participants;
+      const names = listToUse
+        .map(p => p.participantName || p.name || p.userName || p.user_name)
+        .filter(Boolean);
+
+      if (names.length > 0) {
+        return names.join(', ');
+      }
+    }
+
     const candidate = String(
       conv.participantName ||
       conv.otherPartyName ||

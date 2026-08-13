@@ -60,28 +60,39 @@ export const deleteCookie = (name) => {
 };
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
+export const cleanToken = (token) => {
+  if (!token) return '';
+  let cleaned = String(token).trim();
+  if (cleaned.startsWith('Bearer ')) cleaned = cleaned.substring(7).trim();
+  if (cleaned.startsWith('Bearer%20')) cleaned = cleaned.substring(9).trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) cleaned = cleaned.slice(1, -1);
+  return cleaned;
+};
+
 export const saveTokens = (accessToken, refreshToken) => {
   if (accessToken) {
-    setItem('accessToken', accessToken);
-    setCookie('accessToken', accessToken, 7);
-    setCookie('token', accessToken, 7);
-    setCookie('jwt', accessToken, 7);
-    setCookie('access_token', accessToken, 7);
-    setCookie('Authorization', `Bearer ${accessToken}`, 7);
+    const cleanAccess = cleanToken(accessToken);
+    setItem('accessToken', cleanAccess);
+    setCookie('accessToken', cleanAccess, 7);
+    setCookie('token', cleanAccess, 7);
+    setCookie('jwt', cleanAccess, 7);
+    setCookie('access_token', cleanAccess, 7);
+    setCookie('Authorization', `Bearer ${cleanAccess}`, 7);
   }
   if (refreshToken) {
-    setItem('refreshToken', refreshToken);
-    setCookie('refreshToken', refreshToken, 7);
+    const cleanRefresh = cleanToken(refreshToken);
+    setItem('refreshToken', cleanRefresh);
+    setCookie('refreshToken', cleanRefresh, 7);
   }
 };
 
 export const getAccessToken = () => {
   const lsToken = getItem('accessToken');
-  if (lsToken) return lsToken;
+  if (lsToken) return cleanToken(lsToken);
 
   const cookieToken = getCookie('accessToken') || getCookie('access_token') || getCookie('token') || getCookie('jwt');
   if (cookieToken) {
-    const decoded = decodeURIComponent(cookieToken);
+    const decoded = cleanToken(decodeURIComponent(cookieToken));
     setItem('accessToken', decoded);
     return decoded;
   }
@@ -91,11 +102,11 @@ export const getAccessToken = () => {
 
 export const getRefreshToken = () => {
   const lsRefresh = getItem('refreshToken');
-  if (lsRefresh) return lsRefresh;
+  if (lsRefresh) return cleanToken(lsRefresh);
 
   const cookieRefresh = getCookie('refreshToken') || getCookie('refresh_token');
   if (cookieRefresh) {
-    const decoded = decodeURIComponent(cookieRefresh);
+    const decoded = cleanToken(decodeURIComponent(cookieRefresh));
     setItem('refreshToken', decoded);
     return decoded;
   }
@@ -298,7 +309,8 @@ export const authenticatedFetch = async (url, options = {}, retried = false) => 
     }
 
     if (token) {
-      baseHeaders['Authorization'] = `Bearer ${token}`;
+      const cleanTok = cleanToken(token);
+      baseHeaders['Authorization'] = `Bearer ${cleanTok}`;
     }
 
     return baseHeaders;
@@ -330,7 +342,10 @@ export const authenticatedFetch = async (url, options = {}, retried = false) => 
       console.log(`📡 authenticatedFetch retry [${res.status}]`);
     } catch (refreshError) {
       console.error('❌ Refresh failed:', refreshError.message);
-      triggerSessionExpired();
+      // Only force session expiration if a refresh token was present and failed
+      if (getRefreshToken()) {
+        triggerSessionExpired();
+      }
       throw new Error('Session expired. Please login again.');
     }
   }
@@ -338,7 +353,9 @@ export const authenticatedFetch = async (url, options = {}, retried = false) => 
   // ── 401 even after retry — fully expired ──
   if (res.status === 401 && retried) {
     console.log('🔒 401 after refresh — session dead');
-    triggerSessionExpired();
+    if (getRefreshToken()) {
+      triggerSessionExpired();
+    }
     throw new Error('Session expired. Please login again.');
   }
 
