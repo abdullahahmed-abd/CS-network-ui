@@ -169,9 +169,11 @@ export function AttachIntentModal({ lead, onClose, onSuccess, showToast }) {
               <label className="block font-bold text-slate-700 mb-1">Enter Trade Intent ID</label>
               <input
                 type="number"
+                min="0"
+                onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                 value={manualIntentId}
                 onChange={(e) => {
-                  setManualIntentId(e.target.value);
+                  setManualIntentId(e.target.value.replace(/-/g, ''));
                   setSelectedIntentId('');
                 }}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs"

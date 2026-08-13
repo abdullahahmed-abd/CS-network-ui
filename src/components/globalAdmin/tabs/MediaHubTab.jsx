@@ -574,8 +574,10 @@ export default function MediaHubTab() {
                     </label>
                     <input
                       type="number"
+                      min="0"
+                      onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                       value={videoOrder}
-                      onChange={(e) => setVideoOrder(e.target.value)}
+                      onChange={(e) => setVideoOrder(e.target.value.replace(/-/g, ''))}
                       className="w-full px-4 py-3 bg-white border border-slate-300 rounded-2xl text-xs font-bold text-black focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                     />
                   </div>
@@ -696,8 +698,10 @@ export default function MediaHubTab() {
                     </label>
                     <input
                       type="number"
+                      min="0"
+                      onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                       value={videoOrder}
-                      onChange={(e) => setVideoOrder(e.target.value)}
+                      onChange={(e) => setVideoOrder(e.target.value.replace(/-/g, ''))}
                       className="w-full px-4 py-3 bg-white border border-slate-300 rounded-2xl text-xs font-bold text-black focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                     />
                   </div>

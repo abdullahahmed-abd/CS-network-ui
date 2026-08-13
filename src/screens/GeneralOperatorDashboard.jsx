@@ -1636,9 +1636,11 @@ function OperatorCommissionsTab() {
           </label>
           <input
             type="number"
+            min="0"
+            onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
             placeholder="e.g. 25"
             value={entryId}
-            onChange={(e) => setEntryId(e.target.value)}
+            onChange={(e) => setEntryId(e.target.value.replace(/-/g, ''))}
             style={{
               width: '100%', padding: '10px 14px', borderRadius: 10,
               border: '1px solid #D1D5DB', fontSize: 14, fontWeight: 600,

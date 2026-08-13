@@ -113,9 +113,10 @@ export function CreateProposalModal({ intent, lead, onClose, onSuccess, showToas
             </label>
             <input
               type="number"
-              min="1"
+              min="0"
+              onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
               value={formData.quantityRequested}
-              onChange={(e) => setFormData({ ...formData, quantityRequested: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, quantityRequested: e.target.value.replace(/-/g, '') })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:ring-1 focus:ring-emerald-500"
               placeholder="e.g. 200"
               required
@@ -130,9 +131,10 @@ export function CreateProposalModal({ intent, lead, onClose, onSuccess, showToas
               <input
                 type="number"
                 step="0.01"
-                min="0.01"
+                min="0"
+                onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                 value={formData.pricePerUnit}
-                onChange={(e) => setFormData({ ...formData, pricePerUnit: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, pricePerUnit: e.target.value.replace(/-/g, '') })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:ring-1 focus:ring-emerald-500"
                 placeholder="e.g. 11.50"
                 required
@@ -145,9 +147,10 @@ export function CreateProposalModal({ intent, lead, onClose, onSuccess, showToas
               </label>
               <input
                 type="number"
-                min="1"
+                min="0"
+                onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                 value={formData.timelineDays}
-                onChange={(e) => setFormData({ ...formData, timelineDays: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, timelineDays: e.target.value.replace(/-/g, '') })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:ring-1 focus:ring-emerald-500"
                 placeholder="e.g. 30"
                 required

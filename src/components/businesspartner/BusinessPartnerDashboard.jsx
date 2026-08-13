@@ -43,7 +43,6 @@ const navItems = [
   { id: 'pipeline',         label: 'Pipeline',      icon: LayoutGrid    },
   { id: 'leaderboard',      label: 'Leaderboards', icon: Trophy        },
   { id: 'directory',        label: 'Directory',     icon: UsersIcon     },
-  { id: 'trade_intents',    label: 'Trade Intents', icon: BarChart3     },
   { id: 'partnerships',     label: 'Partnerships',  icon: Building2     },
   { id: 'proposals',        label: 'Proposals',     icon: FileText      },
   { id: 'inbox',            label: 'Inbox',         icon: MessageSquare },
@@ -315,7 +314,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
         navItems={navItems}
         activeNav={activeNav}
         setActiveNav={(navId) => {
-          if (navId !== 'trade_intents') setActiveProposalLead(null);
+          setActiveProposalLead(null);
           setActiveNav(navId);
         }}
         activeStage={activeStage}
@@ -337,7 +336,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                 placeholder={
                   activeNav === 'pipeline'
                     ? 'Search leads…'
-                    : ['trade_intents','my_intents'].includes(activeNav)
+                    : activeNav === 'my_intents'
                     ? 'Search intents by title or category…'
                     : 'Search…'
                 }
@@ -371,19 +370,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                 {refreshing ? 'Refreshing…' : 'Refresh'}
               </button>
             )}
-            {activeNav === 'trade_intents' && (
-              <button
-                className="refresh-btn"
-                onClick={() => fetchIntents(intentPage)}
-                disabled={intentsLoading}
-              >
-                <RefreshCw
-                  size={13}
-                  style={intentsLoading ? { animation:'spin 1s linear infinite' } : {}}
-                />
-                Refresh
-              </button>
-            )}
+
 
             {/* Add buttons */}
             {activeNav === 'pipeline' && (
@@ -445,11 +432,9 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                   <Target size={13} />
                   {activeNav === 'pipeline' &&
                     `${getTotalLeads()} leads across ${PIPELINE_STAGES.length} stages`}
-                  {activeNav === 'trade_intents' &&
-                    `Browse ${intents.length} live trade intents in the market`}
                   {activeNav === 'my_intents' &&
                     `${myIntents.length} intents you created`}
-                  {!['pipeline','trade_intents','my_intents'].includes(activeNav) &&
+                  {!['pipeline','my_intents'].includes(activeNav) &&
                     'Manage your business efficiently'}
                   <Rocket size={13} />
                 </p>

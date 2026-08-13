@@ -131,7 +131,6 @@ const navItems = [
   { id: 'leaderboard', label: 'Leaderboards', icon: Trophy },
   { id: 'directory', label: 'Directory', icon: Users },
   { id: 'pipeline', label: 'Pipeline', icon: LayoutGrid },
-  { id: 'trade_intents', label: 'Trade Intents', icon: BarChart3 },
   { id: 'my_intents', label: 'My Intents', icon: Package },
   { id: 'proposals', label: 'Proposals', icon: Send },
   { id: 'deals', label: 'Deals', icon: Handshake },
@@ -2122,9 +2121,11 @@ function CreateIntentModal({ onClose, onSuccess, showToast }) {
                 <input
                   className="form-input"
                   type="number"
+                  min="0"
+                  onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                   placeholder="e.g. 5000"
                   value={form.quantity}
-                  onChange={(e) => update('quantity', e.target.value)}
+                  onChange={(e) => update('quantity', e.target.value.replace(/-/g, ''))}
                 />
               </div>
               <div className="form-group">
@@ -2145,9 +2146,11 @@ function CreateIntentModal({ onClose, onSuccess, showToast }) {
                 <input
                   className="form-input"
                   type="number"
+                  min="0"
+                  onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                   placeholder="e.g. 46"
                   value={form.pricePerUnit}
-                  onChange={(e) => update('pricePerUnit', e.target.value)}
+                  onChange={(e) => update('pricePerUnit', e.target.value.replace(/-/g, ''))}
                 />
               </div>
               <div className="form-group">
@@ -2359,7 +2362,7 @@ function IntentDetailModal({ intent, onClose, onRaiseProposal }) {
 
 /* ══════════════════════════════════════════════════════════════ */
 /* Lead Modal */
-function LeadModal({ lead, currentStageId, stages, onClose }) {
+function LeadModal({ lead, currentStageId, stages, onClose, onBrowseTradeIntents }) {
   if (!lead) return null;
   const stage = stages.find(s => s.id === currentStageId);
   const followUp = formatFollowUp(lead.followUpDate);
@@ -2486,6 +2489,45 @@ function LeadModal({ lead, currentStageId, stages, onClose }) {
             <div className="modal-section">
               <div className="modal-section-title">Notes</div>
               <div className="modal-notes">{lead.notes}</div>
+            </div>
+          )}
+
+          {/* Trade Intent Browse — only gateway to proposals */}
+          {onBrowseTradeIntents && (
+            <div className="modal-section">
+              <div className="modal-section-title">Trade Intent</div>
+              <div style={{
+                background: 'linear-gradient(135deg, var(--primary-sky), var(--primary-cloud))',
+                border: '1px solid rgba(var(--primary-rgb), 0.25)',
+                borderRadius: 14, padding: '14px 16px',
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                  background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <BarChart3 size={18} color="#FFF" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 700, color: 'var(--text-dark)' }}>
+                    Browse Live Trade Intents
+                  </div>
+                  <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 11, color: 'var(--text-light)', marginTop: 2 }}>
+                    Find matching intents &amp; send a proposal for this lead
+                  </div>
+                </div>
+                <button
+                  className="form-submit-btn"
+                  style={{ padding: '8px 16px', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 }}
+                  onClick={() => {
+                    onClose();
+                    onBrowseTradeIntents();
+                  }}
+                >
+                  <BarChart3 size={13} /> Browse
+                </button>
+              </div>
             </div>
           )}
 
@@ -2817,11 +2859,11 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
                   <div className="form-group">
                     <label className="form-label form-label-required">Quantity</label>
-                    <input className="form-input" type="number" placeholder="1000" value={externalForm.quantity} onChange={e => setExternalForm({ ...externalForm, quantity: e.target.value })} />
+                    <input className="form-input" type="number" min="0" onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }} placeholder="1000" value={externalForm.quantity} onChange={e => setExternalForm({ ...externalForm, quantity: e.target.value.replace(/-/g, '') })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label form-label-required">Price/Unit</label>
-                    <input className="form-input" type="number" step="0.01" placeholder="85.50" value={externalForm.pricePerUnit} onChange={e => setExternalForm({ ...externalForm, pricePerUnit: e.target.value })} />
+                    <input className="form-input" type="number" step="0.01" min="0" onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }} placeholder="85.50" value={externalForm.pricePerUnit} onChange={e => setExternalForm({ ...externalForm, pricePerUnit: e.target.value.replace(/-/g, '') })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Unit</label>
@@ -2922,11 +2964,11 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                 <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
                   <div className="form-group">
                     <label className="form-label form-label-required">Quantity</label>
-                    <input className="form-input" type="number" placeholder="1000" value={memberIntentForm.quantity} onChange={e => setMemberIntentForm({ ...memberIntentForm, quantity: e.target.value })} />
+                    <input className="form-input" type="number" min="0" onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }} placeholder="1000" value={memberIntentForm.quantity} onChange={e => setMemberIntentForm({ ...memberIntentForm, quantity: e.target.value.replace(/-/g, '') })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label form-label-required">Price/Unit</label>
-                    <input className="form-input" type="number" step="0.01" placeholder="75.50" value={memberIntentForm.pricePerUnit} onChange={e => setMemberIntentForm({ ...memberIntentForm, pricePerUnit: e.target.value })} />
+                    <input className="form-input" type="number" step="0.01" min="0" onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }} placeholder="75.50" value={memberIntentForm.pricePerUnit} onChange={e => setMemberIntentForm({ ...memberIntentForm, pricePerUnit: e.target.value.replace(/-/g, '') })} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Unit</label>
@@ -3163,7 +3205,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
         const merged = { ...prev, ...updated };
         try {
           localStorage.setItem('cs_userData', JSON.stringify(merged));
-        } catch (e) {}
+        } catch (e) { }
         return merged;
       });
     }
@@ -3240,11 +3282,6 @@ export default function BusinessPartnerDashboard({ onLogout }) {
     }
   }, []);
 
-  const handleLeadCreated = (newLead) => {
-    setShowAddLead(false);
-    fetchPipeline(true);
-  };
-
   // ═══════════════ Fetch Trade Intents ═══════════════
   const fetchIntents = useCallback(async (pg = 0) => {
     setIntentsLoading(true);
@@ -3285,7 +3322,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
       );
       const list =
         data?.myIntents?.content || data?.myIntents ||
-        data?.intents?.content  || data?.intents   ||
+        data?.intents?.content || data?.intents ||
         data?.content || (Array.isArray(data) ? data : []);
       setMyIntents(list);
     } catch (err) {
@@ -3302,7 +3339,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
     fetchPipeline();
   }, [fetchPipeline]);
 
-  // Fetch intents when tab or filter changes
+  // Fetch intents when lead-context trade intent browser is opened
   useEffect(() => {
     if (activeNav === 'trade_intents') fetchIntents(intentPage);
   }, [activeNav, intentPage, fetchIntents]);
@@ -3459,7 +3496,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                     style={{ width: 36, height: 36, borderRadius: '50%' }}
                   />
                 ) : (
-                  <div className="profile-avatar">{(userData?.fullName || userData?.email || 'BP').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2)}</div>
+                  <div className="profile-avatar">{(userData?.fullName || userData?.email || 'BP').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}</div>
                 );
               })()}
               <div style={{ minWidth: 0, flex: 1 }}>
@@ -3497,7 +3534,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
               <input
                 placeholder={
                   activeNav === 'pipeline' ? 'Search leads…' :
-                    activeNav === 'trade_intents' || activeNav === 'my_intents' ? 'Search intents by title or category…' :
+                    activeNav === 'my_intents' ? 'Search intents by title or category…' :
                       'Search…'
                 }
                 value={searchQuery}
@@ -3521,12 +3558,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                 {refreshing ? 'Refreshing…' : 'Refresh'}
               </button>
             )}
-            {activeNav === 'trade_intents' && (
-              <button className="refresh-btn" onClick={() => fetchIntents(intentPage)} disabled={intentsLoading}>
-                <RefreshCw size={13} style={intentsLoading ? { animation: 'spin 1s linear infinite' } : {}} />
-                Refresh
-              </button>
-            )}
+
 
             {activeNav === 'pipeline' && (
               <button className="add-btn" onClick={() => setShowAddLead(true)}>
@@ -3582,7 +3614,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
           }}
         >
           {/* Greeting Hero & KPI Cards (only for pipeline & intents tabs) */}
-          {['pipeline', 'trade_intents', 'my_intents'].includes(activeNav) && (
+          {['pipeline', 'my_intents'].includes(activeNav) && (
             <>
               <div className="greeting-hero">
                 <div className="greeting-inner">
@@ -3592,7 +3624,6 @@ export default function BusinessPartnerDashboard({ onLogout }) {
                     <p>
                       <Target size={13} />
                       {activeNav === 'pipeline' && `${getTotalLeads()} leads across ${PIPELINE_STAGES.length} stages`}
-                      {activeNav === 'trade_intents' && `Browse ${intents.length} live trade intents in the market`}
                       {activeNav === 'my_intents' && `${myIntents.length} intents you created`}
                       <Rocket size={13} />
                     </p>
@@ -3821,9 +3852,20 @@ export default function BusinessPartnerDashboard({ onLogout }) {
             <div className="panel">
               <div className="panel-head">
                 <div>
+                  <button
+                    onClick={() => setActiveNav('pipeline')}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      fontFamily: "'DM Sans',sans-serif", fontSize: 11, fontWeight: 600,
+                      color: 'var(--primary)', marginBottom: 6, padding: 0,
+                    }}
+                  >
+                    <ChevronLeft size={13} /> Back to Pipeline
+                  </button>
                   <div className="panel-title">Trade Intents Market</div>
                   <div className="panel-subtitle">
-                    Live trade opportunities • Click any card for details
+                    Browse live opportunities &amp; raise a proposal for your lead
                   </div>
                 </div>
                 <div className="panel-actions">
@@ -3972,6 +4014,12 @@ export default function BusinessPartnerDashboard({ onLogout }) {
             currentStageId={selectedStage}
             stages={PIPELINE_STAGES}
             onClose={() => { setSelectedLead(null); setSelectedStage(null); }}
+            onBrowseTradeIntents={() => {
+              setSelectedLead(null);
+              setSelectedStage(null);
+              setActiveNav('trade_intents');
+              fetchIntents(0);
+            }}
           />
         )}
       </AnimatePresence>

@@ -272,39 +272,65 @@ function TrustProfileDetailModal({ userId, userName, onClose }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {entriesList.map((entry) => (
-                            <tr key={entry.id} style={{ borderBottom: '1px solid #F1F5F9', fontSize: 12 }}>
-                              <td style={{ padding: '10px 14px', fontWeight: 700, color: '#1E293B' }}>
-                                {entry.scoringRuleName || 'General Rule'}
-                              </td>
-                              <td style={{ padding: '10px 14px' }}>
-                                <span style={{
-                                  padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700,
-                                  background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE',
-                                }}>
-                                  {entry.dimension || 'GROWTH_IMPACT'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '10px 14px', fontWeight: 800, color: '#16A34A' }}>
-                                +{entry.points} pts
-                              </td>
-                              <td style={{ padding: '10px 14px' }}>
-                                <span style={{
-                                  padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
-                                  background: entry.status === 'APPROVED' ? '#DCFCE7' : '#FEF3C7',
-                                  color: entry.status === 'APPROVED' ? '#166534' : '#92400E',
-                                }}>
-                                  {entry.status || 'APPROVED'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '10px 14px', color: '#64748B', fontSize: 11 }}>
-                                {entry.relatedEntityType || 'USER'} #{entry.relatedEntityId || entry.id}
-                              </td>
-                              <td style={{ padding: '10px 14px', color: '#64748B', fontSize: 11 }}>
-                                {entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : '—'}
-                              </td>
-                            </tr>
-                          ))}
+                          {entriesList.map((entry) => {
+                            const ptsNum = Number(entry.points ?? entry.amount ?? 0);
+                            const isNegative = ptsNum < 0 ||
+                              String(entry.type || '').toUpperCase().includes('OUT') ||
+                              String(entry.type || '').toUpperCase().includes('DEDUCT') ||
+                              String(entry.type || '').toUpperCase().includes('DEBIT') ||
+                              String(entry.type || '').toUpperCase().includes('SENT') ||
+                              String(entry.scoringRuleName || '').toUpperCase().includes('TRANSFER_OUT') ||
+                              String(entry.scoringRuleName || '').toUpperCase().includes('DEDUCT') ||
+                              String(entry.points || '').startsWith('-');
+
+                            const displayPoints = isNegative
+                              ? (ptsNum < 0 ? `${ptsNum}` : `-${ptsNum}`)
+                              : (ptsNum > 0 ? `+${ptsNum}` : '0');
+
+                            const textColor = isNegative ? '#DC2626' : '#16A34A';
+                            const bgColor = isNegative ? '#FEF2F2' : '#F0FDF4';
+                            const borderColor = isNegative ? '#FCA5A5' : '#86EFAC';
+
+                            return (
+                              <tr key={entry.id} style={{ borderBottom: '1px solid #F1F5F9', fontSize: 12 }}>
+                                <td style={{ padding: '10px 14px', fontWeight: 700, color: '#1E293B' }}>
+                                  {entry.scoringRuleName || entry.type || 'General Rule'}
+                                </td>
+                                <td style={{ padding: '10px 14px' }}>
+                                  <span style={{
+                                    padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700,
+                                    background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE',
+                                  }}>
+                                    {entry.dimension || 'GROWTH_IMPACT'}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '10px 14px', fontWeight: 800 }}>
+                                  <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 2,
+                                    padding: '2px 8px', borderRadius: 6, fontSize: 12, fontWeight: 800,
+                                    background: bgColor, color: textColor, border: `1px solid ${borderColor}`,
+                                  }}>
+                                    {displayPoints} pts
+                                  </span>
+                                </td>
+                                <td style={{ padding: '10px 14px' }}>
+                                  <span style={{
+                                    padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
+                                    background: entry.status === 'APPROVED' ? '#DCFCE7' : '#FEF3C7',
+                                    color: entry.status === 'APPROVED' ? '#166534' : '#92400E',
+                                  }}>
+                                    {entry.status || 'APPROVED'}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '10px 14px', color: '#64748B', fontSize: 11 }}>
+                                  {entry.relatedEntityType || 'USER'} #{entry.relatedEntityId || entry.id}
+                                </td>
+                                <td style={{ padding: '10px 14px', color: '#64748B', fontSize: 11 }}>
+                                  {entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
 
@@ -613,9 +639,10 @@ function AwardTrustPointsModal({ user, onClose, onSuccess }) {
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
+                  onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                   value={tokenAmount}
-                  onChange={(e) => setTokenAmount(e.target.value)}
+                  onChange={(e) => setTokenAmount(e.target.value.replace(/-/g, ''))}
                   placeholder="e.g. 70"
                   required
                   style={{
@@ -1131,7 +1158,7 @@ function AwardTrustPointsSubTab() {
 }
 
 // ── Transfer Trust Tokens Modal Component ─────────────────────────
-function TransferTokensModal({ user, myTransferablePoints = 0, onClose, onSuccess }) {
+function TransferTokensModal({ user, myTransferablePoints = 0, isGlobalAdmin = false, onClose, onSuccess }) {
   const targetUserId = user?.id || user?.memberId || user?.operatorId || user?.userId || '';
   const targetUserName = user?.fullName || user?.name || 'User';
   const targetUserSub = user?.position || user?.franchiseName || user?.role || user?.email || `ID: #${targetUserId}`;
@@ -1142,7 +1169,9 @@ function TransferTokensModal({ user, myTransferablePoints = 0, onClose, onSucces
   const [successMsg, setSuccessMsg] = useState('');
 
   const numAmount = Number(amount || 0);
+  const isOverLimit = !isGlobalAdmin && numAmount > 20;
   const isOverBalance = numAmount > myTransferablePoints;
+  const effectiveMaxInput = isGlobalAdmin ? myTransferablePoints : Math.min(20, myTransferablePoints);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1152,6 +1181,10 @@ function TransferTokensModal({ user, myTransferablePoints = 0, onClose, onSucces
     }
     if (!amount || numAmount <= 0) {
       setError('Please enter a valid positive token amount to transfer.');
+      return;
+    }
+    if (isOverLimit) {
+      setError('Maximum 20 tokens can be transferred per transaction for non-admin users.');
       return;
     }
     if (isOverBalance) {
@@ -1286,14 +1319,16 @@ function TransferTokensModal({ user, myTransferablePoints = 0, onClose, onSucces
             </div>
 
             {/* Error Banner */}
-            {(error || isOverBalance) && (
+            {(error || isOverLimit || isOverBalance) && (
               <div style={{
                 background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B',
                 borderRadius: 12, padding: '12px 16px', fontSize: 13, fontWeight: 600,
                 display: 'flex', alignItems: 'center', gap: 10,
               }}>
                 <span>⚠️</span>
-                <span>{error || `Cannot transfer ${numAmount} pts. Maximum available is ${myTransferablePoints} pts.`}</span>
+                <span>
+                  {error || (isOverLimit ? 'Maximum 20 tokens can be transferred per transaction.' : `Cannot transfer ${numAmount} pts. Maximum available is ${myTransferablePoints} pts.`)}
+                </span>
               </div>
             )}
 
@@ -1317,42 +1352,46 @@ function TransferTokensModal({ user, myTransferablePoints = 0, onClose, onSucces
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <input
                   type="number"
-                  min="1"
-                  max={myTransferablePoints}
+                  min="0"
+                  onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
+                  max={effectiveMaxInput}
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder={`Max ${myTransferablePoints}`}
+                  onChange={(e) => setAmount(e.target.value.replace(/-/g, ''))}
+                  placeholder={!isGlobalAdmin ? `Max ${effectiveMaxInput} (Limit 20)` : `Max ${myTransferablePoints}`}
                   required
                   style={{
                     flex: 1, padding: '12px 16px', borderRadius: 12,
-                    border: isOverBalance ? '2px solid #EF4444' : '1px solid #CBD5E1',
+                    border: (isOverLimit || isOverBalance) ? '2px solid #EF4444' : '1px solid #CBD5E1',
                     fontSize: 15, fontWeight: 700, outline: 'none', color: '#0F172A',
                   }}
                 />
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {['1', '5', '10', '25'].map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      disabled={Number(amt) > myTransferablePoints}
-                      onClick={() => setAmount(amt)}
-                      style={{
-                        padding: '8px 12px', borderRadius: 10,
-                        border: amount === amt ? '1px solid #0D9488' : '1px solid #E2E8F0',
-                        background: amount === amt ? '#0D9488' : '#F8FAFC',
-                        color: amount === amt ? '#fff' : '#334155',
-                        fontSize: 12, fontWeight: 700,
-                        cursor: Number(amt) > myTransferablePoints ? 'not-allowed' : 'pointer',
-                        opacity: Number(amt) > myTransferablePoints ? 0.4 : 1,
-                      }}
-                    >
-                      +{amt}
-                    </button>
-                  ))}
+                  {['1', '5', '10', '20'].map((amt) => {
+                    const isBtnDisabled = Number(amt) > myTransferablePoints || (!isGlobalAdmin && Number(amt) > 20);
+                    return (
+                      <button
+                        key={amt}
+                        type="button"
+                        disabled={isBtnDisabled}
+                        onClick={() => setAmount(amt)}
+                        style={{
+                          padding: '8px 12px', borderRadius: 10,
+                          border: amount === amt ? '1px solid #0D9488' : '1px solid #E2E8F0',
+                          background: amount === amt ? '#0D9488' : '#F8FAFC',
+                          color: amount === amt ? '#fff' : '#334155',
+                          fontSize: 12, fontWeight: 700,
+                          cursor: isBtnDisabled ? 'not-allowed' : 'pointer',
+                          opacity: isBtnDisabled ? 0.4 : 1,
+                        }}
+                      >
+                        +{amt}
+                      </button>
+                    );
+                  })}
                   <button
                     type="button"
                     disabled={myTransferablePoints <= 0}
-                    onClick={() => setAmount(String(myTransferablePoints))}
+                    onClick={() => setAmount(String(effectiveMaxInput))}
                     style={{
                       padding: '8px 12px', borderRadius: 10, border: '1px solid #0F766E',
                       background: '#CCFBF1', color: '#0F766E', fontSize: 12, fontWeight: 800,
@@ -1363,6 +1402,11 @@ function TransferTokensModal({ user, myTransferablePoints = 0, onClose, onSucces
                   </button>
                 </div>
               </div>
+              {!isGlobalAdmin && (
+                <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginTop: 6 }}>
+                  ℹ️ Transfer Limit: Maximum 20 tokens per transfer for non-admin roles.
+                </div>
+              )}
             </div>
 
             {/* Footer Buttons */}
@@ -1381,15 +1425,15 @@ function TransferTokensModal({ user, myTransferablePoints = 0, onClose, onSucces
               </button>
               <button
                 type="submit"
-                disabled={submitting || isOverBalance || !amount || numAmount <= 0}
+                disabled={submitting || isOverLimit || isOverBalance || !amount || numAmount <= 0}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '12px 24px', borderRadius: 12, border: 'none',
-                  background: submitting || isOverBalance || !amount || numAmount <= 0
+                  background: submitting || isOverLimit || isOverBalance || !amount || numAmount <= 0
                     ? '#94A3B8'
                     : 'linear-gradient(135deg, #0D9488 0%, #0F766E 100%)',
                   color: '#fff', fontWeight: 800, fontSize: 14,
-                  cursor: submitting || isOverBalance || !amount || numAmount <= 0 ? 'not-allowed' : 'pointer',
+                  cursor: submitting || isOverLimit || isOverBalance || !amount || numAmount <= 0 ? 'not-allowed' : 'pointer',
                   boxShadow: '0 4px 14px rgba(13,148,136,0.3)',
                 }}
               >
@@ -1404,7 +1448,7 @@ function TransferTokensModal({ user, myTransferablePoints = 0, onClose, onSucces
 }
 
 // ── Transfer Tokens Sub-Tab Component (Member Directory Search) ──
-function TransferTokensSubTab({ myTransferablePoints = 0, onTransferSuccess }) {
+function TransferTokensSubTab({ myTransferablePoints = 0, onTransferSuccess, isGlobalAdmin = false }) {
   const [filters, setFilters] = useState({
     search: '',
     country: '',
@@ -1744,6 +1788,7 @@ function TransferTokensSubTab({ myTransferablePoints = 0, onTransferSuccess }) {
         <TransferTokensModal
           user={selectedUserForTransfer}
           myTransferablePoints={myTransferablePoints}
+          isGlobalAdmin={isGlobalAdmin}
           onClose={() => setSelectedUserForTransfer(null)}
           onSuccess={() => {
             loadDirectoryData();
@@ -1814,7 +1859,8 @@ export default function TrustLeaderboardTab({ isAdmin = true, userRole = 'GLOBAL
   const ownUserId = myProfileData?.userId || summary.userId;
   const ownUserName = myProfileData?.fullName || 'My Trust Profile';
 
-  const showDetailsButton = !isGlobalAdmin && (activeSubTab === 'scope' || isMember);
+  const canViewOthersDetail = isGlobalAdmin || (isMasterOperator && activeSubTab === 'scope');
+  const showDetailsButton = canViewOthersDetail;
 
 
   const loadLeaderboard = useCallback(async (pg = page, size = pageSize, subTab = activeSubTab) => {
@@ -1998,7 +2044,7 @@ export default function TrustLeaderboardTab({ isAdmin = true, userRole = 'GLOBAL
       {activeSubTab === 'award_points' ? (
         <AwardTrustPointsSubTab />
       ) : activeSubTab === 'transfer_tokens' ? (
-        <TransferTokensSubTab myTransferablePoints={transferablePoints} onTransferSuccess={loadMyProfile} />
+        <TransferTokensSubTab myTransferablePoints={transferablePoints} onTransferSuccess={loadMyProfile} isGlobalAdmin={isGlobalAdmin} />
       ) : (
         <>
           {/* ── Header ── */}
@@ -2245,8 +2291,8 @@ export default function TrustLeaderboardTab({ isAdmin = true, userRole = 'GLOBAL
                       ⭐ {top2.totalScore} Pts
                     </div>
 
-                    {/* Global Admin Details Button */}
-                    {isAdmin && (
+                    {/* Global Admin / Operator Details Button */}
+                    {canViewOthersDetail && (
                       <button
                         onClick={() => setSelectedUserForDetail(top2)}
                         style={{
@@ -2302,8 +2348,8 @@ export default function TrustLeaderboardTab({ isAdmin = true, userRole = 'GLOBAL
                       ⭐ {top1.totalScore} Pts
                     </div>
 
-                    {/* Global Admin Details Button */}
-                    {isAdmin && (
+                    {/* Global Admin / Operator Details Button */}
+                    {canViewOthersDetail && (
                       <button
                         onClick={() => setSelectedUserForDetail(top1)}
                         style={{
@@ -2356,8 +2402,8 @@ export default function TrustLeaderboardTab({ isAdmin = true, userRole = 'GLOBAL
                       ⭐ {top3.totalScore} Pts
                     </div>
 
-                    {/* Global Admin Details Button */}
-                    {isAdmin && (
+                    {/* Global Admin / Operator Details Button */}
+                    {canViewOthersDetail && (
                       <button
                         onClick={() => setSelectedUserForDetail(top3)}
                         style={{

@@ -1045,11 +1045,12 @@ export default function ScheduleMeetingModal({
                     <div className="flex gap-2">
                       <input
                         type="number"
-                        min="5"
+                        min="0"
+                        onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                         max="720"
                         required
                         value={durationMinutes}
-                        onChange={(e) => setDurationMinutes(e.target.value)}
+                        onChange={(e) => setDurationMinutes(e.target.value.replace(/-/g, ''))}
                         style={{ color: '#000000' }}
                         className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs font-bold text-black focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                       />

@@ -83,7 +83,6 @@ export const INTENT_STATUS = {
 
 export const NAV_ITEMS = [
   { id: 'pipeline',         label: 'Pipeline',      },
-  { id: 'trade_intents',    label: 'Trade Intents', },
   { id: 'deals',            label: 'Deals',         },
   { id: 'commissions',      label: 'Commissions',   },
   { id: 'meetings',         label: 'Meetings',      },

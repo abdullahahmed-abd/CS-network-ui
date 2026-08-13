@@ -154,9 +154,11 @@ export function CreateIntentModal({ onClose, onSuccess, showToast }) {
                 <input
                   className="form-input"
                   type="number"
+                  min="0"
+                  onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                   placeholder="e.g. 5000"
                   value={form.quantity}
-                  onChange={e => update('quantity', e.target.value)}
+                  onChange={e => update('quantity', e.target.value.replace(/-/g, ''))}
                 />
               </div>
               <div className="form-group">
@@ -177,9 +179,11 @@ export function CreateIntentModal({ onClose, onSuccess, showToast }) {
                 <input
                   className="form-input"
                   type="number"
+                  min="0"
+                  onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                   placeholder="e.g. 46"
                   value={form.pricePerUnit}
-                  onChange={e => update('pricePerUnit', e.target.value)}
+                  onChange={e => update('pricePerUnit', e.target.value.replace(/-/g, ''))}
                 />
               </div>
               <div className="form-group">

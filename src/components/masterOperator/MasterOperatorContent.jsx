@@ -1954,9 +1954,11 @@ function OperatorCommissionsTab() {
               </label>
               <input
                 type="number"
+                min="0"
+                onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                 placeholder="e.g. 21"
                 value={manualEntryId}
-                onChange={(e) => setManualEntryId(e.target.value)}
+                onChange={(e) => setManualEntryId(e.target.value.replace(/-/g, ''))}
                 style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border.light}`, fontSize: 13, outline: 'none' }}
               />
             </div>

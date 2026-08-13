@@ -1985,8 +1985,8 @@ function CreateProposalModal({ intent, onClose, onSuccess }) {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Quantity Requested</label>
               <div className="relative">
-                <input type="number" placeholder={`Max: ${fmt(intent?.quantity)} ${intent?.unit}`}
-                  value={form.quantityRequested} onChange={e => update('quantityRequested', e.target.value)}
+                <input type="number" min="0" onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }} placeholder={`Max: ${fmt(intent?.quantity)} ${intent?.unit}`}
+                  value={form.quantityRequested} onChange={e => update('quantityRequested', e.target.value.replace(/-/g, ''))}
                   className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 pr-16 text-sm text-gray-800 outline-none transition-all"
                   onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; e.target.style.background = '#fff'; }}
                   onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }} />
@@ -1997,8 +1997,8 @@ function CreateProposalModal({ intent, onClose, onSuccess }) {
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your Price Per Unit</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">₹</span>
-                <input type="number" step="0.01" placeholder={String(intent?.pricePerUnit || '')}
-                  value={form.pricePerUnit} onChange={e => update('pricePerUnit', e.target.value)}
+                <input type="number" step="0.01" min="0" onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }} placeholder={String(intent?.pricePerUnit || '')}
+                  value={form.pricePerUnit} onChange={e => update('pricePerUnit', e.target.value.replace(/-/g, ''))}
                   className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 pl-8 pr-4 py-3 text-sm text-gray-800 outline-none transition-all"
                   onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; e.target.style.background = '#fff'; }}
                   onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }} />
@@ -2024,8 +2024,8 @@ function CreateProposalModal({ intent, onClose, onSuccess }) {
                   </button>
                 ))}
               </div>
-              <input type="number" placeholder="Custom days" value={form.timelineDays}
-                onChange={e => update('timelineDays', e.target.value)}
+              <input type="number" min="0" onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }} placeholder="Custom days" value={form.timelineDays}
+                onChange={e => update('timelineDays', e.target.value.replace(/-/g, ''))}
                 className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition-all"
                 onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; e.target.style.background = '#fff'; }}
                 onBlur={e => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; e.target.style.background = ''; }} />
@@ -2928,12 +2928,23 @@ function FilterChip({ label, onRemove }) {
   );
 }
 
-function ModalInput({ label, onChange, type, min, ...props }) {
-  const minVal = min || (type === 'date' ? getTodayDateString() : type === 'datetime-local' ? getNowDateTimeString() : undefined);
+function ModalInput({ label, onChange, type, min, onKeyDown, ...props }) {
+  const minVal = min || (type === 'date' ? getTodayDateString() : type === 'datetime-local' ? getNowDateTimeString() : (type === 'number' ? '0' : undefined));
+  const handleKeyDown = (e) => {
+    if (type === 'number' && ['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault();
+    if (onKeyDown) onKeyDown(e);
+  };
+  const handleChange = (valOrEvt) => {
+    let val = typeof valOrEvt === 'object' && valOrEvt?.target ? valOrEvt.target.value : valOrEvt;
+    if (type === 'number' && typeof val === 'string') {
+      val = val.replace(/-/g, '');
+    }
+    onChange(val);
+  };
   return (
     <div>
       <label className="block text-sm font-semibold text-gray-700 mb-1.5">{label}</label>
-      <input type={type} min={minVal} {...props} onChange={e => onChange(e.target.value)}
+      <input type={type} min={minVal} onKeyDown={handleKeyDown} {...props} onChange={handleChange}
         className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 outline-none transition-all"
         onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.background = '#fff'; e.target.style.boxShadow = `0 0 0 3px ${BRAND}30`; }}
         onBlur={e => { e.target.style.borderColor = ''; e.target.style.background = ''; e.target.style.boxShadow = ''; }}

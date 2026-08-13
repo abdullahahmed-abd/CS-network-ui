@@ -21,7 +21,7 @@ import {
   setItem, getItem, saveTokens, toBool,
   clearTokens, saveUserData, getUserData,
   removeItem, setSessionExpiredHandler,
-  authenticatedFetch,
+  authenticatedFetch, getCookie,
 } from '../../api/auth';
 import { fetchMyProfile } from '../../api/profileOperationsApi';
 
@@ -192,8 +192,8 @@ export default function App() {
     const formFilledRaw    =
       params.get('isFormFill') || params.get('formFilled') ||
       params.get('fromFill')   || params.get('formfill');
-    const accessToken    = params.get('accessToken');
-    const refreshToken   = params.get('refreshToken');
+    const accessToken    = params.get('accessToken')  || params.get('access_token')  || params.get('token');
+    const refreshToken   = params.get('refreshToken') || params.get('refresh_token') || params.get('refresh');
     const fullName       = params.get('fullName');
     const email          = params.get('email');
     const isOperatorRaw  = params.get('isOperator');
@@ -216,17 +216,26 @@ export default function App() {
     const hasOAuthData    = userId || phoneVerifiedRaw !== null ||
       formFilledRaw !== null || accessToken || refreshToken;
 
-    // ── CASE 1: No OAuth params (returning user) ──
+    // ── CASE 1: No OAuth params (returning user / page refresh) ──
     if (!hasOAuthData) {
-      const savedUser    = getUserData() || {};
-      const savedRoles   = savedUser?.roles || [];
+      const savedUser      = getUserData() || {};
+      const savedRoles     = savedUser?.roles || [];
       const storedBpStatus = getItem(BP_STATUS_KEY);
 
-      if (storedToken) {
-        fetchMyProfile().catch(() => {});
+      // Check BOTH localStorage and JS-readable cookies for token
+      const anyToken = storedToken || getCookie('accessToken') || getCookie('token') || getCookie('jwt');
+
+      if (anyToken) {
         const formFilled = getItem('formFilled');
-        if (formFilled === 'true') {
+        const hasRoles   = savedRoles.length > 0;
+        const isFullySetup = formFilled === 'true' || hasRoles;
+
+        if (isFullySetup) {
+          // Have enough local state — route immediately
+          if (formFilled !== 'true' && hasRoles) setItem('formFilled', 'true');
+
           setSelectedRoles(savedRoles);
+          fetchMyProfile().catch(() => {});
 
           const isOperatorUser =
             savedRoles.includes('OPERATOR')         ||
@@ -240,9 +249,50 @@ export default function App() {
           } else {
             setScreen(getScreenFromRoles(savedRoles, savedUser));
           }
-        } else {
-          setScreen('auth');
+          setBooting(false);
+          return;
         }
+
+        // Token exists but incomplete local state — typical for Google OAuth.
+        // Fetch profile from backend to restore the session.
+        fetchMyProfile()
+          .then((res) => {
+            const profile    = res?.profile || {};
+            const rawRoles   = profile?.roles || profile?.memberRoles || [];
+            const roleList   = Array.isArray(rawRoles) ? rawRoles : [rawRoles].filter(Boolean);
+            const mergedUser = { ...savedUser, ...profile, roles: [...new Set([...savedRoles, ...roleList])] };
+            const finalRoles = mergedUser.roles;
+
+            if (finalRoles.length > 0 || profile?.userId || profile?.email) {
+              // Successfully restored session from backend
+              saveUserData(mergedUser);
+              setItem('formFilled', 'true');
+              setSelectedRoles(finalRoles);
+
+              const restoredBpStatus = getItem(BP_STATUS_KEY);
+              const isOperatorUser =
+                finalRoles.includes('OPERATOR')         ||
+                finalRoles.includes('MASTER_OPERATOR')  ||
+                finalRoles.includes('GENERAL_OPERATOR') ||
+                mergedUser?.isOperator                  ||
+                mergedUser?.membershipType === 'OPERATOR';
+
+              if (restoredBpStatus === 'PENDING' && finalRoles.includes('MEMBER') && !isOperatorUser) {
+                setScreen('auth');
+              } else {
+                setScreen(getScreenFromRoles(finalRoles, mergedUser));
+              }
+            } else {
+              setScreen('auth');
+            }
+          })
+          .catch(() => {
+            // Profile fetch failed (token expired/invalid) — clear and show login
+            clearTokens();
+            setScreen('auth');
+          })
+          .finally(() => setBooting(false));
+        return; // booting will be set false in .finally()
       } else {
         setScreen('auth');
       }
@@ -253,14 +303,19 @@ export default function App() {
     // ── CASE 2: Fresh OAuth redirect ──
     window.history.replaceState({}, '', window.location.pathname);
 
-    const phoneVerified = toBool(phoneVerifiedRaw);
+    // Google OAuth may not pass phoneVerified param; default to true when accessToken exists
+    const phoneVerified = phoneVerifiedRaw !== null ? toBool(phoneVerifiedRaw) : (accessToken ? true : false);
     const formFilled    = toBool(formFilledRaw);
 
     if (userId) setItem('userId', userId);
     setItem('phoneVerified', String(phoneVerified));
-    setItem('formFilled',    String(formFilled));
+    // If user has roles from the OAuth response, they are fully set up — mark formFilled
+    const effectiveFormFilled = formFilled || (urlRoles.length > 0);
+    setItem('formFilled', String(effectiveFormFilled));
 
     if (accessToken && refreshToken) saveTokens(accessToken, refreshToken);
+    // If only accessToken came (no refreshToken), still save it
+    else if (accessToken) saveTokens(accessToken, null);
 
     const savedUser  = getUserData() || {};
     const savedRoles = savedUser?.roles || [];
@@ -275,7 +330,7 @@ export default function App() {
       fullName:      fullName      || savedUser.fullName      || '',
       email:         email         || savedUser.email         || '',
       phoneVerified,
-      formFilled,
+      formFilled:    effectiveFormFilled,
       roles:         finalRoles,
       isOperator,
       membershipType: membershipType || savedUser.membershipType || (isOperator ? 'OPERATOR' : ''),
@@ -287,7 +342,40 @@ export default function App() {
     if (finalRoles.length) setSelectedRoles(finalRoles);
     if (bpAppStatus) saveBpStatus(bpAppStatus, franchiseName);
 
-    navigateTo(phoneVerified, formFilled, user, bpAppStatus, franchiseName);
+    // Google OAuth may not include phoneVerified in URL params.
+    // If we have an accessToken + roles, the user is authenticated — treat phoneVerified as true.
+    const effectivePhoneVerified = phoneVerified || (accessToken && finalRoles.length > 0);
+    const effectiveFormFilled2   = effectiveFormFilled || (accessToken && finalRoles.length > 0);
+
+    if (effectivePhoneVerified || effectiveFormFilled2) {
+      navigateTo(true, effectiveFormFilled2 || effectiveFormFilled, user, bpAppStatus, franchiseName);
+    } else if (accessToken && !phoneVerifiedRaw) {
+      // Google OAuth with token but no phoneVerified param — fetch profile to determine route
+      fetchMyProfile()
+        .then((res) => {
+          const profile    = res?.profile || {};
+          const rawRoles   = profile?.roles || profile?.memberRoles || finalRoles;
+          const roleList   = Array.isArray(rawRoles) ? rawRoles : [rawRoles].filter(Boolean);
+          const mergedUser = { ...user, ...profile, roles: [...new Set([...finalRoles, ...roleList])] };
+          const allRoles   = mergedUser.roles;
+
+          if (allRoles.length > 0 || profile?.email) {
+            saveUserData(mergedUser);
+            setItem('formFilled', 'true');
+            setSelectedRoles(allRoles);
+            setScreen(getScreenFromRoles(allRoles, mergedUser));
+          } else {
+            navigateTo(phoneVerified, effectiveFormFilled, user, bpAppStatus, franchiseName);
+          }
+        })
+        .catch(() => {
+          navigateTo(phoneVerified, effectiveFormFilled, user, bpAppStatus, franchiseName);
+        })
+        .finally(() => setBooting(false));
+      return;
+    } else {
+      navigateTo(phoneVerified, effectiveFormFilled, user, bpAppStatus, franchiseName);
+    }
   }, []);
 
   // ─────────────────────────────────────────────────────────
@@ -340,7 +428,13 @@ export default function App() {
           setSelectedRoles(updatedRoles);
           saveUserData({ ...savedUser, roles: updatedRoles });
           setScreen('bp_dashboard');
-          setTimeout(() => openBpModal('APPROVED', franchiseName), 500);
+
+          // Only show popup modal once if user wasn't ALREADY a Business Partner
+          const wasAlreadyBp = savedRoles.includes('BUSINESS_PARTNER') || getItem('bpApprovalSeen') === 'true';
+          if (!wasAlreadyBp) {
+            setItem('bpApprovalSeen', 'true');
+            setTimeout(() => openBpModal('APPROVED', franchiseName), 500);
+          }
 
         } else if (bpAppStatus === 'REJECTED') {
           setScreen('bp_pending');
@@ -457,14 +551,14 @@ export default function App() {
       setBpFranchiseName(franchiseName);
 
       if (bpAppStatus === 'APPROVED') {
+        setItem('bpApprovalSeen', 'true');
         setScreen('bp_dashboard');
-        setTimeout(() => setBpModalOpen(true), 500);
       } else if (bpAppStatus === 'REJECTED') {
         setScreen('bp_pending');
-        setTimeout(() => setBpModalOpen(true), 400);
+        setTimeout(() => openBpModal('REJECTED', franchiseName), 400);
       } else {
         setScreen('bp_pending');
-        setTimeout(() => setBpModalOpen(true), 400);
+        setTimeout(() => openBpModal('PENDING', franchiseName), 400);
       }
 
     } else {
@@ -483,6 +577,7 @@ export default function App() {
   const handleBpModalClose = () => setBpModalOpen(false);
 
   const handleBpGoToDashboard = () => {
+    setItem('bpApprovalSeen', 'true');
     clearBpStatus();
     setScreen('bp_dashboard');
   };

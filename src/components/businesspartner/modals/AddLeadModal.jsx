@@ -434,8 +434,10 @@ export function AddLeadModal({ onClose, onSuccess, showToast }) {
                       <label className="block font-bold text-slate-700 mb-1">Quantity *</label>
                       <input
                         type="number"
+                        min="0"
+                        onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                         value={extForm.quantity}
-                        onChange={(e) => setExtForm({ ...extForm, quantity: e.target.value })}
+                        onChange={(e) => setExtForm({ ...extForm, quantity: e.target.value.replace(/-/g, '') })}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800"
                         placeholder="1000"
                         required
@@ -446,8 +448,10 @@ export function AddLeadModal({ onClose, onSuccess, showToast }) {
                       <input
                         type="number"
                         step="0.01"
+                        min="0"
+                        onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                         value={extForm.pricePerUnit}
-                        onChange={(e) => setExtForm({ ...extForm, pricePerUnit: e.target.value })}
+                        onChange={(e) => setExtForm({ ...extForm, pricePerUnit: e.target.value.replace(/-/g, '') })}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800"
                         placeholder="85.50"
                         required
@@ -959,8 +963,10 @@ export function AddLeadModal({ onClose, onSuccess, showToast }) {
                     <label className="block font-bold text-slate-700 mb-1">Quantity *</label>
                     <input
                       type="number"
+                      min="0"
+                      onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                       value={memIntForm.quantity}
-                      onChange={(e) => setMemIntForm({ ...memIntForm, quantity: e.target.value })}
+                      onChange={(e) => setMemIntForm({ ...memIntForm, quantity: e.target.value.replace(/-/g, '') })}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800"
                       placeholder="1000"
                       required
@@ -971,8 +977,10 @@ export function AddLeadModal({ onClose, onSuccess, showToast }) {
                     <input
                       type="number"
                       step="0.01"
+                      min="0"
+                      onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                       value={memIntForm.pricePerUnit}
-                      onChange={(e) => setMemIntForm({ ...memIntForm, pricePerUnit: e.target.value })}
+                      onChange={(e) => setMemIntForm({ ...memIntForm, pricePerUnit: e.target.value.replace(/-/g, '') })}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800"
                       placeholder="75.50"
                       required

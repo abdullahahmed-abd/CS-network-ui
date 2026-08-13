@@ -105,8 +105,9 @@ export default function SubmitEventReportModal({
             <input
               type="number"
               min="0"
+              onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
               value={attendeeCount}
-              onChange={(e) => setAttendeeCount(e.target.value)}
+              onChange={(e) => setAttendeeCount(e.target.value.replace(/-/g, ''))}
               placeholder="e.g. 45"
               style={{
                 width: '100%', padding: '10px 14px', borderRadius: 12,
@@ -124,8 +125,9 @@ export default function SubmitEventReportModal({
               <input
                 type="number"
                 min="0"
+                onKeyDown={(e) => { if (['-', 'e', 'E', '+'].includes(e.key)) e.preventDefault(); }}
                 value={totalExpense}
-                onChange={(e) => setTotalExpense(e.target.value)}
+                onChange={(e) => setTotalExpense(e.target.value.replace(/-/g, ''))}
                 placeholder="e.g. 15000"
                 style={{
                   width: '100%', padding: '10px 14px', borderRadius: 12,

@@ -44,15 +44,18 @@ export const getCookie = (name) => {
 export const setCookie = (name, value, days = 7) => {
   try {
     const expires = new Date(Date.now() + days * 864e5).toUTCString();
-    // SameSite=None; Secure is required for cross-origin requests (e.g. localhost -> ngrok)
-    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=None; Secure`;
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const sameSitePolicy = isHttps ? '; SameSite=None; Secure' : '; SameSite=Lax';
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/${sameSitePolicy}`;
   } catch (e) {
     console.warn('Cookie write failed:', e);
   }
 };
 
 export const deleteCookie = (name) => {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure`;
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const sameSitePolicy = isHttps ? '; SameSite=None; Secure' : '; SameSite=Lax';
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${sameSitePolicy}`;
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 };
 
@@ -73,24 +76,31 @@ export const saveTokens = (accessToken, refreshToken) => {
 };
 
 export const getAccessToken = () => {
-  const cookieToken = getCookie('accessToken') || getCookie('token') || getCookie('jwt');
-  if (cookieToken) return decodeURIComponent(cookieToken);
-
   const lsToken = getItem('accessToken');
-  if (lsToken) {
-    setCookie('accessToken', lsToken, 7);
-    setCookie('token', lsToken, 7);
-    setCookie('jwt', lsToken, 7);
-    setCookie('access_token', lsToken, 7);
-    setCookie('Authorization', `Bearer ${lsToken}`, 7);
-    return lsToken;
+  if (lsToken) return lsToken;
+
+  const cookieToken = getCookie('accessToken') || getCookie('access_token') || getCookie('token') || getCookie('jwt');
+  if (cookieToken) {
+    const decoded = decodeURIComponent(cookieToken);
+    setItem('accessToken', decoded);
+    return decoded;
   }
 
   return null;
 };
 
 export const getRefreshToken = () => {
-  return getCookie('refreshToken') || getCookie('token') || getItem('refreshToken');
+  const lsRefresh = getItem('refreshToken');
+  if (lsRefresh) return lsRefresh;
+
+  const cookieRefresh = getCookie('refreshToken') || getCookie('refresh_token');
+  if (cookieRefresh) {
+    const decoded = decodeURIComponent(cookieRefresh);
+    setItem('refreshToken', decoded);
+    return decoded;
+  }
+
+  return null;
 };
 
 export const clearTokens = () => {
