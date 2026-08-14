@@ -6,7 +6,7 @@
 // Document Download: GET /partnerships/documents/{documentId}/download
 // ══════════════════════════════════════════════════════════════════════════════
 
-import { authenticatedFetch, BASE_URL } from './auth';
+import { authenticatedFetch, getAccessToken, BASE_URL } from './auth';
 
 // ─────────────────────────────────────────────
 // Enums & Reference Constants (§3.4 & §6)
