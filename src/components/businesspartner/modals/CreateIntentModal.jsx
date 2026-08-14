@@ -4,18 +4,21 @@ import {
   Loader2, ShoppingCart, Store,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { authenticatedFetch } from '../../../api/auth';
-import { CATEGORIES, UNITS, BASE_URL } from '../../constants/BpConstants';
+import { authenticatedFetch, getUserData } from '../../../api/auth';
+import { getSectorData, BASE_URL } from '../../constants/BpConstants';
 import { getNowDateTimeString } from '../../../utils/BpHelpers';
 
-export function CreateIntentModal({ onClose, onSuccess, showToast }) {
+export function CreateIntentModal({ userProfile, onClose, onSuccess, showToast }) {
+  const userSector = userProfile?.businessSector || userProfile?.profile?.businessSector || getUserData()?.businessSector || 'AGRICULTURE';
+  const { categories, units } = getSectorData(userSector);
+
   const [form, setForm] = useState({
     intentType:   'BUY',
-    category:     'Wheat',
+    category:     categories[0] || 'Wheat',
     title:        '',
     description:  '',
     quantity:     '',
-    unit:         'KG',
+    unit:         units[0] || 'KG',
     pricePerUnit: '',
     currency:     'INR',
     expiresAt:    '',
@@ -134,7 +137,7 @@ export function CreateIntentModal({ onClose, onSuccess, showToast }) {
                 value={form.category}
                 onChange={e => update('category', e.target.value)}
               >
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
@@ -168,7 +171,7 @@ export function CreateIntentModal({ onClose, onSuccess, showToast }) {
                   value={form.unit}
                   onChange={e => update('unit', e.target.value)}
                 >
-                  {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                  {units.map(u => <option key={u} value={u}>{u}</option>)}
                 </select>
               </div>
             </div>

@@ -23,6 +23,7 @@ import MyRegistrationsTab from './MyRegistrationsTab';
 import MeetingsTab from '../components/meetings/MeetingsTab';
 import PartnershipsTab from '../components/partnerships/PartnershipsTab';
 import { ProposalsTab, ReceivedProposalsContent } from './BuyerSellerDashboard';
+import { getSectorData } from '../components/constants/BpConstants';
 import TrustLeaderboardTab from '../components/globalAdmin/tabs/TrustLeaderboardTab';
 import DirectoryTab from '../components/directory/DirectoryTab';
 
@@ -1972,14 +1973,17 @@ function IntentCard({ intent, onView }) {
 
 /* ══════════════════════════════════════════════════════════════ */
 /* Create Intent Modal */
-function CreateIntentModal({ onClose, onSuccess, showToast }) {
+function CreateIntentModal({ onClose, onSuccess, showToast, userProfile }) {
+  const userSector = userProfile?.businessSector || userProfile?.profile?.businessSector || getUserData()?.businessSector || 'AGRICULTURE';
+  const { categories, units } = getSectorData(userSector);
+
   const [form, setForm] = useState({
     intentType: 'BUY',
-    category: 'Wheat',
+    category: categories[0] || 'Wheat',
     title: '',
     description: '',
     quantity: '',
-    unit: 'KG',
+    unit: units[0] || 'KG',
     pricePerUnit: '',
     currency: 'INR',
     expiresAt: '',
@@ -2099,7 +2103,7 @@ function CreateIntentModal({ onClose, onSuccess, showToast }) {
                 value={form.category}
                 onChange={(e) => update('category', e.target.value)}
               >
-                {CATEGORIES.map((c) => (
+                {categories.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
@@ -2135,7 +2139,7 @@ function CreateIntentModal({ onClose, onSuccess, showToast }) {
                   value={form.unit}
                   onChange={(e) => update('unit', e.target.value)}
                 >
-                  {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                  {units.map((u) => <option key={u} value={u}>{u}</option>)}
                 </select>
               </div>
             </div>
@@ -2550,14 +2554,17 @@ function LeadModal({ lead, currentStageId, stages, onClose, onBrowseTradeIntents
 
 /* ══════════════════════════════════════════════════════════════ */
 /* Add Lead Modal */
-function AddLeadModal({ onClose, onSuccess, showToast }) {
+function AddLeadModal({ onClose, onSuccess, showToast, userProfile }) {
+  const userSector = userProfile?.businessSector || userProfile?.profile?.businessSector || getUserData()?.businessSector || 'AGRICULTURE';
+  const { categories: leadCategories } = getSectorData(userSector);
+
   const [step, setStep] = useState('choose');
   const [selectedType, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [externalForm, setExternalForm] = useState({ companyName: '', contactPerson: '', phone: '', email: '', title: '', description: '', quantity: '', unit: 'KG', pricePerUnit: '', currency: 'INR', intentType: 'BUY', category: 'AGRICULTURE', expiresAt: '', notes: '', followUpDate: '' });
-  const [memberIntentForm, setMemberIntentForm] = useState({ memberId: '', title: '', description: '', quantity: '', unit: 'KG', pricePerUnit: '', currency: 'INR', intentType: 'SELL', category: 'AGRICULTURE', expiresAt: '', notes: '', followUpDate: '' });
+  const [externalForm, setExternalForm] = useState({ companyName: '', contactPerson: '', phone: '', email: '', title: '', description: '', quantity: '', unit: 'KG', pricePerUnit: '', currency: 'INR', intentType: 'BUY', category: leadCategories[0] || 'AGRICULTURE', expiresAt: '', notes: '', followUpDate: '' });
+  const [memberIntentForm, setMemberIntentForm] = useState({ memberId: '', title: '', description: '', quantity: '', unit: 'KG', pricePerUnit: '', currency: 'INR', intentType: 'SELL', category: leadCategories[0] || 'AGRICULTURE', expiresAt: '', notes: '', followUpDate: '' });
   const [internalForm, setInternalForm] = useState({ memberId: '', tradeIntentId: '', notes: '', followUpDate: '' });
 
   // Franchise Member Search State
@@ -2844,7 +2851,7 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                   <div className="form-group">
                     <label className="form-label">Category</label>
                     <select className="form-input" value={externalForm.category} onChange={e => setExternalForm({ ...externalForm, category: e.target.value })}>
-                      {CATEGORIES.map(c => <option key={c} value={c.toUpperCase()}>{c}</option>)}
+                      {leadCategories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
@@ -2949,7 +2956,7 @@ function AddLeadModal({ onClose, onSuccess, showToast }) {
                   <div className="form-group">
                     <label className="form-label">Category</label>
                     <select className="form-input" value={memberIntentForm.category} onChange={e => setMemberIntentForm({ ...memberIntentForm, category: e.target.value })}>
-                      {CATEGORIES.map(c => <option key={c} value={c.toUpperCase()}>{c}</option>)}
+                      {leadCategories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
@@ -4051,6 +4058,7 @@ export default function BusinessPartnerDashboard({ onLogout }) {
       <AnimatePresence>
         {showAddLead && (
           <AddLeadModal
+            userProfile={userProfile}
             onClose={() => setShowAddLead(false)}
             onSuccess={handleLeadCreated}
             showToast={showToast}

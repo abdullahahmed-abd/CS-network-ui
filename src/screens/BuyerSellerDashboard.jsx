@@ -28,6 +28,7 @@ import MyProfileModal from '../components/profile/MyProfileModal';
 import { EventsTab } from './EventsComponents';
 import MyRegistrationsTab from './MyRegistrationsTab';
 import { getTodayDateString, getNowDateTimeString } from '../utils/BpHelpers';
+import { getSectorData } from '../components/constants/BpConstants';
 import MeetingsTab from '../components/meetings/MeetingsTab';
 import TrustLeaderboardTab from '../components/globalAdmin/tabs/TrustLeaderboardTab';
 
@@ -2983,13 +2984,16 @@ function ModalSelect({ label, options, onChange, ...props }) {
 }
 
 // ── CreateIntentModal ──
-function CreateIntentModal({ roles, onClose, onSuccess }) {
+function CreateIntentModal({ roles, onClose, onSuccess, userProfile }) {
+  const userSector = userProfile?.businessSector || userProfile?.profile?.businessSector || getUserData()?.businessSector || 'AGRICULTURE';
+  const { categories, units } = getSectorData(userSector);
+
   const canBuy = roles.includes('BUYER');
   const canSell = roles.includes('SELLER');
   const [form, setForm] = useState({
     intentType: canBuy ? 'BUY' : 'SELL',
-    category: 'Wheat', title: '', description: '',
-    quantity: '', unit: 'KG', pricePerUnit: '', currency: 'INR', expiresAt: '',
+    category: categories[0] || 'Wheat', title: '', description: '',
+    quantity: '', unit: units[0] || 'KG', pricePerUnit: '', currency: 'INR', expiresAt: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -3069,7 +3073,7 @@ function CreateIntentModal({ roles, onClose, onSuccess }) {
               )}
             </div>
             <ModalSelect label="Category" value={form.category} onChange={v => update('category', v)}
-              options={CATEGORIES.map(c => ({ label: c, value: c }))} />
+              options={categories.map(c => ({ label: c, value: c }))} />
             <ModalInput label="Title" placeholder="e.g. BUY Premium Wheat" value={form.title} onChange={v => update('title', v)} />
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description</label>
@@ -3081,7 +3085,7 @@ function CreateIntentModal({ roles, onClose, onSuccess }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <ModalInput label="Quantity" type="number" placeholder="e.g. 5000" value={form.quantity} onChange={v => update('quantity', v)} />
-              <ModalSelect label="Unit" value={form.unit} onChange={v => update('unit', v)} options={UNITS.map(u => ({ label: u, value: u }))} />
+              <ModalSelect label="Unit" value={form.unit} onChange={v => update('unit', v)} options={units.map(u => ({ label: u, value: u }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <ModalInput label="Price per Unit" type="number" placeholder="e.g. 46" value={form.pricePerUnit} onChange={v => update('pricePerUnit', v)} />
