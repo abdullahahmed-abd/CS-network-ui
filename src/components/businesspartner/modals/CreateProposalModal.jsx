@@ -17,8 +17,9 @@ export function CreateProposalModal({ intent, lead, onClose, onSuccess, showToas
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const targetId = lead?.id || intent?.id || intent?.tradeIntentId || intent?.intentId;
-    if (!targetId) return;
+    if (loading) return;
+
+    const targetIntentId = intent?.id || intent?.tradeIntentId || intent?.intentId || lead?.tradeIntentId || lead?.tradeIntent?.id;
 
     if (!formData.quantityRequested || Number(formData.quantityRequested) <= 0) {
       setError('Quantity requested must be greater than 0');
@@ -38,7 +39,9 @@ export function CreateProposalModal({ intent, lead, onClose, onSuccess, showToas
 
     try {
       let res;
-      const targetIntentId = intent?.id || intent?.tradeIntentId || intent?.intentId || lead?.tradeIntentId || lead?.tradeIntent?.id;
+      // ✅ STRICT CONTEXT SEPARATION:
+      // If lead.id is present, it's a Business Partner submitting for a lead -> ONLY call createProposalForLead
+      // Otherwise, it's a normal user submitting for an intent -> ONLY call createProposalForIntent
       if (lead?.id) {
         res = await createProposalForLead(lead.id, {
           tradeIntentId: targetIntentId,

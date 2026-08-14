@@ -1939,6 +1939,7 @@ function CreateProposalModal({ intent, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setError('');
+    if (loading) return;
     if (!form.quantityRequested) return setError('Quantity is required');
     if (!form.pricePerUnit) return setError('Price per unit is required');
     if (!form.timelineDays) return setError('Timeline is required');
