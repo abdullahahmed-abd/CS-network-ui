@@ -81,7 +81,12 @@ export default function App() {
     }
 
     if (roles.includes('BUSINESS_PARTNER')) return 'bp_dashboard';
-    return 'buyer_seller_dashboard';
+
+    const planPurchased = getItem('planPurchased');
+    if (planPurchased === 'true' || user?.planPurchased === true || user?.selectedPlanId) {
+      return 'buyer_seller_dashboard';
+    }
+    return 'plans';
   };
 
   // ─────────────────────────────────────────────────────────

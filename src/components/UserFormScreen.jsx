@@ -7,7 +7,8 @@ import {
   X, Star, Zap, Award, TrendingUp, Clock, Briefcase, Factory, Layers,
 } from 'lucide-react';
 import Backgroundimage from '../assets/image/Backgroundimg19.png';
-import { authenticatedFetch, removeItem, clearTokens } from '../api/auth';
+import { authenticatedFetch, removeItem, getItem, clearTokens } from '../api/auth';
+import { acceptInvitation } from '../api/adminApi';
 
 const BASE_URL = 'https://connectsouq.sundukpay.com';
 
@@ -1030,8 +1031,18 @@ export default function UserFormScreen({
       removeItem('formFilled');
       removeItem('phoneVerified');
 
-      // ✅ Clear invite token after successful submit
-      if (isInviteFlow) {
+      // ✅ Accept invitation & clear invite token after successful submit
+      const inviteToken = inviteData?.inviteToken || inviteData?.token || getItem('pendingInviteToken');
+      if (isInviteFlow || inviteToken) {
+        if (inviteToken) {
+          console.log('📨 Accepting invitation AFTER form submit...');
+          try {
+            const acceptRes = await acceptInvitation(inviteToken);
+            console.log('✅ Invitation accepted:', acceptRes);
+          } catch (acceptErr) {
+            console.warn('⚠️ Accept invitation failed (form saved):', acceptErr.message);
+          }
+        }
         removeItem('pendingInviteToken');
       }
 
