@@ -805,9 +805,6 @@ function GeneralFranchiseTab({ cfg }) {
           <p style={{ fontSize: 12, color: T.text.muted, margin: '4px 0 0', fontFamily: T.font }}>Create and manage state & city level franchises</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Btn variant="secondary" onClick={() => { setInviteId(''); setInviteResult(null); setShowInvite(true); }} accent="#3B82F6">
-            📨 Invite Operator
-          </Btn>
           <Btn onClick={() => { setShowCreate(true); setCreateResult(null); }} accent="#3B82F6">➕ Create General Franchise</Btn>
         </div>
       </div>
@@ -824,7 +821,6 @@ function GeneralFranchiseTab({ cfg }) {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
             <Btn onClick={() => { setShowCreate(true); setCreateResult(null); }} accent="#3B82F6">➕ Create General Franchise</Btn>
-            <Btn variant="secondary" onClick={() => { setInviteId(''); setInviteResult(null); setShowInvite(true); }} accent="#3B82F6">🔗 Invite General Operator</Btn>
           </div>
         </div>
       ) : (
@@ -851,9 +847,6 @@ function GeneralFranchiseTab({ cfg }) {
                   >📋 Copy</motion.button>
                 </div>
               )}
-              <Btn variant="secondary" fullWidth onClick={() => { setInviteId(String(f.id)); setInviteResult(null); setShowInvite(true); }} accent="#3B82F6">
-                📨 Invite Operator
-              </Btn>
             </motion.div>
           ))}
         </div>
@@ -1067,9 +1060,6 @@ function SectorFranchiseTab({ cfg }) {
           <p style={{ fontSize: 12, color: T.text.muted, margin: '4px 0 0', fontFamily: T.font }}>Create and manage industry sector franchises</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Btn variant="secondary" onClick={() => { setInviteId(''); setInviteResult(null); setShowInvite(true); }} accent="#10B981">
-            📨 Invite Operator
-          </Btn>
           <Btn onClick={() => { setShowCreate(true); setCreateResult(null); }} accent="#10B981">➕ Create Sector Franchise</Btn>
         </div>
       </div>
@@ -1085,7 +1075,6 @@ function SectorFranchiseTab({ cfg }) {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
             <Btn onClick={() => { setShowCreate(true); setCreateResult(null); }} accent="#10B981">➕ Create Sector Franchise</Btn>
-            <Btn variant="secondary" onClick={() => { setInviteId(''); setInviteResult(null); setShowInvite(true); }} accent="#10B981">🔗 Invite Sector Operator</Btn>
           </div>
         </div>
       ) : (
@@ -1112,9 +1101,6 @@ function SectorFranchiseTab({ cfg }) {
                   >📋 Copy</motion.button>
                 </div>
               )}
-              <Btn variant="secondary" fullWidth onClick={() => { setInviteId(String(f.id)); setInviteResult(null); setShowInvite(true); }} accent="#10B981">
-                📨 Invite Operator
-              </Btn>
             </motion.div>
           ))}
         </div>

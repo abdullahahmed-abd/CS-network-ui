@@ -1,4 +1,4 @@
-// components/directory/DirectoryTab.jsx
+// components/directory/DirectoryTab.jsx 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, ShieldCheck, BookOpen, Network } from 'lucide-react';

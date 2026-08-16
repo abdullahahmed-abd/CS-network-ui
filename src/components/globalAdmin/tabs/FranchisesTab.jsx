@@ -116,10 +116,6 @@ export default function FranchisesTab() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <GreenButton variant="outline"
-            onClick={() => { setInviteFranchiseId(''); setInviteResult(null); setShowInvite(true); }}>
-            📨 Invite Operator
-          </GreenButton>
           <GreenButton onClick={() => { setShowCreate(true); setCreateResult(null); }}>
             ➕ Create Franchise
           </GreenButton>
@@ -196,16 +192,6 @@ export default function FranchisesTab() {
                   >📋 Copy</motion.button>
                 </div>
               )}
-              <GreenButton
-                variant="outline"
-                onClick={() => {
-                  setInviteFranchiseId(String(f.id));
-                  setInviteResult(null);
-                  setShowInvite(true);
-                }}
-              >
-                📨 Invite Operator
-              </GreenButton>
             </motion.div>
           ))}
         </div>

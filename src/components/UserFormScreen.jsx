@@ -70,7 +70,7 @@ const POSITION_OPTIONS = [
 
 const CONTACT_METHOD_OPTIONS = [
   { label: 'WhatsApp', value: 'WHATSAPP', icon: '💬' },
-  { label: 'Call', value: 'CALL', icon: '📞' },
+  { label: 'Phone', value: 'PHONE', icon: '📞' },
   { label: 'Email', value: 'EMAIL', icon: '📧' },
 ];
 

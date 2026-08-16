@@ -38,6 +38,7 @@ export default function App() {
   const [userData, setUserData] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [inviteData, setInviteData] = useState(null);
+  const [paymentType, setPaymentType] = useState('plan');
 
   // ── BP Modal state ──
   const [bpModalOpen, setBpModalOpen] = useState(false);
@@ -163,6 +164,11 @@ export default function App() {
       window.history.replaceState({}, '', '/');
       setItem('formFilled', 'true');
       setItem('planPurchased', 'true');
+      const isEvt = params.get('type')?.toLowerCase() === 'event' ||
+                    params.get('type')?.toLowerCase() === 'event_payment' ||
+                    params.get('paymentFor') === 'event' ||
+                    params.has('eventId');
+      setPaymentType(isEvt ? 'event' : 'plan');
       setScreen('payment_success');
       setBooting(false);
       return;
@@ -523,9 +529,9 @@ export default function App() {
 
     setSelectedRoles(savedRoles);
 
-    const targetScreen = getScreenFromRoles(savedRoles, savedUser);
-    console.log('🚀 Plan selected, transitioning to target screen:', targetScreen);
-    setScreen(targetScreen);
+    console.log('🚀 Plan selected, showing plan subscription success screen');
+    setPaymentType('plan');
+    setScreen('payment_success');
   };
 
   const handlePaymentSuccess = () => {
@@ -793,7 +799,7 @@ export default function App() {
 
       {/* ── Payment ── */}
       {screen === 'payment_success' && (
-        <PaymentSuccess onContinue={handlePaymentSuccess} />
+        <PaymentSuccess type={paymentType} onContinue={handlePaymentSuccess} />
       )}
       {screen === 'payment_failed' && (
         <PaymentFailed

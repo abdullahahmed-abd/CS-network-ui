@@ -468,8 +468,6 @@ export default function CreateEventModal({
                 ]}
               />
             </div>
-            <InputField label="Cover Image URL" value={coverImageUrl} onChange={setCoverImageUrl}
-              placeholder="https://example.com/image.jpg" />
           </>
         )}
 

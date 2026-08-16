@@ -1,11 +1,17 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, PartyPopper, Crown, Sparkles, ArrowRight } from 'lucide-react';
+import { CheckCircle2, PartyPopper, Crown, Sparkles, ArrowRight, Ticket } from 'lucide-react';
 import Backgroundimage from '../assets/image/Backgroundimg19.png';
 
-export default function PaymentSuccessScreen({ onContinue }) {
+export default function PaymentSuccessScreen({ onContinue, type = 'plan' }) {
   const [showConfetti, setShowConfetti] = useState(true);
   const [countdown, setCountdown] = useState(5);
+
+  // Determine if this is an Event payment or Plan Subscription payment
+  const searchParams = new URLSearchParams(window.location.search);
+  const urlType = searchParams.get('type')?.toLowerCase();
+  const hasEventId = searchParams.has('eventId');
+  const isEvent = type === 'event' || urlType === 'event' || urlType === 'event_payment' || hasEventId;
 
   // Auto redirect after 5 seconds
   useEffect(() => {
@@ -146,43 +152,82 @@ export default function PaymentSuccessScreen({ onContinue }) {
               </motion.div>
             </motion.div>
 
-            {/* Text */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <h1 className="mb-3 text-3xl font-bold text-gray-900">
-                Payment Successful! 🎉
-              </h1>
-              <p className="mb-2 text-gray-600 text-base">
-                Your subscription has been activated successfully.
-              </p>
-              <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 border border-green-200 mb-6">
-                <Crown className="h-4 w-4 text-amber-500" />
-                <span className="text-sm font-bold text-green-700">
-                  30-day free trial started!
-                </span>
-              </div>
-            </motion.div>
+            {/* Dynamic Text Content */}
+            {isEvent ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <h1 className="mb-3 text-3xl font-bold text-gray-900">
+                  Event Payment Successful! 🎉
+                </h1>
+                <p className="mb-2 text-gray-600 text-base">
+                  Your event registration has been confirmed successfully.
+                </p>
+                <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 border border-green-200 mb-6">
+                  <Ticket className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-bold text-green-700">
+                    Event Registration Confirmed!
+                  </span>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <h1 className="mb-3 text-3xl font-bold text-gray-900">
+                  Payment Successful! 🎉
+                </h1>
+                <p className="mb-2 text-gray-600 text-base">
+                  Your subscription has been activated successfully.
+                </p>
+                <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-4 py-2 border border-green-200 mb-6">
+                  <Crown className="h-4 w-4 text-amber-500" />
+                  <span className="text-sm font-bold text-green-700">
+                    30-day free trial started!
+                  </span>
+                </div>
+              </motion.div>
+            )}
 
-            {/* Trial info card */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="mb-8 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 p-5"
-            >
-              <div className="flex items-center justify-center gap-3 mb-3">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm font-bold text-green-800">Trial Period Active</span>
-              </div>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                You won't be charged during the 30-day trial period.
-                Your plan billing will start automatically after the trial ends.
-                You can cancel anytime.
-              </p>
-            </motion.div>
+            {/* Dynamic Info Card */}
+            {isEvent ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="mb-8 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 p-5"
+              >
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-sm font-bold text-green-800">Event Pass Active</span>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Your registration is complete and your event pass is ready.
+                  You can view your pass details anytime in your dashboard under My Registrations.
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="mb-8 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 p-5"
+              >
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-sm font-bold text-green-800">Trial Period Active</span>
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  You won't be charged during the 30-day trial period.
+                  Your plan billing will start automatically after the trial ends.
+                  You can cancel anytime.
+                </p>
+              </motion.div>
+            )}
 
             {/* CTA Button */}
             <motion.button
