@@ -228,7 +228,7 @@ export default function App() {
       const savedRoles = savedUser?.roles || [];
       const storedBpStatus = getItem(BP_STATUS_KEY);
 
-      if (storedToken) {
+      if (storedToken || (savedUser && (savedUser.userId || savedUser.email || savedUser.roles?.length))) {
         const formFilled = getItem('formFilled');
         if (formFilled === 'true') {
           setSelectedRoles(savedRoles);

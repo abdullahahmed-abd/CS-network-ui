@@ -346,21 +346,19 @@ export function TradeChatScreen({
     if (!conversationId) return;
 
     const token = getAccessToken();
-    if (!token) {
-      setConnecting(false);
-      return;
+    if (token) {
+      document.cookie = `accessToken=${encodeURIComponent(token)}; path=/; SameSite=None; Secure`;
+      document.cookie = `token=${encodeURIComponent(token)}; path=/; SameSite=None; Secure`;
+      document.cookie = `Authorization=Bearer ${encodeURIComponent(token)}; path=/; SameSite=None; Secure`;
     }
-
-    // Ensure all cookies are written with SameSite=None; Secure for cross-origin ngrok requests
-    document.cookie = `accessToken=${encodeURIComponent(token)}; path=/; SameSite=None; Secure`;
-    document.cookie = `token=${encodeURIComponent(token)}; path=/; SameSite=None; Secure`;
-    document.cookie = `Authorization=Bearer ${encodeURIComponent(token)}; path=/; SameSite=None; Secure`;
 
     setConnecting(true);
     setError('');
 
     // Append token & ngrok bypass parameters for HTTP 101 WebSocket Upgrade GET /cs-network/ws
-    const wsUrlWithParams = `${WS_URL}?token=${encodeURIComponent(token)}&ngrok-skip-browser-warning=true`;
+    const wsUrlWithParams = token
+      ? `${WS_URL}?token=${encodeURIComponent(token)}&ngrok-skip-browser-warning=true`
+      : `${WS_URL}?ngrok-skip-browser-warning=true`;
 
     const client = new Client({
       brokerURL: wsUrlWithParams,
@@ -371,9 +369,9 @@ export function TradeChatScreen({
         if (str.includes('STOMP') || str.includes('Websocket')) console.log('📡 STOMP Debug:', str);
       },
 
-      connectHeaders: {
+      connectHeaders: token ? {
         Authorization: `Bearer ${token}`,
-      },
+      } : {},
 
       onConnect: () => {
         console.log('✅ WebSocket GET /cs-network/ws connected');
